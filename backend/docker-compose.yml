@@ -1,0 +1,51 @@
+services:
+  # Mode 1: Local PostgreSQL 16 Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: kritagas_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_password}
+      POSTGRES_DB: ${POSTGRES_DB:-kritagas_db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kritagas_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # FastAPI Backend Service (supports both Mode 1: Local Postgres and Mode 2: Cloud Neon)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kritagas_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - DEBUG=${DEBUG:-false}
+      - APP_NAME=${APP_NAME:-KRITAGAS Backend}
+      - API_V1_PREFIX=${API_V1_PREFIX:-/api/v1}
+      - SECRET_KEY=${SECRET_KEY:-replace_with_a_secure_secret_key_in_production}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres_secure_password}@postgres:5432/${POSTGRES_DB:-kritagas_db}}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - DATABASE_ECHO=${DATABASE_ECHO:-false}
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-local}
+      - LOCAL_STORAGE_DIR=${LOCAL_STORAGE_DIR:-./uploads}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  postgres_data:
+    driver: local

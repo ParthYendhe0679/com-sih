@@ -113,18 +113,9 @@ export default function FIRIntakePage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-[24px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-              FIR Intake &amp; Neural Case Ingestion Console
+              FIR Intake &amp; Case Processing Console
             </h1>
-            <span
-              className="text-[11px] font-mono-id px-2.5 py-0.5 rounded-full font-bold"
-              style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
-            >
-              Pipeline v5.2
-            </span>
           </div>
-          <p className="text-[13.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
-            Digital FIR ingestion, OCR text vectorization, entity resolution, and automated case network construction
-          </p>
         </div>
 
         {/* Option Switcher: Online Approved vs Offline Upload (Section 6) */}

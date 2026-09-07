@@ -8,7 +8,7 @@ import { mockCaseService } from '@/services/mockServices';
 import type { Case, CrimeType, CasePriority, CaseStatus } from '@/types';
 import DataTable, { ColumnDef } from '@/components/shared/DataTable';
 import FilterBar, { FilterOption } from '@/components/shared/FilterBar';
-import { FolderOpen, Plus, Shield, ArrowUpRight } from 'lucide-react';
+import { FolderOpen, Plus, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function CasesPage() {
@@ -20,8 +20,6 @@ export default function CasesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<{ [key: string]: string }>({
     crime: 'all',
-    status: 'all',
-    priority: 'all',
     city: 'all',
   });
 
@@ -37,7 +35,7 @@ export default function CasesPage() {
   };
 
   const handleClearAll = () => {
-    setFilters({ crime: 'all', status: 'all', priority: 'all', city: 'all' });
+    setFilters({ crime: 'all', city: 'all' });
     setSearchQuery('');
   };
 
@@ -49,13 +47,10 @@ export default function CasesPage() {
         const matchesQuery =
           c.id.toLowerCase().includes(q) ||
           c.title.toLowerCase().includes(q) ||
-          c.assignedOfficer.toLowerCase().includes(q) ||
           c.location.toLowerCase().includes(q);
         if (!matchesQuery) return false;
       }
       if (filters.crime !== 'all' && c.crime !== filters.crime) return false;
-      if (filters.status !== 'all' && c.status !== filters.status) return false;
-      if (filters.priority !== 'all' && c.priority !== filters.priority) return false;
       if (filters.city !== 'all' && c.city !== filters.city) return false;
       return true;
     });
@@ -74,28 +69,6 @@ export default function CasesPage() {
         { label: 'Cybercrime', value: 'Cybercrime' },
         { label: 'Vehicle Theft', value: 'Vehicle Theft' },
         { label: 'Extortion', value: 'Extortion' },
-      ],
-    },
-    {
-      key: 'status',
-      label: 'Status',
-      value: filters.status,
-      options: [
-        { label: 'Active', value: 'Active' },
-        { label: 'Under Investigation', value: 'Under Investigation' },
-        { label: 'Pending Review', value: 'Pending Review' },
-        { label: 'Closed', value: 'Closed' },
-      ],
-    },
-    {
-      key: 'priority',
-      label: 'Priority',
-      value: filters.priority,
-      options: [
-        { label: 'Critical', value: 'Critical' },
-        { label: 'High', value: 'High' },
-        { label: 'Medium', value: 'Medium' },
-        { label: 'Low', value: 'Low' },
       ],
     },
     {
@@ -132,8 +105,8 @@ export default function CasesPage() {
       sortable: true,
       render: (c) => (
         <div>
-          <div className="font-medium text-[var(--ink-primary)] truncate max-w-[320px]">{c.title}</div>
-          <div className="text-[11px] text-[var(--ink-tertiary)] truncate max-w-[320px]">{c.description}</div>
+          <div className="font-medium text-[var(--ink-primary)] truncate max-w-[340px]">{c.title}</div>
+          <div className="text-[11px] text-[var(--ink-tertiary)] truncate max-w-[340px]">{c.description}</div>
         </div>
       ),
     },
@@ -158,48 +131,6 @@ export default function CasesPage() {
       ),
     },
     {
-      key: 'status',
-      header: 'Status',
-      sortable: true,
-      render: (c) => {
-        const cls =
-          c.status === 'Active'
-            ? 'badge-active'
-            : c.status === 'Under Investigation'
-            ? 'badge-investigation'
-            : c.status === 'Pending Review'
-            ? 'badge-review'
-            : 'badge-closed';
-        return <span className={`badge ${cls}`}>{c.status}</span>;
-      },
-    },
-    {
-      key: 'priority',
-      header: 'Priority',
-      sortable: true,
-      render: (c) => {
-        const cls =
-          c.priority === 'Critical'
-            ? 'badge-critical'
-            : c.priority === 'High'
-            ? 'badge-high'
-            : c.priority === 'Medium'
-            ? 'badge-medium'
-            : 'badge-low';
-        return <span className={`badge ${cls}`}>{c.priority}</span>;
-      },
-    },
-    {
-      key: 'assignedOfficer',
-      header: 'Assigned Officer',
-      sortable: true,
-      render: (c) => (
-        <span className="text-[12px] font-medium text-[var(--ink-primary)]">
-          {c.assignedOfficer}
-        </span>
-      ),
-    },
-    {
       key: 'created',
       header: 'Created',
       sortable: true,
@@ -219,39 +150,18 @@ export default function CasesPage() {
     <div className="space-y-4 animate-fade-in">
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-              Investigation Cases
-            </h1>
-            <span
-              className="text-[11px] font-mono-id px-2 py-0.5 rounded-full font-medium"
-              style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
-            >
-              {filteredCases.length} records
-            </span>
-          </div>
-          <p className="text-[13px] text-[var(--ink-secondary)]">
-            Active and archived multi-jurisdictional intelligence cases
-          </p>
-        </div>
+        <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+          Investigation Cases
+        </h1>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push('/fir')}
-            className="px-3.5 py-2 rounded-xl text-[13px] font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm hover:opacity-90"
+            className="px-3.5 py-2 rounded-xl text-[13px] font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm hover:opacity-90 cursor-pointer"
             style={{ background: 'var(--accent)' }}
           >
             <Plus size={14} />
             <span>Ingest FIR / Create Case</span>
-          </button>
-          <button
-            onClick={() => router.push('/cases/CASE-102')}
-            className="px-3 py-2 rounded-xl text-[13px] font-medium border flex items-center gap-1.5 transition-colors hover:bg-[var(--surface-2)]"
-            style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
-          >
-            <Shield size={14} />
-            <span>Open Flagship CASE-102</span>
           </button>
         </div>
       </div>
@@ -263,7 +173,7 @@ export default function CasesPage() {
         onClearAll={handleClearAll}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        searchPlaceholder="Search by Case ID, title, officer, or location..."
+        searchPlaceholder="Search by Case ID, title, or location..."
       />
 
       {/* Cases Table */}

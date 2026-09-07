@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleSidebar, setRole } from '@/store/slices/uiSlice';
@@ -32,7 +32,7 @@ interface NavSection {
   defaultOpen?: boolean;
 }
 
-// ── Police/Investigator Navigation ─────────────────────────
+// ── Police/Investigator Navigation (Part 32) ───────────────
 const policeNav: NavSection[] = [
   {
     label: 'Overview',
@@ -51,13 +51,12 @@ const policeNav: NavSection[] = [
     ],
   },
   {
-    label: 'Monitoring',
-    defaultOpen: false,
+    label: 'Intelligence',
+    defaultOpen: true,
     items: [
-      { href: '/monitoring', label: 'Live Monitoring', icon: Radio, pulse: true },
-      { href: '/sentinel', label: 'Sentinel', icon: Eye },
-      { href: '/anomaly', label: 'Behaviour Anomaly', icon: ActivitySquare },
-      { href: '/alerts', label: 'Live Alerts', icon: Bell },
+      { href: '/intelligence/samanvaya', label: 'Investigation Agents', icon: BrainCircuit, badge: 'SAMANVAYA', pulse: true },
+      { href: '/historical', label: 'Historical Intelligence', icon: History },
+      { href: '/ai', label: 'KAVA AI', icon: Bot },
     ],
   },
   {
@@ -65,34 +64,13 @@ const policeNav: NavSection[] = [
     defaultOpen: false,
     items: [
       { href: '/evidence', label: 'Evidence Intelligence', icon: Package },
-      { href: '/evidence?tab=forensics', label: 'Forensics', icon: ShieldCheck },
-      { href: '/evidence?tab=correlation', label: 'Evidence Correlation', icon: GitCompare },
-      { href: '/evidence?tab=contradictions', label: 'Contradictions', icon: AlertOctagon },
-      { href: '/evidence?tab=integrity', label: 'Evidence Integrity', icon: Database },
     ],
   },
   {
     label: 'Analytics',
     defaultOpen: false,
     items: [
-      { href: '/analytics?tab=trends', label: 'Crime Trends', icon: BarChart3 },
-      { href: '/analytics?tab=hotspots', label: 'Crime Hotspot Map', icon: Map },
-      { href: '/analytics?tab=patterns', label: 'Predictive Intelligence', icon: BrainCircuit },
-    ],
-  },
-  {
-    label: 'Intelligence',
-    defaultOpen: true,
-    items: [
-      { href: '/historical', label: 'Historical Intelligence', icon: History },
-      { href: '/ai', label: 'AI Assistant / KAVA AI', icon: Bot },
-    ],
-  },
-  {
-    label: 'Administration',
-    defaultOpen: false,
-    items: [
-      { href: '/admin', label: 'Settings', icon: Settings },
+      { href: '/analytics', label: 'Analytics', icon: BarChart3 },
     ],
   },
 ];
@@ -140,16 +118,29 @@ const roleMeta: Record<UserRole, { label: string; color: string; icon: React.Com
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
   const currentRole = useAppSelector((s) => s.ui.currentRole);
+  const effectiveRole: UserRole = pathname?.startsWith('/citizen')
+    ? 'citizen'
+    : pathname?.startsWith('/admin')
+    ? 'admin'
+    : currentRole;
+
+  // Sync effective role to Redux when it differs
+  useEffect(() => {
+    if (effectiveRole !== currentRole) {
+      dispatch(setRole(effectiveRole));
+    }
+  }, [effectiveRole, currentRole, dispatch]);
 
   // Collapsible section state — initialize all sections to their defaultOpen state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    const sections = navByRole[currentRole] || policeNav;
-    sections.forEach((s) => { initial[s.label] = s.defaultOpen ?? true; });
+    const allSections = [...policeNav, ...citizenNav, ...adminNav];
+    allSections.forEach((s) => { initial[s.label] = s.defaultOpen ?? true; });
     return initial;
   });
 
@@ -157,8 +148,8 @@ export default function Sidebar() {
     setOpenSections((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
-  const sections = navByRole[currentRole] || policeNav;
-  const meta = roleMeta[currentRole] || roleMeta.police;
+  const sections = navByRole[effectiveRole] || policeNav;
+  const meta = roleMeta[effectiveRole] || roleMeta.police;
   const RoleIcon = meta.icon;
 
   const handleRoleSwitch = (role: UserRole) => {
@@ -169,16 +160,37 @@ export default function Sidebar() {
     else router.push('/dashboard');
   };
 
-  const [roleSwitcherOpen, setRoleSwitcherOpen] = useState(false);
-
   const isActive = (href: string) => {
     const [path, query] = href.split('?');
     if (path === '/cases/search') return pathname === '/cases/search';
+
     if (query) {
-      // For tab-based links just match the path
-      return pathname === path;
+      if (pathname !== path) return false;
+      const itemParams = new URLSearchParams(query);
+      for (const [key, value] of itemParams.entries()) {
+        if (searchParams.get(key) !== value) return false;
+      }
+      return true;
     }
-    return pathname === href || (href !== '/dashboard' && href !== '/citizen' && href !== '/admin' && pathname?.startsWith(href));
+
+    if (pathname === href) {
+      if (href === '/admin') {
+        const tab = searchParams.get('tab');
+        return !tab || tab === 'dashboard';
+      }
+      if (href === '/citizen') {
+        const tab = searchParams.get('tab');
+        return !tab || tab === 'overview';
+      }
+      return true;
+    }
+
+    return (
+      href !== '/dashboard' &&
+      href !== '/citizen' &&
+      href !== '/admin' &&
+      Boolean(pathname?.startsWith(href))
+    );
   };
 
   return (
@@ -223,39 +235,6 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* Role Badge */}
-      {!collapsed && (
-        <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium cursor-pointer hover:opacity-90 transition-opacity"
-            style={{ background: `${meta.color}14`, color: meta.color }}
-            onClick={() => setRoleSwitcherOpen(!roleSwitcherOpen)}
-          >
-            <RoleIcon size={14} />
-            <span className="flex-1 truncate">{meta.label}</span>
-            <ChevronDown size={12} className={cn('transition-transform', roleSwitcherOpen && 'rotate-180')} />
-          </div>
-          {roleSwitcherOpen && (
-            <div className="mt-1.5 space-y-1 animate-fade-in">
-              {(Object.keys(roleMeta) as UserRole[]).filter(r => r !== currentRole).map(r => {
-                const RM = roleMeta[r];
-                const RI = RM.icon;
-                return (
-                  <button
-                    key={r}
-                    onClick={() => { handleRoleSwitch(r); setRoleSwitcherOpen(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-medium transition-colors hover:bg-[var(--surface-2)]"
-                    style={{ color: 'var(--ink-secondary)' }}
-                  >
-                    <RI size={13} />
-                    <span>{RM.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">

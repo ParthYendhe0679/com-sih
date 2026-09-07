@@ -7,17 +7,16 @@ import { setCommandPaletteOpen } from '@/store/slices/uiSlice';
 import { mockSearchService } from '@/services/mockServices';
 import {
   Search, FolderOpen, User, Car, FileText, MapPin, Building2,
-  Network, Map, History, Package, Bot, Bell, Eye, X
+  Network, Map, History, Package, Bot, BrainCircuit, X
 } from 'lucide-react';
 
 const actionItems = [
   { label: 'Open Case', icon: FolderOpen, action: '/cases' },
+  { label: 'Launch SAMANVAYA Intelligence', icon: BrainCircuit, action: '/intelligence/samanvaya' },
   { label: 'Open Network', icon: Network, action: '/network' },
   { label: 'Open Map', icon: Map, action: '/map' },
   { label: 'Search Historical Intelligence', icon: History, action: '/historical' },
   { label: 'Open Evidence', icon: Package, action: '/evidence' },
-  { label: 'Open Sentinel', icon: Eye, action: '/sentinel' },
-  { label: 'Open Alerts', icon: Bell, action: '/alerts' },
   { label: 'Ask KRITAGAS AI', icon: Bot, action: '/ai' },
 ];
 

@@ -20,16 +20,16 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
 
-// Live feed events — realistic investigation activity
+// Active Investigation Activity (Part 24)
 const liveFeedData = [
-  { time: '15:42', type: 'network', color: '#4F46E5', event: 'New connection detected between PERSON-014 and PERSON-033', case: 'CASE-102', severity: 'high' },
-  { time: '15:38', type: 'fir', color: '#16A34A', event: 'FIR processed and entities extracted — 4 persons, 2 vehicles', case: 'CASE-117', severity: 'info' },
-  { time: '15:31', type: 'ai', color: '#7C3AED', event: 'AI identified 87% similarity with CASE-2019-042 (historical)', case: 'CASE-102', severity: 'high' },
-  { time: '15:24', type: 'evidence', color: '#D97706', event: 'Evidence integrity verified — SHA-256 hash confirmed', case: 'CASE-108', severity: 'info' },
-  { time: '15:18', type: 'alert', color: '#DC2626', event: 'Anomaly: Entity PERSON-021 detected at restricted geofence', case: 'CASE-102', severity: 'critical' },
-  { time: '15:09', type: 'network', color: '#4F46E5', event: 'ORG-014 linked to 3 additional shell accounts', case: 'CASE-102', severity: 'high' },
-  { time: '15:01', type: 'fir', color: '#16A34A', event: 'Citizen complaint CMP-2026-0103 converted to FIR and queued', case: 'CASE-119', severity: 'info' },
-  { time: '14:52', type: 'ai', color: '#7C3AED', event: 'Centrality analysis complete — PERSON-014 identified as hub node', case: 'CASE-102', severity: 'high' },
+  { time: '10:45', type: 'agent', color: '#6366F1', event: 'Investigation Agent completed multi-source synthesis', case: 'CASE-102', severity: 'info' },
+  { time: '10:42', type: 'evidence', color: '#D97706', event: 'Investigator reviewed wire transfer evidence (EVIDENCE-046)', case: 'CASE-102', severity: 'info' },
+  { time: '10:38', type: 'historical', color: '#7C3AED', event: 'Historical case match detected: 87% similarity with CASE-087', case: 'CASE-102', severity: 'high' },
+  { time: '10:35', type: 'network', color: '#4F46E5', event: 'New entity correlation found: Karan Verma ↔ MH-01-AB-1234', case: 'CASE-102', severity: 'high' },
+  { time: '10:32', type: 'case', color: '#16A34A', event: 'CASE-102 dossier updated with Juhu PS FIR-2026-0102', case: 'CASE-102', severity: 'info' },
+  { time: '10:18', type: 'fir', color: '#0EA5E9', event: 'Approved online citizen complaint converted to investigation queue', case: 'CASE-119', severity: 'info' },
+  { time: '10:05', type: 'network', color: '#4F46E5', event: 'Centrality analysis identified ORG-014 as primary financial hub', case: 'CASE-102', severity: 'high' },
+  { time: '09:50', type: 'evidence', color: '#0369A1', event: 'Evidence integrity sealed: SHA-256 cryptographic verification', case: 'CASE-108', severity: 'info' },
 ];
 
 const aiInsights = [
@@ -78,12 +78,12 @@ export default function DashboardPage() {
   const topMetrics = [
     { label: 'Active Cases', value: '128', sub: '+4 this week', icon: FolderOpen, href: '/cases', color: 'var(--accent)', bg: 'var(--accent-muted)' },
     { label: 'New FIRs', value: '23', sub: '8 pending review', icon: FileCheck, href: '/fir', color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
-    { label: 'Network Alerts', value: '17', sub: '5 high priority', icon: Network, href: '/alerts', color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
+    { label: 'SAMANVAYA AI', value: '10', sub: 'Agents online', icon: Brain, href: '/intelligence/samanvaya', color: '#6366F1', bg: 'rgba(99,102,241,0.08)' },
     { label: 'High Priority Entities', value: '41', sub: '12 under watch', icon: Users, href: '/cases/CASE-102?tab=entities', color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
     { label: 'Historical Matches', value: '31', sub: '89% top match', icon: History, href: '/historical', color: '#7C3AED', bg: 'rgba(124,58,237,0.08)' },
     { label: 'Evidence Reviews', value: '12', sub: 'SHA-256 sealed', icon: Package, href: '/evidence', color: '#0369A1', bg: 'rgba(3,105,161,0.08)' },
-    { label: 'Anomalies Detected', value: '9', sub: 'Sentinel active', icon: Activity, href: '/anomaly', color: '#0891B2', bg: 'rgba(8,145,178,0.08)' },
-    { label: 'Open Alerts', value: '34', sub: '6 unread', icon: AlertTriangle, href: '/alerts', color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
+    { label: 'Cross-Case Patterns', value: '9', sub: 'MANTHAN identified', icon: Activity, href: '/intelligence/samanvaya', color: '#0891B2', bg: 'rgba(8,145,178,0.08)' },
+    { label: 'Case Leads', value: '34', sub: '6 ready for review', icon: AlertTriangle, href: '/cases', color: '#DC2626', bg: 'rgba(220,38,38,0.08)' },
   ];
 
   const topEntities = [
@@ -96,53 +96,32 @@ export default function DashboardPage() {
   return (
     <div className="space-y-7 animate-fade-in">
 
-      {/* ── Flagship Case Banner ─────────────────────────────── */}
-      <div
-        className="p-6 rounded-2xl border flex flex-col lg:flex-row lg:items-center justify-between gap-5"
-        style={{ background: 'var(--surface-1)', borderColor: 'var(--accent-subtle)', boxShadow: 'var(--glass-shadow-sm)' }}
-      >
-        <div className="flex items-start gap-4">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-            style={{ background: 'var(--accent)', color: '#fff' }}
-          >
-            <Shield size={24} />
-          </div>
-          <div>
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide"
-                style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
-                Flagship Investigation
-              </span>
-              <span className="badge badge-critical text-[10px] font-bold">CRITICAL PRIORITY</span>
-              <span className="text-[12px] font-mono-id" style={{ color: 'var(--ink-tertiary)' }}>
-                Assigned: DCP R. Sharma
-              </span>
-            </div>
-            <h2 className="text-[22px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-              CASE-102: Organized Financial Fraud Investigation
-            </h2>
-            <p className="text-[13.5px] mt-0.5 max-w-2xl" style={{ color: 'var(--ink-secondary)' }}>
-              Multi-jurisdictional money laundering network through shell entities • 14 correlated POIs (Karan Verma, Rahul Thakur) • ₹4.70 Cr traced fund flow
-            </p>
-          </div>
+      {/* ── Page Header ──────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            Investigation Intelligence Overview
+          </h1>
+          <p className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
+            Real-time criminal syndicate tracking, forensic signals, and live tactical telemetry
+          </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5">
           <Link
-            href="/monitoring"
-            className="px-4 py-2.5 rounded-xl text-[13px] font-semibold border flex items-center gap-2 hover:bg-[var(--surface-2)] transition-all"
-            style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+            href="/intelligence/samanvaya"
+            className="px-3.5 py-2 rounded-xl text-[12.5px] font-semibold border flex items-center gap-2 hover:bg-[var(--surface-2)] transition-all"
+            style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)', background: 'var(--surface-1)' }}
           >
-            <span className="w-2 h-2 rounded-full bg-[var(--success)] live-pulse-dot" />
-            Live Feed
+            <span className="w-2 h-2 rounded-full bg-[var(--accent)] live-pulse-dot" />
+            SAMANVAYA AI
           </Link>
           <button
-            onClick={() => router.push('/cases/CASE-102')}
-            className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white flex items-center gap-2 transition-all hover:opacity-90"
+            onClick={() => router.push('/cases')}
+            className="px-4 py-2 rounded-xl text-[12.5px] font-semibold text-white flex items-center gap-2 transition-all hover:opacity-90 shadow-sm cursor-pointer"
             style={{ background: 'var(--accent)' }}
           >
-            Open Workspace
-            <ArrowRight size={15} />
+            View Cases
+            <ArrowRight size={14} />
           </button>
         </div>
       </div>
@@ -226,10 +205,10 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[var(--success)] live-pulse-dot" />
               <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
-                Live Investigation Feed
+                Active Investigation Activity
               </h3>
             </div>
-            <Link href="/monitoring" className="text-[12px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1">
+            <Link href="/cases" className="text-[12px] font-semibold text-[var(--accent)] hover:underline flex items-center gap-1">
               View all <ChevronRight size={13} />
             </Link>
           </div>
@@ -298,7 +277,7 @@ export default function DashboardPage() {
               <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>Top Network Entities</h3>
               <p className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>Highest graph centrality</p>
             </div>
-            <Link href="/network" className="text-[13px] text-[var(--accent)] font-semibold hover:underline flex items-center gap-0.5">
+            <Link href="/cases/CASE-102?tab=network" className="text-[13px] text-[var(--accent)] font-semibold hover:underline flex items-center gap-0.5">
               Graph <ChevronRight size={13} />
             </Link>
           </div>

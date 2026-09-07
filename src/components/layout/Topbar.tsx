@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleTheme, setCommandPaletteOpen, setRole } from '@/store/slices/uiSlice';
 import type { UserRole } from '@/store/slices/uiSlice';
-import { Search, Bell, Bot, Sun, Moon, Command } from 'lucide-react';
+import { Search, Bell, Sun, Moon, Command } from 'lucide-react';
 import { mockAlertService } from '@/services/mockServices';
 import NotificationsDrawer from './NotificationsDrawer';
 
@@ -23,33 +23,25 @@ export default function Topbar() {
   const theme = useAppSelector((s) => s.ui.theme);
   const collapsed = useAppSelector((s) => s.ui.sidebarCollapsed);
   const currentRole = useAppSelector((s) => s.ui.currentRole);
+  const effectiveRole: UserRole = pathname?.startsWith('/citizen')
+    ? 'citizen'
+    : pathname?.startsWith('/admin')
+    ? 'admin'
+    : currentRole;
 
   const [unreadAlerts, setUnreadAlerts] = useState(3);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
-  const [eventCount, setEventCount] = useState(1248);
 
   useEffect(() => {
-    const updateTime = () => {
-      setCurrentTime(new Date().toTimeString().slice(0, 8));
-    };
-    updateTime();
     mockAlertService.getUnreadCount().then((cnt) => setUnreadAlerts(cnt > 0 ? cnt : 3));
-    const timer = setInterval(() => {
-      updateTime();
-      setEventCount((prev) => prev + Math.floor(Math.random() * 2));
-    }, 3000);
-    return () => clearInterval(timer);
   }, []);
 
   const handleSearch = useCallback(() => {
     dispatch(setCommandPaletteOpen(true));
   }, [dispatch]);
 
-  const meta = roleMeta[currentRole] ?? roleMeta.police;
-
-  const isLiveMonitoring = pathname === '/monitoring';
+  const meta = roleMeta[effectiveRole] ?? roleMeta.police;
 
   const sidebarOffset = collapsed
     ? 'var(--sidebar-collapsed-width, 68px)'
@@ -83,35 +75,10 @@ export default function Topbar() {
             </span>
           </button>
 
-          {/* Prototype badge */}
-          <div
-            className="hidden lg:flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold tracking-wide"
-            style={{ background: 'rgba(217, 119, 6, 0.08)', color: '#D97706' }}
-          >
-            SYNTHETIC DATA
-          </div>
         </div>
 
-        {/* Right: Live ticker, bells, theme, user */}
+        {/* Right: Bells, theme, user */}
         <div className="flex items-center gap-2">
-          {/* Live feed indicator (police only) */}
-          {currentRole === 'police' && (
-            <button
-              onClick={() => router.push('/monitoring')}
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl text-[12px] font-mono-id border transition-colors hover:bg-[var(--glass-2)]"
-              style={{
-                borderColor: isLiveMonitoring ? 'var(--accent)' : 'var(--border)',
-                background: isLiveMonitoring ? 'var(--accent-muted)' : 'var(--glass-1)',
-              }}
-            >
-              <span className="w-2 h-2 rounded-full bg-[var(--success)] live-pulse-dot" />
-              <span className="font-bold text-[var(--success)]">LIVE</span>
-              <span style={{ color: 'var(--ink-tertiary)' }}>|</span>
-              <span style={{ color: 'var(--ink-secondary)' }}>{eventCount.toLocaleString()} events</span>
-              <span style={{ color: 'var(--ink-tertiary)' }}>{currentTime}</span>
-            </button>
-          )}
-
           {/* Notifications */}
           <button
             onClick={() => setNotificationsOpen(true)}
@@ -127,18 +94,6 @@ export default function Topbar() {
               />
             )}
           </button>
-
-          {/* AI shortcut (police only) */}
-          {currentRole === 'police' && (
-            <button
-              onClick={() => router.push('/ai')}
-              className="flex items-center justify-center w-9 h-9 rounded-xl hover:bg-[var(--glass-2)] transition-colors"
-              style={{ color: 'var(--accent)' }}
-              title="KRITAGAS AI"
-            >
-              <Bot size={18} strokeWidth={1.8} />
-            </button>
-          )}
 
           {/* Theme toggle */}
           <button
@@ -165,7 +120,7 @@ export default function Topbar() {
               </div>
               <div className="hidden sm:flex flex-col">
                 <span className="text-[13px] font-semibold leading-tight" style={{ color: 'var(--ink-primary)' }}>
-                  {currentRole === 'police' ? 'DCP R. Sharma' : currentRole === 'admin' ? 'Admin' : 'Citizen User'}
+                  {effectiveRole === 'police' ? 'DCP R. Sharma' : effectiveRole === 'admin' ? 'Admin' : 'Citizen User'}
                 </span>
                 <span className="text-[11px] leading-tight" style={{ color: 'var(--ink-tertiary)' }}>
                   {meta.label}
@@ -193,7 +148,7 @@ export default function Topbar() {
 
                 <div className="space-y-1">
                   {(['police', 'citizen', 'admin'] as UserRole[]).map((r) => {
-                    const isCurrent = r === currentRole;
+                    const isCurrent = r === effectiveRole;
                     const rMeta = roleMeta[r];
                     return (
                       <button

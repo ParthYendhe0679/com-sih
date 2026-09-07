@@ -233,11 +233,53 @@ const aiResponses: Record<string, { answer: string; entities: { id: string; name
     cases: ['CASE-102'],
     confidence: 88,
   },
+  'summarize case-102': {
+    answer: '### CASE-102 Summary: Organized Financial Fraud Investigation\n\n- **Crime Category:** Organized Financial Fraud & PMLA Contravention\n- **Status:** Active Investigation (Assigned: DCP R. Sharma)\n- **Locus:** Andheri West, Mumbai & Pune Deccan Corridor\n- **Origin:** FIR-2026-0102 lodged on 15-Aug-2026 by complainant Manoj Tiwari\n- **Primary Entities:** Karan Verma (PERSON-019), Rahul Thakur (PERSON-016), Nisha Kapoor (PERSON-015), and M/s Nexus Trading Corp (ORG-014)\n- **Factual Core:** Inducement of ₹4.70 Cr commercial property acquisition at Versova Business Centre with ₹1.26 Cr advance routed across shell accounts\n- **Assets Flagged:** Mercedes-Benz E-Class (MH-01-AB-1234), Toyota Innova (MH-02-CD-4567)\n- **Current Intelligence:** 31 network nodes, 55 relationships, 4 detected fraud sub-clusters, and 3 archival matches.\n\n⚠️ Note: System output provides analytical assistance; human investigator verification is required.',
+    entities: [{ id: 'PERSON-019', name: 'Karan Verma', type: 'Person' }, { id: 'PERSON-016', name: 'Rahul Thakur', type: 'Person' }, { id: 'ORG-014', name: 'Nexus Trading Corp', type: 'Organization' }],
+    cases: ['CASE-102'],
+    confidence: 96,
+  },
+  'who are the most connected individuals': {
+    answer: '### Top Connected Individuals in Case Scope:\n\n1. **Karan Verma (PERSON-019)** — 18 direct connections. Degree Centrality: 0.52. Linked to 6 shell entities, 4 co-conspirators, 2 vehicles, and 3 historical case records.\n2. **Aarav Mehta (PERSON-014)** — 15 direct connections. Degree Centrality: 0.48. Primary corporate signatory across 4 bank escrow conduits.\n3. **Rahul Thakur (PERSON-016)** — 12 direct connections. Degree Centrality: 0.44. Manages transport logistics and vehicle movement across Mumbai-Pune highway.\n4. **Nisha Kapoor (PERSON-015)** — 11 direct connections. Degree Centrality: 0.41. Property seller counter-party in previous Versova transfers.\n5. **Vikram Sharma (PERSON-021)** — 12 direct connections. Intermediary director in Westline Logistics accounts.',
+    entities: [{ id: 'PERSON-019', name: 'Karan Verma', type: 'Person' }, { id: 'PERSON-014', name: 'Aarav Mehta', type: 'Person' }, { id: 'PERSON-016', name: 'Rahul Thakur', type: 'Person' }],
+    cases: ['CASE-102', 'CASE-087'],
+    confidence: 94,
+  },
+  'show connections between karan verma and rahul': {
+    answer: '### Cross-Entity Connections: Karan Verma ↔ Rahul Thakur\n\n1. **Telephony Intercept (CDR):** 18 direct calls logged between +91 98765 XXXXX (Karan Verma) and +91 99887 XXXXX (Rahul Thakur) within 48 hours of escrow liquidation.\n2. **Historical Case Co-occurrence:** Both individuals recorded as associates in closed case **CASE-087** (Westside Financial Fraud Ring, 2023).\n3. **Co-location Sightings:** Both subjects observed departing Bandra Bandstand meeting point in convoy vehicles MH-01-AB-1234 and MH-02-CD-4567.\n4. **Corporate Tie:** Cross-holding links between Nexus Trading Corp and GlobalProp Realty Pvt Ltd.\n\n- **Overall Link Strength:** High (87% confidence)\n- **Primary Evidence:** CDR logs, ANPR toll surveillance, and ROC Director filings.',
+    entities: [{ id: 'PERSON-019', name: 'Karan Verma', type: 'Person' }, { id: 'PERSON-016', name: 'Rahul Thakur', type: 'Person' }],
+    cases: ['CASE-102', 'CASE-087'],
+    confidence: 87,
+  },
+  'what evidence connects these two people': {
+    answer: '### Evidentiary Proof Linking Subjects:\n\n1. **EVIDENCE-048 (CDR Extraction):** Complete call ledger showing 18 outgoing and incoming calls with average duration 4.2 minutes.\n2. **EVIDENCE-047 (ANPR Surveillance):** Camera capture at Khalapur Toll Plaza (Km 38) timestamped 14:43 showing convoy movement.\n3. **EVIDENCE-045 (Corporate Articles):** ROC registry document linking common registered address at 22 Juhu Tara Road.\n4. **EVIDENCE-046 (Bank Wire Slips):** Wire transfer of ₹25L referencing mutual shell accounts.\n5. **EVIDENCE-088 (Historical Case Record):** Joint interrogation statement from 2023 Bandra investigation.',
+    entities: [{ id: 'EVIDENCE-047', name: 'Toll ANPR CCTV', type: 'Evidence' }, { id: 'EVIDENCE-048', name: 'CDR Extraction', type: 'Evidence' }, { id: 'EVIDENCE-045', name: 'ROC Articles', type: 'Evidence' }],
+    cases: ['CASE-102', 'CASE-087'],
+    confidence: 92,
+  },
+  'find important locations': {
+    answer: '### Crucial Geographic Vectors for Investigation:\n\n1. **22 Juhu Tara Road, Juhu, Mumbai (LOC-087):** Registered corporate headquarters of Nexus Trading Corp. Multiple subject sightings recorded.\n2. **Versova Business Centre, Andheri West:** Alleged locus of commercial property fraud; crime scene per FIR-2026-0102.\n3. **Khalapur Toll Plaza (Mumbai-Pune Expressway Km 38):** High-speed ANPR camera point where suspect vehicle MH-01-AB-1234 was logged departing Mumbai at 14:43.\n4. **55 FC Road, Deccan Gymkhana, Pune (LOC-023):** Branch operations base for GlobalProp Realty Pvt Ltd.\n5. **Bandra Bandstand Promenade:** Meeting point observed 48 hours prior to transaction execution.',
+    entities: [{ id: 'LOC-087', name: 'Juhu Tara Road', type: 'Location' }, { id: 'LOC-023', name: 'FC Road, Pune', type: 'Location' }],
+    cases: ['CASE-102'],
+    confidence: 93,
+  },
+  'show historical cases related to this case': {
+    answer: '### Correlated Historical Cases (Pattern Match):\n\n1. **CASE-087 (Westside Financial Fraud Ring, 2023):**\n   - **Similarity:** 87%\n   - **Shared Factors:** Karan Verma, Rahul Thakur, Vehicle MH-01-AB-1234, and identical property undervaluation MO.\n\n2. **CASE-041 (Offshore Shell Entity Network, 2024):**\n   - **Similarity:** 74%\n   - **Shared Factors:** Common Chartered Accountant Divya Saxena, shell bank conduit structure, and phone number reference.\n\n3. **CASE-004 (Delhi Construction Land Fraud, 2026):**\n   - **Similarity:** 68%\n   - **Shared Factors:** Interstate hawala transfers between Mumbai and Delhi NCR.',
+    entities: [{ id: 'CASE-087', name: 'Westside Ring', type: 'Case' }, { id: 'CASE-041', name: 'Offshore Shell', type: 'Case' }],
+    cases: ['CASE-087', 'CASE-041', 'CASE-004'],
+    confidence: 91,
+  },
+  'what suspicious patterns exist': {
+    answer: '### Detected Suspicious Analytical Patterns:\n\n1. **Financial Funnel Anomaly:** ₹1.26 Crore moved from primary corporate escrow into 3 disparate regional accounts within 48 hours of receipt without corresponding trade invoices.\n2. **Alibi Contradiction:** Written statement claimed subject was in Pune continuously, but ANPR toll cameras recorded vehicle MH-01-AB-1234 on expressway at 14:43.\n3. **Pre-Crime Communication Spike:** Call frequency between Karan Verma and Rahul Thakur increased by 400% in the 72 hours preceding complainant advance payment.\n4. **Cross-Case Modus Operandi Match:** Property transfer mechanics mirror exactly the methodology used in closed case CASE-087.\n\n⚠️ Analytical finding only. Requires independent human investigator verification.',
+    entities: [{ id: 'EVIDENCE-047', name: 'ANPR Toll Record', type: 'Evidence' }, { id: 'TXN-001', name: 'Wire Transfer', type: 'Financial' }],
+    cases: ['CASE-102'],
+    confidence: 89,
+  },
 };
 
 export const mockAIService = {
   async ask(question: string): Promise<AIMessage> {
-    await delay(1500);
+    await delay(1200);
     const lowerQ = question.toLowerCase();
     const matchedKey = Object.keys(aiResponses).find(k => lowerQ.includes(k) || k.includes(lowerQ.slice(0, 20)));
 
@@ -257,22 +299,22 @@ export const mockAIService = {
     return {
       id: `ai-${Date.now()}`,
       role: 'assistant',
-      content: `Based on the available investigation data, I've analyzed your query: "${question}"\n\nThe current dataset contains 128 active cases, 100 persons of interest, and 150+ evidence records across 7 major cities. For the most relevant results, try querying specific case IDs (e.g., CASE-102), person IDs (e.g., PERSON-014), or specific crime types.\n\nSuggested follow-up queries:\n- "Show all cases in Mumbai"\n- "Find connections for PERSON-014"\n- "What evidence exists for CASE-102?"`,
+      content: `### KAVA AI Investigation Query Analysis\n\n**Query:** "${question}"\n\nBased on cross-case correlation of 128 active cases, 100 entities, and 150 evidence items:\n\n- **Target Case Context:** CASE-102 (Organized Financial Fraud Investigation)\n- **Primary Correlated Entities:** Karan Verma (PERSON-019), Rahul Thakur (PERSON-016), Nexus Trading Corp (ORG-014)\n- **Key Corroborating Sources:** FIR-2026-0102, ANPR Toll Surveillance, and Bank Wire Audit Ledgers\n\nFor more specific tactical analysis, try asking:\n- *"Summarize CASE-102"*\n- *"Who are the most connected individuals?"*\n- *"Show connections between Karan Verma and Rahul"*\n- *"What evidence connects these two people?"*\n- *"Find important locations"*\n- *"Show historical cases related to this case"*\n- *"What suspicious patterns exist?"*\n\n⚠️ Note: All analytical findings require verified investigator signoff.`,
       timestamp: new Date().toISOString(),
-      sources: [{ id: 'CASE-102', type: 'Case', title: 'XYZ Network Investigation' }],
-      confidence: 65,
+      sources: [{ id: 'CASE-102', type: 'Case', title: 'CASE-102' }],
+      confidence: 75,
     };
   },
 
   getSuggestedQuestions(): string[] {
     return [
-      'Show all kidnapping cases in Mumbai.',
-      'Which person has the highest number of connections?',
-      'Find historical cases related to CASE-102.',
-      'Show all FIRs involving PERSON-014.',
-      'Which areas show increasing robbery activity?',
-      'Why are PERSON-014 and PERSON-021 connected?',
-      'Show evidence supporting this relationship.',
+      'Summarize CASE-102',
+      'Who are the most connected individuals?',
+      'Show connections between Karan Verma and Rahul.',
+      'What evidence connects these two people?',
+      'Find important locations.',
+      'Show historical cases related to this case.',
+      'What suspicious patterns exist?',
     ];
   },
 };

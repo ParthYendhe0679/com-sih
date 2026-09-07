@@ -17,29 +17,35 @@ import {
   Package, Network, Map, History, Clock, Bell, Bot, FileText,
   ShieldCheck, AlertTriangle, ArrowLeft, ArrowRight, GitFork, CheckCircle2,
   Calendar, FileCode, Check, Eye, RefreshCw, Share2, Sparkles,
-  Layers, ChevronRight, ExternalLink, HelpCircle, Plus
+  Layers, ChevronRight, ExternalLink, HelpCircle, Plus, BrainCircuit, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type TabKey =
   | 'overview'
+  | 'fir'
+  | 'entities'
+  | 'relationships'
   | 'network'
   | 'map'
   | 'timeline'
-  | 'entities'
   | 'evidence'
+  | 'historical'
   | 'related'
+  | 'insights'
   | 'ai';
 
 const workspaceTabs: { key: TabKey; label: string; icon: React.ElementType; badge?: string }[] = [
   { key: 'overview', label: 'Overview', icon: FolderOpen },
+  { key: 'fir', label: 'FIR & Documents', icon: FileText, badge: 'FIR-0102' },
+  { key: 'entities', label: 'Entities', icon: User, badge: '14' },
+  { key: 'relationships', label: 'Relationships', icon: Share2, badge: '55' },
   { key: 'network', label: 'Network', icon: Network, badge: '31' },
   { key: 'map', label: 'Case Map', icon: Map, badge: 'Live' },
   { key: 'timeline', label: 'Timeline', icon: Clock },
-  { key: 'entities', label: 'Entities', icon: User, badge: '14' },
   { key: 'evidence', label: 'Evidence', icon: Package, badge: '9' },
-  { key: 'related', label: 'Related Cases', icon: History, badge: '3' },
-  { key: 'ai', label: 'AI Insights', icon: Bot },
+  { key: 'historical', label: 'Historical Intelligence', icon: History, badge: '3' },
+  { key: 'insights', label: 'Explainable Insights', icon: Sparkles, badge: 'AI' },
 ];
 
 function CaseDetailContent() {
@@ -58,6 +64,8 @@ function CaseDetailContent() {
   // Cross-tab interaction links
   const [focusedLocationName, setFocusedLocationName] = useState<string | null>(null);
   const [selectedEntityForNetwork, setSelectedEntityForNetwork] = useState<string | null>(null);
+  const [relationshipFilter, setRelationshipFilter] = useState<string>('all');
+  const [relationshipSearch, setRelationshipSearch] = useState<string>('');
 
   useEffect(() => {
     mockCaseService.getCase(caseId).then((c) => {
@@ -166,26 +174,27 @@ function CaseDetailContent() {
             {/* Quick Action Buttons (Section 4) */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
+                onClick={() => router.push(`/intelligence/samanvaya?case=${currentCase.id}`)}
+                className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+              >
+                <BrainCircuit size={14} />
+                <span>Launch SAMANVAYA Intelligence</span>
+              </button>
+              <button
                 onClick={() => { router.push('/fir'); toast.info('Navigating to FIR Processing console'); }}
-                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold border hover:bg-[var(--surface-2)] transition-colors"
+                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
                 style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
               >
                 Process Data
               </button>
               <button
                 onClick={() => { setActiveTab('network'); toast.success('Case network refreshed.'); }}
-                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold border hover:bg-[var(--surface-2)] transition-colors flex items-center gap-1"
+                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold border hover:bg-[var(--surface-2)] transition-colors flex items-center gap-1 cursor-pointer"
                 style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
               >
                 <RefreshCw size={12} />
-                <span>Build / Refresh Network</span>
-              </button>
-              <button
-                onClick={() => { setActiveTab('evidence'); toast.info('Viewing case evidence dossier'); }}
-                className="px-3.5 py-1.5 rounded-xl text-[12px] font-semibold text-white shadow-sm hover:opacity-90 transition-all"
-                style={{ background: 'var(--accent)' }}
-              >
-                View Evidence
+                <span>Case Network</span>
               </button>
             </div>
           </div>
@@ -386,7 +395,169 @@ function CaseDetailContent() {
         </div>
       )}
 
-      {/* ── TAB 2: NETWORK (Section 13-17) ───────────────────────── */}
+      {/* ── TAB 2: FIR & LEGAL DOCUMENTS (Part 5 & Part 10) ────────── */}
+      {activeTab === 'fir' && (
+        <div className="space-y-6 animate-fade-in">
+          <div className="p-6 rounded-2xl border glass-panel space-y-4" style={{ borderColor: 'var(--border)' }}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-bold bg-[var(--accent-muted)] text-[var(--accent)]">
+                    ORIGINAL POLICE DOSSIER
+                  </span>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs font-mono-id text-gray-400">CR.P.C. SEC 154</span>
+                </div>
+                <h3 className="text-xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  First Information Report ({currentCase.firId || 'FIR-2026-0102'})
+                </h3>
+                <p className="text-[13px] text-[var(--ink-secondary)]">
+                  Primary complaint document registered at Juhu Police Station establishing the factual scope of investigation
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push('/fir')}
+                  className="px-4 py-2 rounded-xl text-[12.5px] font-semibold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 transition-all cursor-pointer"
+                  style={{ background: 'var(--accent)' }}
+                >
+                  <FileText size={14} />
+                  <span>Open in FIR Intake Console</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Legal Metadata Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[12.5px]">
+              <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] block text-[var(--ink-tertiary)]">Police Station</span>
+                <strong className="font-semibold" style={{ color: 'var(--ink-primary)' }}>Juhu Police Station</strong>
+              </div>
+              <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] block text-[var(--ink-tertiary)]">Date Registered</span>
+                <strong className="font-mono-id font-semibold" style={{ color: 'var(--ink-primary)' }}>15-08-2026</strong>
+              </div>
+              <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] block text-[var(--ink-tertiary)]">Jurisdiction</span>
+                <strong className="font-semibold" style={{ color: 'var(--ink-primary)' }}>Mumbai Suburban</strong>
+              </div>
+              <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] block text-[var(--ink-tertiary)]">Acts &amp; Sections</span>
+                <strong className="font-mono-id font-semibold text-amber-500">IPC 420, 467, 468, 471 r/w 120(B)</strong>
+              </div>
+            </div>
+
+            {/* Complainant & Accused Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
+              <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-2" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] block">
+                  1. Complainant Information
+                </span>
+                <div className="text-[13px] space-y-1" style={{ color: 'var(--ink-primary)' }}>
+                  <div>Name: <strong>Shri Manoj Tiwari</strong> (S/o Shri Ramesh Tiwari)</div>
+                  <div>Address: <span className="text-[var(--ink-secondary)]">52 Hazratganj, New Delhi — 110001</span></div>
+                  <div>Occupation: <span className="text-[var(--ink-secondary)]">Commercial Property Dealer</span></div>
+                  <div>Contact: <span className="font-mono-id text-[var(--ink-secondary)]">+91 98110 02330</span></div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-2" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-rose-500 block">
+                  2. Primary Investigation Subjects Named
+                </span>
+                <div className="text-[13px] space-y-1" style={{ color: 'var(--ink-primary)' }}>
+                  <div>Subject 1: <strong>Karan Verma</strong> (Managing Director, M/s Nexus Trading Corp)</div>
+                  <div>Subject 2: <strong>Rahul Thakur</strong> (Director, GlobalProp Realty Pvt Ltd)</div>
+                  <div>Subject 3: <strong>Nisha Kapoor</strong> (Promoter, Horizon Digital Solutions)</div>
+                  <div>Corporate Entity: <strong>M/s Nexus Trading Corp</strong> (22 Juhu Tara Road)</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Full Legal Text OCR Transcript */}
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+                  Certified OCR Transcription (Raw Legal Text):
+                </span>
+                <span className="text-[11px] font-mono-id text-emerald-500 font-semibold">
+                  ✓ Verified OCR Hash: sha256:8f4c29a071
+                </span>
+              </div>
+              <div
+                className="p-5 rounded-2xl border font-mono text-[12px] leading-relaxed max-h-[380px] overflow-y-auto"
+                style={{
+                  background: 'var(--surface-0)',
+                  borderColor: 'var(--border)',
+                  color: 'var(--ink-primary)',
+                }}
+              >
+                <p className="font-bold text-[13px] text-indigo-400 mb-2">
+                  FIRST INFORMATION REPORT (Under Section 154 Cr.P.C.) — Juhu Police Station
+                </p>
+                <p className="text-gray-400 mb-2">
+                  District: Mumbai Suburban | Year: 2026 | FIR No.: 0102/2026 | Date: 15-08-2026
+                  <br />
+                  Acts &amp; Sections: IPC 420, 467, 468, 471 r/w 120(B) | Prevention of Money Laundering Act, 2002 — Sec 3, 4
+                </p>
+                <div className="space-y-2 text-gray-300">
+                  <p>
+                    <strong>BRIEF FACTS OF OFFENCE:</strong>
+                    <br />
+                    The complainant states that he entered into a property purchase agreement with M/s Nexus Trading Corp (Registered Office: 22 Juhu Tara Road, Juhu, Mumbai) represented by one Shri Aarav Mehta and Shri Karan Verma (Managing Director) for purchase of commercial property at Versova Business Centre, Mumbai for a consideration of Rs. 4,70,00,000/- (Rupees Four Crore Seventy Lakhs).
+                  </p>
+                  <p>
+                    The complainant paid an advance of Rs. 95,00,000/- (Rupees Ninety Five Lakhs) by account transfer to M/s Nexus Trading Corp. Upon investigation by the complainant, it was discovered that:
+                  </p>
+                  <p className="pl-4">
+                    (a) The property at Versova was previously sold to another entity, M/s Horizon Digital Solutions, allegedly controlled by one Smt. Nisha Kapoor.
+                    <br />
+                    (b) M/s Nexus Trading Corp appears to be a shell company with minimal legitimate business operations. Company registration records show Shri Aarav Mehta and Shri Vikram Sharma as co-directors.
+                    <br />
+                    (c) The complainant&apos;s advance amount was transferred through multiple entities including M/s AM Consultancy Services, M/s Apex Financial Services (Pune), and M/s GlobalProp Realty Pvt Ltd (Pune).
+                    <br />
+                    (d) Transport of documents and cash was facilitated through vehicles registered under the name of one Shri Ravi Thakur of Pune, associated with M/s GlobalProp Realty.
+                    <br />
+                    (e) Suspicious cash deposits were observed in accounts linked to Shri Vikram Sharma and M/s Westline Logistics Ltd.
+                  </p>
+                  <p>
+                    <strong>VEHICLES OBSERVED:</strong> Mercedes-Benz E-Class (MH-01-AB-1234), Toyota Innova (MH-02-CD-4567), Tata LPT (MH-12-RT-2000).
+                  </p>
+                  <p>
+                    <strong>COMMUNICATION REFERENCES:</strong> +91 98765 XXXXX, +91 98201 01421, +91 98201 02128.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
+              <div className="text-[12px] text-[var(--ink-secondary)]">
+                Processed via <strong>Deep Neural OCR Pipeline</strong> • 14 People, 6 Vehicles, 18 Locations Extracted
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('entities')}
+                  className="px-3.5 py-2 rounded-xl text-[12px] font-semibold border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                  style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+                >
+                  View Extracted Entities (14)
+                </button>
+                <button
+                  onClick={() => setActiveTab('relationships')}
+                  className="px-3.5 py-2 rounded-xl text-[12px] font-bold text-white transition-all hover:opacity-90 cursor-pointer"
+                  style={{ background: 'var(--accent)' }}
+                >
+                  View Discovered Relationships →
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 5: NETWORK (Section 13-17) ───────────────────────── */}
       {activeTab === 'network' && (
         <div className="space-y-3 animate-fade-in">
           {/* Header Banner for Case Network */}
@@ -642,7 +813,288 @@ function CaseDetailContent() {
         </div>
       )}
 
-      {/* ── TAB 6: EVIDENCE (Section 21) ────────────────────────── */}
+      {/* ── TAB 4: RELATIONSHIPS (Part 9 & Part 10) ──────────────── */}
+      {activeTab === 'relationships' && (
+        <div className="p-6 rounded-2xl border glass-panel space-y-6 animate-fade-in" style={{ borderColor: 'var(--border)' }}>
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-bold bg-[var(--accent-muted)] text-[var(--accent)]">
+                  CROSS-ENTITY INTELLIGENCE
+                </span>
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs font-mono-id text-gray-400">MULTI-MODAL DISCOVERY</span>
+              </div>
+              <h3 className="text-xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                Discovered Relationships Ledger
+              </h3>
+              <p className="text-[13px] text-[var(--ink-secondary)]">
+                Corroborated connections between subjects, shell entities, vehicles, phones, and historical dossiers
+              </p>
+            </div>
+
+            <button
+              onClick={() => setActiveTab('network')}
+              className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
+              style={{ background: 'var(--accent)' }}
+            >
+              <Network size={14} />
+              <span>Explore on Network Graph</span>
+            </button>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-1 max-w-md">
+              <div className="relative flex-1">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Filter by entity, evidence, or location..."
+                  value={relationshipSearch}
+                  onChange={(e) => setRelationshipSearch(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-xl text-[12.5px] border outline-none transition-all"
+                  style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[11.5px] font-medium text-[var(--ink-tertiary)]">Type:</span>
+              <select
+                value={relationshipFilter}
+                onChange={(e) => setRelationshipFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[12.5px] font-medium border cursor-pointer outline-none"
+                style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+              >
+                <option value="all">All Types (10 Key Connections)</option>
+                <option value="OPERATES">OPERATES (Vehicles)</option>
+                <option value="ASSOCIATED_WITH">ASSOCIATED_WITH (Associates)</option>
+                <option value="DESIGNATED_DIRECTOR">DESIGNATED_DIRECTOR (Corporate)</option>
+                <option value="TRANSFERRED_TO">TRANSFERRED_TO (Financial)</option>
+                <option value="SUBSCRIBES_TO">SUBSCRIBES_TO (Telephony)</option>
+                <option value="LINKED_TO">LINKED_TO (Historical)</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Relationships Table */}
+          <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border)' }}>
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b text-left text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]"
+                  style={{ borderColor: 'var(--border)', background: 'var(--surface-0)' }}>
+                  <th className="py-3 px-4">Source Entity</th>
+                  <th className="py-3 px-4">Discovered Relationship</th>
+                  <th className="py-3 px-4">Target Entity</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4">Confidence</th>
+                  <th className="py-3 px-4">Supporting Evidence / Proof</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                {[
+                  {
+                    id: 'REL-01',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'OPERATES',
+                    target: 'Vehicle MH-01-AB-1234',
+                    targetId: 'VEHICLE-044',
+                    confidence: 94,
+                    category: 'Asset Operation',
+                    evidence: 'Toll Plaza ANPR Camera Snapshots at Khalapur Km 38 (EVIDENCE-047)',
+                    location: 'Khalapur Toll Plaza',
+                    date: '2026-08-28',
+                  },
+                  {
+                    id: 'REL-02',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'ASSOCIATED_WITH',
+                    target: 'Rahul Thakur',
+                    targetId: 'PERSON-016',
+                    confidence: 87,
+                    category: 'Co-Conspirator',
+                    evidence: '18 Phone CDR Calls + Shared Attendance in historical case CASE-087',
+                    location: 'Bandra Bandstand Promenade',
+                    date: '2026-09-02',
+                  },
+                  {
+                    id: 'REL-03',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'DESIGNATED_DIRECTOR',
+                    target: 'Nexus Trading Corp',
+                    targetId: 'ORG-014',
+                    confidence: 98,
+                    category: 'Corporate Control',
+                    evidence: 'Ministry of Corporate Affairs (ROC) Incorporation Filing (EVIDENCE-045)',
+                    location: '22 Juhu Tara Road, Juhu',
+                    date: '2026-09-01',
+                  },
+                  {
+                    id: 'REL-04',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'SUBSCRIBES_TO',
+                    target: 'Phone +91 98765 XXXXX',
+                    targetId: 'PHONE-014',
+                    confidence: 98,
+                    category: 'Telephony Account',
+                    evidence: 'Aadhaar e-KYC Telco Verification File & SIM Registry Ledger',
+                    location: 'Andheri West',
+                    date: '2026-09-01',
+                  },
+                  {
+                    id: 'REL-05',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'VISITED',
+                    target: 'Central Road, Andheri West',
+                    targetId: 'LOC-087',
+                    confidence: 90,
+                    category: 'Physical Presence',
+                    evidence: 'CCTV Camera #14-B Footage at Versova Business Centre',
+                    location: 'Andheri West, Mumbai',
+                    date: '2026-08-15',
+                  },
+                  {
+                    id: 'REL-06',
+                    source: 'Karan Verma',
+                    sourceId: 'PERSON-019',
+                    type: 'LINKED_TO',
+                    target: 'Historical Case CASE-041',
+                    targetId: 'CASE-041',
+                    confidence: 82,
+                    category: 'Historical Pattern',
+                    evidence: 'Overlapping Chartered Accountant Divya Saxena & Escrow diversion methodology',
+                    location: 'Nariman Point, Mumbai',
+                    date: '2024-11-10',
+                  },
+                  {
+                    id: 'REL-07',
+                    source: 'Transaction ₹25L (TXN-001)',
+                    sourceId: 'TXN-001',
+                    type: 'TRANSFERRED_TO',
+                    target: 'Nexus Trading Corp',
+                    targetId: 'ORG-014',
+                    confidence: 98,
+                    category: 'Financial Flow',
+                    evidence: 'Forensic Bank wire audit slip signed by designated director (EVIDENCE-046)',
+                    location: 'Bandra Branch, Mumbai',
+                    date: '2026-09-02',
+                  },
+                  {
+                    id: 'REL-08',
+                    source: 'Rahul Thakur',
+                    sourceId: 'PERSON-016',
+                    type: 'OPERATES',
+                    target: 'Vehicle MH-02-CD-4567',
+                    targetId: 'VEHICLE-020',
+                    confidence: 89,
+                    category: 'Asset Operation',
+                    evidence: 'Traffic ANPR Camera scan co-located near IT Park corridor',
+                    location: 'Koregaon Park, Pune',
+                    date: '2026-09-03',
+                  },
+                  {
+                    id: 'REL-09',
+                    source: 'Nisha Kapoor',
+                    sourceId: 'PERSON-015',
+                    type: 'CO_SIGNATORY_WITH',
+                    target: 'Karan Verma',
+                    targetId: 'PERSON-019',
+                    confidence: 84,
+                    category: 'Contractual Tie',
+                    evidence: 'Real estate sale agreement counter-signature (Versova Property)',
+                    location: 'Andheri West',
+                    date: '2026-08-12',
+                  },
+                  {
+                    id: 'REL-10',
+                    source: 'Nexus Trading Corp',
+                    sourceId: 'ORG-014',
+                    type: 'MAINTAINS_ACCOUNT',
+                    target: 'Account 9812-4410-9281',
+                    targetId: 'ACC-012',
+                    confidence: 99,
+                    category: 'Banking Conduit',
+                    evidence: 'Certified Bank Ledger showing ₹4.70 Cr aggregate incoming remittance',
+                    location: 'Juhu Tara Road',
+                    date: '2026-08-15',
+                  },
+                ]
+                  .filter((rel) => {
+                    if (relationshipFilter !== 'all' && rel.type !== relationshipFilter) return false;
+                    if (relationshipSearch) {
+                      const q = relationshipSearch.toLowerCase();
+                      return (
+                        rel.source.toLowerCase().includes(q) ||
+                        rel.target.toLowerCase().includes(q) ||
+                        rel.evidence.toLowerCase().includes(q) ||
+                        rel.type.toLowerCase().includes(q)
+                      );
+                    }
+                    return true;
+                  })
+                  .map((rel) => (
+                    <tr key={rel.id} className="hover:bg-[var(--surface-0)] transition-colors">
+                      <td className="py-3.5 px-4 font-bold" style={{ color: 'var(--ink-primary)' }}>
+                        {rel.source}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-mono-id text-[11px] font-bold px-2 py-1 rounded bg-[var(--surface-2)] text-[var(--accent)] border border-[var(--border)]">
+                          → {rel.type} →
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                        {rel.target}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="text-[11.5px] px-2 py-0.5 rounded-full bg-[var(--surface-2)] text-[var(--ink-secondary)]">
+                          {rel.category}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="font-mono-id font-bold text-emerald-500">
+                          {rel.confidence}%
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 max-w-xs text-[12px] text-[var(--ink-secondary)] truncate" title={rel.evidence}>
+                        {rel.evidence}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleViewInNetwork(rel.sourceId)}
+                            className="px-2.5 py-1 rounded-lg text-[11.5px] font-semibold border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                            style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
+                            title="Highlight in Network Graph"
+                          >
+                            Graph
+                          </button>
+                          <button
+                            onClick={() => handleViewOnMap(rel.location)}
+                            className="px-2.5 py-1 rounded-lg text-[11.5px] font-semibold border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
+                            style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
+                            title="View Location on Map"
+                          >
+                            Map
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 8: EVIDENCE (Section 21) ────────────────────────── */}
       {activeTab === 'evidence' && (
         <div className="p-6 rounded-2xl border glass-panel space-y-5 animate-fade-in"
           style={{ borderColor: 'var(--border)' }}>
@@ -744,8 +1196,8 @@ function CaseDetailContent() {
         </div>
       )}
 
-      {/* ── TAB 7: RELATED CASES (Section 21) ───────────────────── */}
-      {activeTab === 'related' && (
+      {/* ── TAB 9: HISTORICAL INTELLIGENCE (Section 21) ────────── */}
+      {(activeTab === 'historical' || activeTab === 'related') && (
         <div className="p-6 rounded-2xl border glass-panel space-y-5 animate-fade-in"
           style={{ borderColor: 'var(--border)' }}>
           <div className="border-b pb-4">
@@ -853,8 +1305,8 @@ function CaseDetailContent() {
         </div>
       )}
 
-      {/* ── TAB 8: AI INSIGHTS (Section 22) ─────────────────────── */}
-      {activeTab === 'ai' && (
+      {/* ── TAB 10: EXPLAINABLE INSIGHTS (Section 22) ────────────── */}
+      {(activeTab === 'insights' || activeTab === 'ai') && (
         <div className="p-6 rounded-2xl border glass-panel space-y-6 animate-fade-in"
           style={{ borderColor: 'var(--border)' }}>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"

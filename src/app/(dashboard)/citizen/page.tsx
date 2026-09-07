@@ -1,25 +1,18 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addComplaint, setSelectedComplaint } from '@/store/slices/citizenPortalSlice';
 import type { CrimeType, ComplaintStatus } from '@/types';
 import {
   UserCheck, Plus, FileText, CheckCircle2, Clock, Shield,
   Upload, AlertTriangle, ChevronRight, FileCheck, ArrowRight,
-  Send, Bell, LayoutDashboard, FolderOpen, X, Paperclip
+  Send, Bell, FolderOpen, X, Paperclip
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type TabKey = 'overview' | 'file' | 'complaints' | 'notifications';
-
-const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { key: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { key: 'file', label: 'File a Complaint', icon: Plus },
-  { key: 'complaints', label: 'My Complaints', icon: FolderOpen },
-  { key: 'notifications', label: 'Notifications', icon: Bell },
-];
 
 const statusSteps: ComplaintStatus[] = [
   'Submitted', 'Under Verification', 'Verified', 'Converted to FIR', 'Investigation', 'Closed',
@@ -33,10 +26,20 @@ const notifications = [
 
 function CitizenContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const tabParam = searchParams.get('tab') as TabKey | null;
-  const [activeTab, setActiveTab] = useState<TabKey>(
-    tabParam && ['overview', 'file', 'complaints', 'notifications'].includes(tabParam) ? tabParam : 'overview'
-  );
+  const activeTab: TabKey =
+    tabParam && ['overview', 'file', 'complaints', 'notifications'].includes(tabParam)
+      ? tabParam
+      : 'overview';
+
+  const navigateToTab = (tab: TabKey) => {
+    if (tab === 'overview') {
+      router.push('/citizen');
+    } else {
+      router.push(`/citizen?tab=${tab}`);
+    }
+  };
 
   const dispatch = useAppDispatch();
   const { complaints, selectedComplaintId } = useAppSelector((s) => s.citizenPortal);
@@ -60,7 +63,7 @@ function CitizenContent() {
     if (!complainantName || !description) { toast.error('Please fill mandatory fields.'); return; }
     dispatch(addComplaint({ complainantName, phone, email, crimeType, description, location, city, date, time: '11:30', evidenceFiles: evidenceName ? [evidenceName] : [] }));
     toast.success('Complaint successfully filed! Acknowledgement has been generated.');
-    setActiveTab('complaints');
+    navigateToTab('complaints');
   };
 
   const overviewStats = [
@@ -91,26 +94,6 @@ function CitizenContent() {
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="flex gap-1 p-1 rounded-xl border w-fit" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-[13.5px] font-semibold transition-all"
-              style={{
-                background: isActive ? 'var(--surface-1)' : 'transparent',
-                color: isActive ? '#16A34A' : 'var(--ink-secondary)',
-                boxShadow: isActive ? 'var(--glass-shadow-sm)' : 'none',
-              }}>
-              <Icon size={15} />
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
       {/* ── Overview ─────────────────────────────────────────── */}
       {activeTab === 'overview' && (
         <div className="space-y-6 animate-fade-in">
@@ -127,7 +110,7 @@ function CitizenContent() {
 
           {/* Action cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <button onClick={() => setActiveTab('file')}
+            <button onClick={() => navigateToTab('file')}
               className="p-6 rounded-2xl border text-left hover:border-[#16A34A] hover:-translate-y-0.5 transition-all group"
               style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
@@ -139,7 +122,7 @@ function CitizenContent() {
                 Report an incident to the police. Provide details, upload documents, and get a tracking ID.
               </p>
             </button>
-            <button onClick={() => setActiveTab('complaints')}
+            <button onClick={() => navigateToTab('complaints')}
               className="p-6 rounded-2xl border text-left hover:border-[var(--accent)] hover:-translate-y-0.5 transition-all group"
               style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110"
@@ -275,7 +258,7 @@ function CitizenContent() {
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
             <h2 className="text-[20px] font-bold" style={{ color: 'var(--ink-primary)' }}>My Complaints ({complaints.length})</h2>
-            <button onClick={() => setActiveTab('file')}
+            <button onClick={() => navigateToTab('file')}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white"
               style={{ background: '#16A34A' }}>
               <Plus size={15} /> File New

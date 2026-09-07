@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense } from 'react';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import CommandPalette from './CommandPalette';
@@ -16,11 +16,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAuthPage = pathname === '/login' || pathname === '/auth' || pathname === '/';
 
-  // Hydrate role from localStorage on client
+  // Hydrate role on client based on route or storage
   useEffect(() => {
-    const stored = getStoredRole();
-    dispatch(setRole(stored));
-  }, [dispatch]);
+    if (pathname?.startsWith('/citizen')) {
+      dispatch(setRole('citizen'));
+    } else if (pathname?.startsWith('/admin')) {
+      dispatch(setRole('admin'));
+    } else {
+      const stored = getStoredRole();
+      dispatch(setRole(stored));
+    }
+  }, [dispatch, pathname]);
 
   if (isAuthPage) {
     return <main className="min-h-screen w-full">{children}</main>;
@@ -30,7 +36,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--surface-0)] text-[var(--ink-primary)]">
-      <Sidebar />
+      <Suspense fallback={null}>
+        <Sidebar />
+      </Suspense>
       <Topbar />
       <CommandPalette />
       <EntityInspector />

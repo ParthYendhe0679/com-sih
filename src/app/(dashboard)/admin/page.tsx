@@ -4,21 +4,11 @@ import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { auditLogs } from '@/mock';
 import {
-  Settings, Users, ShieldAlert, Activity, Clock,
-  FileCheck, Database, CheckCircle2, Search, Lock,
-  Shield, Server, AlertTriangle, UserCheck, Eye, Edit2
+  CheckCircle2, Search, Shield, Eye, Edit2
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 type TabKey = 'dashboard' | 'users' | 'roles' | 'audit' | 'security';
-
-const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
-  { key: 'dashboard', label: 'Admin Dashboard', icon: Settings },
-  { key: 'users', label: 'User Management', icon: Users },
-  { key: 'roles', label: 'Role Management', icon: Lock },
-  { key: 'audit', label: 'Audit Logs', icon: FileCheck },
-  { key: 'security', label: 'Security', icon: ShieldAlert },
-];
 
 const mockUsers = [
   { id: 'USR-001', name: 'DCP R. Sharma', role: 'Supervisory Officer', dept: 'Economic Offences Wing', status: 'Active', badge: 'DCP/MUM/0456', lastActive: '2 min ago' },
@@ -61,9 +51,10 @@ const securityEvents = [
 function AdminContent() {
   const searchParams = useSearchParams();
   const tabParam = searchParams.get('tab') as TabKey | null;
-  const [activeTab, setActiveTab] = useState<TabKey>(
-    tabParam && ['dashboard', 'users', 'roles', 'audit', 'security'].includes(tabParam) ? tabParam : 'dashboard'
-  );
+  const activeTab: TabKey =
+    tabParam && ['dashboard', 'users', 'roles', 'audit', 'security'].includes(tabParam)
+      ? tabParam
+      : 'dashboard';
   const [searchLog, setSearchLog] = useState('');
 
   const filteredLogs = auditLogs.filter((log) => {
@@ -88,26 +79,6 @@ function AdminContent() {
         <p className="text-[14px]" style={{ color: 'var(--ink-secondary)' }}>
           User management, role-based access control, audit logs, and security monitoring
         </p>
-      </div>
-
-      {/* Tab Bar */}
-      <div className="flex gap-1 p-1 rounded-xl border w-fit flex-wrap" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-[13px] font-semibold transition-all"
-              style={{
-                background: isActive ? 'var(--surface-1)' : 'transparent',
-                color: isActive ? '#D97706' : 'var(--ink-secondary)',
-                boxShadow: isActive ? 'var(--glass-shadow-sm)' : 'none',
-              }}>
-              <Icon size={14} />
-              {tab.label}
-            </button>
-          );
-        })}
       </div>
 
       {/* ── Admin Dashboard ───────────────────────────────────── */}
@@ -328,7 +299,8 @@ function AdminContent() {
 
       {/* ── Security ─────────────────────────────────────────── */}
       {activeTab === 'security' && (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-4 animate-fade-in">
+          <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>Security & Threat Monitoring</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Events (Today)</h3>

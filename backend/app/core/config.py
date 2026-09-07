@@ -90,12 +90,31 @@ class Settings(BaseSettings):
     NEO4J_USERNAME: Optional[str] = None
     NEO4J_PASSWORD: Optional[str] = None
 
+    # Valkey Cache Configuration (Aiven Valkey / Redis-compatible)
+    VALKEY_URL: Optional[str] = None
+    VALKEY_HOST: Optional[str] = None
+    VALKEY_PORT: int = 24408
+    VALKEY_USERNAME: str = "default"
+    VALKEY_PASSWORD: Optional[str] = None
+    VALKEY_SSL: bool = True
+    VALKEY_SOCKET_TIMEOUT: float = 2.0
+    VALKEY_CONNECT_TIMEOUT: float = 3.0
+    ENABLE_VALKEY: bool = True
+
     # Feature Flags
     ENABLE_AI: bool = True
     ENABLE_GRAPH: bool = False
     ENABLE_REDIS: bool = False
     ENABLE_BLOCKCHAIN: bool = False
     ENABLE_OCR: bool = False
+
+    # Blockchain Evidence Integrity Configuration
+    BLOCKCHAIN_MODE: str = "mock"  # mock | ethereum
+    BLOCKCHAIN_PROVIDER: str = "mock"
+    BLOCKCHAIN_ENABLED: bool = False
+    BLOCKCHAIN_RPC_URL: Optional[str] = None
+    BLOCKCHAIN_PRIVATE_KEY: Optional[str] = None
+    BLOCKCHAIN_CONTRACT_ADDRESS: Optional[str] = None
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
@@ -189,6 +208,21 @@ class Settings(BaseSettings):
         elif p in ("local", "local_fallback", "rule_engine"):
             return True
         return False
+
+    @property
+    def valkey_connection_url(self) -> Optional[str]:
+        """Resolve Valkey/Redis connection string with TLS support."""
+        if self.VALKEY_URL and self.VALKEY_URL.strip():
+            return self.VALKEY_URL.strip()
+        if self.REDIS_URL and self.REDIS_URL.strip():
+            return self.REDIS_URL.strip()
+        if self.VALKEY_HOST and self.VALKEY_HOST.strip():
+            scheme = "rediss" if self.VALKEY_SSL else "redis"
+            user = self.VALKEY_USERNAME or "default"
+            pwd = f":{self.VALKEY_PASSWORD}" if self.VALKEY_PASSWORD else ""
+            auth = f"{user}{pwd}@" if (user or pwd) else ""
+            return f"{scheme}://{auth}{self.VALKEY_HOST.strip()}:{self.VALKEY_PORT}"
+        return None
 
 
 settings = Settings()

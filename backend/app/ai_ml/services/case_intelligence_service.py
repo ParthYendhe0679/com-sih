@@ -24,6 +24,7 @@ from app.ai_ml.schemas.intelligence import (
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
 from app.models.case import Case
+from app.models.data_architecture import EntityRelationship, InvestigationReport
 from app.models.user import User
 
 logger = get_logger("kritagas.case_intelligence_service")
@@ -32,9 +33,13 @@ logger = get_logger("kritagas.case_intelligence_service")
 class CaseIntelligenceService:
     """Orchestrates case intelligence execution, background job lifecycle, and result queries."""
 
-    def __init__(self, session: AsyncSession):
+    _inflight_locks: Dict[str, asyncio.Lock] = {}
+
+    def __init__(self, session: AsyncSession, cache_service: Optional[Any] = None):
         self.session = session
         self.engine = master_intelligence_engine
+        from app.services.cache_service import cache_service as default_cache
+        self.cache = cache_service or default_cache
 
     async def create_analysis_job(
         self,
@@ -141,12 +146,34 @@ class CaseIntelligenceService:
             for a in analysis_result["anomalies"]:
                 self.session.add(a)
 
+            # Persist Official Investigation AI Dossier Report
+            report = InvestigationReport(
+                id=uuid.uuid4(),
+                case_id=case.id,
+                report_type="AI_DOSSIER",
+                title=f"AI Intelligence Dossier: {case.title}",
+                summary=f"Automated intelligence synthesis for Case {case.case_number}. Discovered {len(analysis_result['correlations'])} correlations, {len(analysis_result['similar_cases'])} similar cases, {len(analysis_result['anomalies'])} anomalies.",
+                content_json={
+                    "priority_score": analysis_result["investigation_priority"]["score"],
+                    "priority_level": analysis_result["investigation_priority"]["level"],
+                    "total_correlations": len(analysis_result["correlations"]),
+                    "total_similar_cases": len(analysis_result["similar_cases"]),
+                    "total_anomalies": len(analysis_result["anomalies"]),
+                    "total_patterns": len(analysis_result["pattern_insights"]),
+                },
+                generated_by_id=job.triggered_by_id,
+                agent_name="CASE_INTELLIGENCE_ENGINE_V1",
+                status="FINAL",
+            )
+            self.session.add(report)
+
             # Stage 4: Finalize
             job.progress = 100
             job.status = "COMPLETED"
             job.current_stage = "COMPLETED"
             job.completed_at = datetime.now(timezone.utc)
             job.result_summary = {
+                "report_id": str(report.id),
                 "priority_score": analysis_result["investigation_priority"]["score"],
                 "total_correlations": len(analysis_result["correlations"]),
                 "total_similar_cases": len(analysis_result["similar_cases"]),
@@ -156,6 +183,7 @@ class CaseIntelligenceService:
             await self.session.commit()
             return analysis_result
 
+
         except Exception as e:
             logger.error(f"Error during case analysis execution: {e}")
             job.status = "FAILED"
@@ -164,84 +192,114 @@ class CaseIntelligenceService:
             return {"status": "FAILED", "error": str(e)}
 
     async def get_case_intelligence_dossier(self, case_id: uuid.UUID) -> CaseIntelligenceDossier:
-        """Fetch or synthesize the complete case intelligence dossier."""
-        stmt = select(Case).where(Case.id == case_id)
-        result = await self.session.execute(stmt)
-        case = result.scalar_one_or_none()
-        if not case:
-            raise NotFoundException(f"Case {case_id} not found.")
+        """Fetch or synthesize the complete case intelligence dossier with caching and request deduplication."""
+        cache_key = self.cache.keys.case_intelligence(case_id)
+        cached = await self.cache.get(cache_key)
+        if cached is not None and isinstance(cached, dict):
+            try:
+                return CaseIntelligenceDossier.model_validate(cached)
+            except Exception:
+                pass
 
-        # Load persisted correlations, similarities, insights, anomalies
-        corr_stmt = select(Correlation).where(Correlation.case_id == case_id)
-        corr_res = await self.session.execute(corr_stmt)
-        correlations = list(corr_res.scalars().all())
+        # Request deduplication: ensure simultaneous requests for the same case dossier reuse computation
+        lock_key = str(case_id)
+        if lock_key not in self._inflight_locks:
+            self._inflight_locks[lock_key] = asyncio.Lock()
 
-        sim_stmt = select(CaseSimilarity).where(CaseSimilarity.source_case_id == case_id)
-        sim_res = await self.session.execute(sim_stmt)
-        similarities = list(sim_res.scalars().all())
+        async with self._inflight_locks[lock_key]:
+            # Double-check cache after acquiring lock
+            cached_retry = await self.cache.get(cache_key)
+            if cached_retry is not None and isinstance(cached_retry, dict):
+                try:
+                    return CaseIntelligenceDossier.model_validate(cached_retry)
+                except Exception:
+                    pass
 
-        ins_stmt = select(IntelligenceInsight).where(IntelligenceInsight.case_id == case_id)
-        ins_res = await self.session.execute(ins_stmt)
-        insights = list(ins_res.scalars().all())
+            stmt = select(Case).where(Case.id == case_id)
+            result = await self.session.execute(stmt)
+            case = result.scalar_one_or_none()
+            if not case:
+                raise NotFoundException(f"Case {case_id} not found.")
 
-        anom_stmt = select(Anomaly).where(Anomaly.case_id == case_id)
-        anom_res = await self.session.execute(anom_stmt)
-        anomalies = list(anom_res.scalars().all())
+            # Load persisted correlations, similarities, insights, anomalies
+            corr_stmt = select(Correlation).where(Correlation.case_id == case_id)
+            corr_res = await self.session.execute(corr_stmt)
+            correlations = list(corr_res.scalars().all())
 
-        ent_stmt = select(Entity).where(Entity.case_id == case_id)
-        ent_res = await self.session.execute(ent_stmt)
-        entities = list(ent_res.scalars().all())
+            sim_stmt = select(CaseSimilarity).where(CaseSimilarity.source_case_id == case_id)
+            sim_res = await self.session.execute(sim_stmt)
+            similarities = list(sim_res.scalars().all())
 
-        # If empty, run inline synthesis
-        if not similarities and not correlations:
-            hist_stmt = select(Case).where(Case.id != case.id).limit(10)
-            hist_res = await self.session.execute(hist_stmt)
-            historical = list(hist_res.scalars().all())
-            res = self.engine.run_case_analysis_pipeline(case, historical, entities)
-            similarities = res["similar_cases"]
-            correlations = res["correlations"]
-            insights = res["pattern_insights"]
-            anomalies = res["anomalies"]
+            ins_stmt = select(IntelligenceInsight).where(IntelligenceInsight.case_id == case_id)
+            ins_res = await self.session.execute(ins_stmt)
+            insights = list(ins_res.scalars().all())
 
-        priority_calc = self.engine.scorer.calculate_investigation_priority(
-            evidence_count=len(getattr(case, "evidence", []) or []),
-            correlation_count=len(correlations),
-            similar_case_count=len(similarities),
-            anomaly_count=len(anomalies),
-        )
+            anom_stmt = select(Anomaly).where(Anomaly.case_id == case_id)
+            anom_res = await self.session.execute(anom_stmt)
+            anomalies = list(anom_res.scalars().all())
 
-        insight_responses = [
-            InsightResponse(
-                id=ins.id,
-                case_id=ins.case_id,
-                insight_type=ins.insight_type,
-                title=ins.title,
-                summary=ins.summary,
-                confidence=ins.confidence,
-                facts=ins.facts or [],
-                inferences=ins.inferences or [],
-                supporting_records=ins.supporting_records or [],
-                limitations=ins.limitations,
-                priority=ins.priority,
-                created_at=ins.created_at,
+            ent_stmt = select(Entity).where(Entity.case_id == case_id)
+            ent_res = await self.session.execute(ent_stmt)
+            entities = list(ent_res.scalars().all())
+
+            # If empty, run inline synthesis
+            if not similarities and not correlations:
+                hist_stmt = select(Case).where(Case.id != case.id).limit(10)
+                hist_res = await self.session.execute(hist_stmt)
+                historical = list(hist_res.scalars().all())
+                res = self.engine.run_case_analysis_pipeline(case, historical, entities)
+                similarities = res["similar_cases"]
+                correlations = res["correlations"]
+                insights = res["pattern_insights"]
+                anomalies = res["anomalies"]
+
+            evidence_list = case.__dict__.get("evidence") or []
+            priority_calc = self.engine.scorer.calculate_investigation_priority(
+                evidence_count=len(evidence_list),
+                correlation_count=len(correlations),
+                similar_case_count=len(similarities),
+                anomaly_count=len(anomalies),
             )
-            for ins in insights
-        ]
 
-        return CaseIntelligenceDossier(
-            case_id=case.id,
-            case_number=case.case_number,
-            title=case.title,
-            investigation_priority_score=priority_calc["score"],
-            priority_breakdown=priority_calc["components"],
-            total_entities_extracted=len(entities),
-            total_correlations_found=len(correlations),
-            total_similar_cases=len(similarities),
-            total_anomalies_flagged=len(anomalies),
-            insights=insight_responses,
-            graph_hubs=[],
-            generated_at=datetime.now(timezone.utc),
-        )
+            insight_responses = [
+                InsightResponse(
+                    id=ins.id,
+                    case_id=ins.case_id,
+                    insight_type=ins.insight_type,
+                    title=ins.title,
+                    summary=ins.summary,
+                    confidence=ins.confidence,
+                    facts=ins.facts or [],
+                    inferences=ins.inferences or [],
+                    supporting_records=ins.supporting_records or [],
+                    limitations=ins.limitations,
+                    priority=ins.priority,
+                    created_at=ins.created_at,
+                )
+                for ins in insights
+            ]
+
+            dossier = CaseIntelligenceDossier(
+                case_id=case.id,
+                case_number=case.case_number,
+                title=case.title,
+                investigation_priority_score=priority_calc["score"],
+                priority_breakdown=priority_calc["components"],
+                total_entities_extracted=len(entities),
+                total_correlations_found=len(correlations),
+                total_similar_cases=len(similarities),
+                total_anomalies_flagged=len(anomalies),
+                insights=insight_responses,
+                graph_hubs=[],
+                generated_at=datetime.now(timezone.utc),
+            )
+
+            await self.cache.set(
+                cache_key,
+                dossier.model_dump(mode="json"),
+                ttl=self.cache.ttl.AI_RESULT,
+            )
+            return dossier
 
     def _synthesize_entities_from_case(self, case: Case) -> List[Entity]:
         """Extract baseline entities from case title, narrative, and location."""

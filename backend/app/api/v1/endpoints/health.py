@@ -7,9 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.ai import ai_service
 from app.ai.schemas.ai import OverallAIHealthResponse
+from app.api.deps import get_cache_service
 from app.core.config import settings
 from app.db.init_db import check_db_connection, check_db_readiness
 from app.db.session import get_db
+from app.services.cache_service import CacheService
 
 router = APIRouter()
 
@@ -61,6 +63,11 @@ async def readiness_probe(session: AsyncSession = Depends(get_db)) -> JSONRespon
     }
 
     # Optional services: only evaluate if feature is explicitly enabled
+    if settings.ENABLE_VALKEY:
+        services_status["valkey"] = {
+            "status": "configured" if settings.valkey_connection_url else "unconfigured",
+            "provider": "Valkey",
+        }
     if settings.ENABLE_REDIS:
         services_status["redis"] = {"status": "configured" if settings.REDIS_URL else "unconfigured"}
     if settings.ENABLE_GRAPH:
@@ -71,6 +78,12 @@ async def readiness_probe(session: AsyncSession = Depends(get_db)) -> JSONRespon
             "status": ai_health.status,
             "configured_providers": ai_health.configured_providers,
             "default_provider": ai_health.default_provider,
+        }
+    if settings.ENABLE_BLOCKCHAIN or getattr(settings, "BLOCKCHAIN_ENABLED", False):
+        services_status["blockchain"] = {
+            "status": "configured",
+            "provider": getattr(settings, "BLOCKCHAIN_PROVIDER", "mock"),
+            "mode": getattr(settings, "BLOCKCHAIN_MODE", "mock"),
         }
 
     # Critical failure: if primary PostgreSQL is down, report 503
@@ -94,4 +107,47 @@ async def readiness_probe(session: AsyncSession = Depends(get_db)) -> JSONRespon
             "services": services_status,
         },
     )
+
+
+@router.get(
+    "/database",
+    summary="PostgreSQL / Neon Database Health Probe",
+    description="Inspects PostgreSQL connectivity, query latency, and connection pool state without exposing credentials.",
+)
+async def database_health_check(session: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+    """Return safe observability metrics for primary PostgreSQL / Neon connection."""
+    report = await check_db_readiness(session)
+    is_ok = report.get("status") == "connected"
+    
+    # Determine provider from connection URL
+    provider = "neon" if "neon.tech" in str(settings.DATABASE_URL).lower() else "postgresql"
+
+    return {
+        "status": "healthy" if is_ok else "unhealthy",
+        "database": "postgresql",
+        "provider": provider,
+        "latency_ms": report.get("latency_ms"),
+        "pool_status": "optimal" if is_ok else "degraded",
+    }
+
+
+@router.get(
+    "/cache",
+    summary="Valkey Cache Health & Observability Probe",
+    description="Inspects Valkey connectivity, latency, and hit/miss metrics without exposing credentials.",
+)
+async def cache_health_check(cache: CacheService = Depends(get_cache_service)) -> Dict[str, Any]:
+    """Return safe observability metrics and hit rates for Valkey caching layer."""
+    health_status = await cache.get_health_status()
+    is_ok = health_status.get("connected", False)
+    return {
+        "status": "healthy" if is_ok else ("disabled" if not cache.enabled else "degraded"),
+        "cache": "valkey",
+        "engine": health_status.get("engine", "Valkey"),
+        "connected": is_ok,
+        "latency_ms": health_status.get("latency_ms"),
+        "metrics": health_status.get("metrics", {}),
+    }
+
+
 

@@ -8,20 +8,20 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { toggleSidebar, setRole } from '@/store/slices/uiSlice';
 import type { UserRole } from '@/store/slices/uiSlice';
 import {
-  LayoutDashboard, FolderOpen, FileText, Network, Map, History,
-  Search, Radio, Eye, ActivitySquare, Bell, Package,
-  GitCompare, AlertOctagon, ShieldCheck, BrainCircuit,
-  TrendingUp, BookmarkCheck, Clock, Play,
-  Bot, Settings, ChevronLeft, ChevronRight, ChevronDown,
-  UserCircle2, ShieldAlert, Settings2, BarChart3, UserCheck,
-  AlertTriangle, FileSearch, Database, Users, Lock
+  LayoutDashboard, FolderOpen, FileText, History,
+  Search, Package, BrainCircuit, BarChart3,
+  ChevronLeft, ChevronRight, ChevronDown,
+  UserCircle2, ShieldAlert, Settings2,
+  Users, Lock, FileSearch, Bell, LogOut,
+  Bot
 } from 'lucide-react';
-import { toast } from 'sonner';
+import { useSession, roleColors } from '@/hooks/useSession';
+import { authApi } from '@/lib/api/auth';
 
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
   pulse?: boolean;
   badge?: string;
 }
@@ -32,7 +32,7 @@ interface NavSection {
   defaultOpen?: boolean;
 }
 
-// ── Police/Investigator Navigation (Part 32) ───────────────
+// ── Police/Investigator Navigation ─────────────────────────
 const policeNav: NavSection[] = [
   {
     label: 'Overview',
@@ -75,7 +75,7 @@ const policeNav: NavSection[] = [
   },
 ];
 
-// ── Citizen Navigation ───────────────────────────────────────
+// ── Citizen Navigation ─────────────────────────────────────
 const citizenNav: NavSection[] = [
   {
     label: 'My Portal',
@@ -89,15 +89,27 @@ const citizenNav: NavSection[] = [
   },
 ];
 
-// ── Admin Navigation ─────────────────────────────────────────
+// ── Admin Navigation ───────────────────────────────────────
 const adminNav: NavSection[] = [
+  {
+    label: 'Overview',
+    defaultOpen: true,
+    items: [
+      { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+    ],
+  },
   {
     label: 'Administration',
     defaultOpen: true,
     items: [
-      { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
-      { href: '/admin?tab=users', label: 'User Management', icon: Users },
-      { href: '/admin?tab=roles', label: 'Role Management', icon: Lock },
+      { href: '/admin?tab=users', label: 'Users', icon: Users },
+      { href: '/admin?tab=roles', label: 'Roles & Permissions', icon: Lock },
+    ],
+  },
+  {
+    label: 'System',
+    defaultOpen: false,
+    items: [
       { href: '/admin?tab=audit', label: 'Audit Logs', icon: FileSearch },
       { href: '/admin?tab=security', label: 'Security', icon: ShieldAlert },
     ],
@@ -110,10 +122,10 @@ const navByRole: Record<UserRole, NavSection[]> = {
   admin: adminNav,
 };
 
-const roleMeta: Record<UserRole, { label: string; color: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
-  police: { label: 'Police / Investigator', color: 'var(--accent)', icon: ShieldAlert },
-  citizen: { label: 'Citizen Portal', color: '#16A34A', icon: UserCircle2 },
-  admin: { label: 'Administrator', color: '#D97706', icon: Settings2 },
+const roleMeta: Record<UserRole, { label: string; fallbackShort: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+  police: { label: 'Police / Investigator', fallbackShort: 'POL', icon: ShieldAlert },
+  citizen: { label: 'Citizen Portal', fallbackShort: 'CTZ', icon: UserCircle2 },
+  admin: { label: 'Administrator', fallbackShort: 'ADM', icon: Settings2 },
 };
 
 export default function Sidebar() {
@@ -129,14 +141,12 @@ export default function Sidebar() {
     ? 'admin'
     : currentRole;
 
-  // Sync effective role to Redux when it differs
   useEffect(() => {
     if (effectiveRole !== currentRole) {
       dispatch(setRole(effectiveRole));
     }
   }, [effectiveRole, currentRole, dispatch]);
 
-  // Collapsible section state — initialize all sections to their defaultOpen state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     const allSections = [...policeNav, ...citizenNav, ...adminNav];
@@ -150,14 +160,13 @@ export default function Sidebar() {
 
   const sections = navByRole[effectiveRole] || policeNav;
   const meta = roleMeta[effectiveRole] || roleMeta.police;
-  const RoleIcon = meta.icon;
+  const session = useSession(effectiveRole);
+  const avatarColor = roleColors[effectiveRole] || roleColors.police;
+  const initials = session.loading ? meta.fallbackShort : session.initials;
 
-  const handleRoleSwitch = (role: UserRole) => {
-    dispatch(setRole(role));
-    toast.success(`Switched to ${roleMeta[role].label}`);
-    if (role === 'citizen') router.push('/citizen');
-    else if (role === 'admin') router.push('/admin');
-    else router.push('/dashboard');
+  const handleSignOut = () => {
+    authApi.logout();
+    router.push('/login');
   };
 
   const isActive = (href: string) => {
@@ -196,61 +205,58 @@ export default function Sidebar() {
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-full z-40 flex flex-col border-r transition-all duration-200 ease-out glass-panel overflow-hidden',
+        'fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ease-out overflow-hidden bg-white border-r shadow-xs',
         collapsed ? 'w-[68px]' : 'w-[272px]'
       )}
-      style={{ borderColor: 'var(--border)' }}
+      style={{
+        background: 'var(--sidebar-bg, #FFFFFF)',
+        borderColor: 'var(--sidebar-border, #E2E8F0)',
+      }}
     >
-      {/* Brand Header */}
+      {/* ── Brand Header (At Top) ─────────────────────────────── */}
       <div
-        className="flex items-center h-[60px] px-4 border-b shrink-0"
-        style={{ borderColor: 'var(--border)' }}
+        className={cn(
+          'h-16 shrink-0 flex items-center px-5 border-b transition-all',
+          collapsed ? 'justify-center px-2' : 'justify-between'
+        )}
+        style={{ borderColor: 'var(--sidebar-border, #E2E8F0)' }}
       >
-        {!collapsed ? (
-          <Link href="/dashboard" className="flex items-center gap-3 w-full">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[14px] font-bold text-white shadow-md shrink-0"
-              style={{ background: 'var(--accent)' }}
-            >
-              K
-            </div>
+        <Link href="/dashboard" className="flex items-center gap-3 min-w-0 group">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px] font-black text-white shadow-sm shrink-0 bg-gradient-to-tr from-indigo-600 to-indigo-500 group-hover:scale-105 transition-transform"
+          >
+            K
+          </div>
+          {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-[15px] font-bold tracking-tight leading-tight" style={{ color: 'var(--ink-primary)' }}>
+              <span className="text-[14.5px] font-bold tracking-tight leading-none text-slate-900">
                 KRITAGAS
               </span>
-              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
+              <span className="text-[9.5px] font-bold uppercase tracking-widest text-slate-400 mt-1">
                 Intelligence Platform
               </span>
             </div>
-          </Link>
-        ) : (
-          <Link href="/dashboard" className="flex items-center justify-center w-full">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-[14px] font-bold text-white shadow-md"
-              style={{ background: 'var(--accent)' }}
-            >
-              K
-            </div>
-          </Link>
-        )}
+          )}
+        </Link>
       </div>
 
-
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
+      {/* ── Navigation Items ──────────────────────────────────── */}
+      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
         {sections.map((section) => {
           const isOpen = openSections[section.label] !== false;
           return (
-            <div key={section.label} className="mb-1">
+            <div key={section.label} className="mb-2">
               {/* Section header */}
               {!collapsed && (
                 <button
                   onClick={() => toggleSection(section.label)}
-                  className="w-full flex items-center justify-between px-2 py-1.5 text-[10.5px] font-bold uppercase tracking-wider rounded-md transition-colors hover:bg-[var(--surface-2)]"
-                  style={{ color: 'var(--ink-tertiary)' }}
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                 >
-                  {section.label}
-                  <ChevronDown size={11} className={cn('transition-transform', !isOpen && '-rotate-90')} />
+                  <span>{section.label}</span>
+                  <ChevronDown
+                    size={13}
+                    className={cn('transition-transform duration-150', !isOpen && '-rotate-90')}
+                  />
                 </button>
               )}
 
@@ -264,31 +270,39 @@ export default function Sidebar() {
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13.5px] font-medium transition-all duration-100 relative',
-                      collapsed && 'justify-center px-0',
+                      'flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] transition-all duration-100 relative group',
+                      collapsed && 'justify-center px-0 h-10',
                       active
-                        ? 'font-semibold'
-                        : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:bg-[var(--glass-1)]'
+                        ? 'font-semibold text-indigo-600 bg-indigo-50/90 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                     )}
-                    style={
-                      active
-                        ? {
-                            color: 'var(--accent)',
-                            background: 'var(--accent-muted)',
-                            border: '1px solid var(--accent-subtle)',
-                          }
-                        : {}
-                    }
                   >
-                    <Icon size={16} strokeWidth={active ? 2.2 : 1.7} />
+                    <Icon
+                      size={18}
+                      strokeWidth={active ? 2.2 : 1.7}
+                      className={cn(
+                        'shrink-0 transition-colors',
+                        active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700'
+                      )}
+                    />
                     {!collapsed && <span className="truncate">{item.label}</span>}
                     {item.pulse && !collapsed && (
-                      <span className="ml-auto w-2 h-2 rounded-full bg-[var(--success)] live-pulse-dot shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-1.5" />
                     )}
                     {item.badge && !collapsed && (
-                      <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-[var(--error)] text-white shrink-0">
+                      <span
+                        className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-red-600 text-white shadow-2xs tracking-wide"
+                      >
                         {item.badge}
                       </span>
+                    )}
+                    {/* Tooltip for collapsed */}
+                    {collapsed && (
+                      <div
+                        className="absolute left-full ml-3 px-3 py-1.5 rounded-lg text-[12.5px] font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 bg-slate-900 text-white shadow-lg"
+                      >
+                        {item.label}
+                      </div>
                     )}
                   </Link>
                 );
@@ -298,28 +312,32 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="border-t p-2 space-y-1 shrink-0" style={{ borderColor: 'var(--border)' }}>
+      {/* ── Footer / Actions ───────────────────── */}
+      <div
+        className="p-3 border-t shrink-0 space-y-1"
+        style={{ borderColor: 'var(--sidebar-border, #E2E8F0)' }}
+      >
         {/* Collapse Toggle */}
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center justify-center w-full py-2 rounded-lg text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-2)] transition-colors"
+          className="flex items-center justify-center w-full py-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
-          {collapsed ? <ChevronRight size={16} /> : (
-            <span className="flex items-center gap-2 text-[12px] font-medium">
-              <ChevronLeft size={16} />
+          {collapsed ? (
+            <ChevronRight size={16} />
+          ) : (
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+              <ChevronLeft size={15} />
               Collapse
             </span>
           )}
         </button>
 
-        {/* Switch to Login */}
+        {/* Switch Portal */}
         {!collapsed && (
           <button
             onClick={() => router.push('/login')}
-            className="w-full text-[12px] text-center py-1.5 rounded-lg transition-colors hover:bg-[var(--surface-2)]"
-            style={{ color: 'var(--ink-tertiary)' }}
+            className="w-full text-center text-[12px] font-medium py-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
           >
             Switch Portal
           </button>

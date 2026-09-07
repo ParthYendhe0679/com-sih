@@ -1,5 +1,6 @@
 """Dashboard analytics domain service aggregating real-time database metrics."""
 
+from typing import Optional, Any
 from app.core.constants import CasePriority, CaseStatus, FIRStatus, UserRole
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
@@ -18,7 +19,7 @@ from app.schemas.fir import FIRResponse
 
 
 class DashboardService:
-    """Service computing analytical summaries and operational intelligence metrics."""
+    """Service computing analytical summaries and operational intelligence metrics with caching."""
 
     def __init__(
         self,
@@ -27,15 +28,26 @@ class DashboardService:
         case_repo: CaseRepository,
         audit_repo: AuditRepository,
         notification_repo: NotificationRepository,
+        cache_service: Optional[Any] = None,
     ):
         self.user_repo = user_repo
         self.fir_repo = fir_repo
         self.case_repo = case_repo
         self.audit_repo = audit_repo
         self.notification_repo = notification_repo
+        from app.services.cache_service import cache_service as default_cache
+        self.cache = cache_service or default_cache
 
     async def get_citizen_dashboard(self, citizen: User) -> CitizenDashboardResponse:
-        """Calculate live statistics for Citizen portal view."""
+        """Calculate live statistics for Citizen portal view with caching."""
+        cache_key = self.cache.keys.dashboard("citizen", citizen.id)
+        cached = await self.cache.get(cache_key)
+        if cached is not None and isinstance(cached, dict):
+            try:
+                return CitizenDashboardResponse.model_validate(cached)
+            except Exception:
+                pass
+
         total = await self.fir_repo.count_for_citizen(citizen.id)
         drafts = await self.fir_repo.count_for_citizen(citizen.id, FIRStatus.DRAFT)
         submitted = await self.fir_repo.count_for_citizen(citizen.id, FIRStatus.SUBMITTED)
@@ -52,7 +64,7 @@ class DashboardService:
         recent_firs = await self.fir_repo.list_for_citizen(citizen.id, offset=0, limit=5)
         unread_notifications = await self.notification_repo.count_unread(citizen.id)
 
-        return CitizenDashboardResponse(
+        response = CitizenDashboardResponse(
             total_firs=total,
             pending_firs=pending,
             accepted_firs=accepted,
@@ -60,9 +72,19 @@ class DashboardService:
             recent_firs=[FIRResponse.model_validate(f) for f in recent_firs],
             unread_notifications_count=unread_notifications,
         )
+        await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=self.cache.ttl.DASHBOARD)
+        return response
 
     async def get_police_dashboard(self, police: User) -> PoliceDashboardResponse:
-        """Calculate operational metrics for Law Enforcement Officer view."""
+        """Calculate operational metrics for Law Enforcement Officer view with caching."""
+        cache_key = self.cache.keys.dashboard("police", police.id)
+        cached = await self.cache.get(cache_key)
+        if cached is not None and isinstance(cached, dict):
+            try:
+                return PoliceDashboardResponse.model_validate(cached)
+            except Exception:
+                pass
+
         assigned = await self.case_repo.count_for_investigator(police.id)
         open_cases = (
             await self.case_repo.count_cases(status=CaseStatus.OPEN)
@@ -79,7 +101,7 @@ class DashboardService:
         recent_cases = await self.case_repo.list_for_investigator(police.id, offset=0, limit=5)
         recent_firs = await self.fir_repo.list_for_police_queue(offset=0, limit=5)
 
-        return PoliceDashboardResponse(
+        response = PoliceDashboardResponse(
             assigned_cases=assigned,
             open_cases=open_cases,
             pending_fir_reviews=pending_firs,
@@ -87,9 +109,19 @@ class DashboardService:
             recent_cases=[CaseResponse.model_validate(c) for c in recent_cases],
             recent_firs_to_review=[FIRResponse.model_validate(f) for f in recent_firs],
         )
+        await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=self.cache.ttl.DASHBOARD)
+        return response
 
     async def get_admin_dashboard(self) -> AdminDashboardResponse:
-        """Calculate system-wide metrics and audit history for Administrator view."""
+        """Calculate system-wide metrics and audit history for Administrator view with caching."""
+        cache_key = self.cache.keys.dashboard("admin", "system")
+        cached = await self.cache.get(cache_key)
+        if cached is not None and isinstance(cached, dict):
+            try:
+                return AdminDashboardResponse.model_validate(cached)
+            except Exception:
+                pass
+
         total_users = await self.user_repo.count_users()
         total_police = await self.user_repo.count_users(role=UserRole.POLICE)
         total_citizens = await self.user_repo.count_users(role=UserRole.CITIZEN)
@@ -101,7 +133,7 @@ class DashboardService:
 
         recent_logs = await self.audit_repo.list_recent(limit=10)
 
-        return AdminDashboardResponse(
+        response = AdminDashboardResponse(
             total_users=total_users,
             total_police_officers=total_police,
             total_citizens=total_citizens,
@@ -122,3 +154,5 @@ class DashboardService:
                 for log in recent_logs
             ],
         )
+        await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=self.cache.ttl.DASHBOARD)
+        return response

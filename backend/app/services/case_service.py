@@ -1,7 +1,7 @@
 """Case investigation management and workflow domain service."""
 
 from datetime import datetime, timezone
-from typing import List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 import uuid
 from app.core.constants import (
     AuditAction,
@@ -50,6 +50,7 @@ class CaseService:
         notification_service: NotificationService,
         intelligence_service: IntelligenceService,
         graph_service: GraphService,
+        cache_service: Optional[Any] = None,
     ):
         self.case_repo = case_repo
         self.fir_repo = fir_repo
@@ -58,6 +59,16 @@ class CaseService:
         self.notification_service = notification_service
         self.intelligence_service = intelligence_service
         self.graph_service = graph_service
+        from app.services.cache_service import cache_service as default_cache
+        self.cache = cache_service or default_cache
+
+    async def _invalidate_case_cache(self, case_id: uuid.UUID):
+        """Targeted invalidation of case-specific and dashboard caches."""
+        try:
+            await self.cache.delete_pattern(self.cache.keys.case_pattern(case_id))
+            await self.cache.delete_pattern(self.cache.keys.dashboard_pattern())
+        except Exception:
+            pass
 
     async def get_case_by_id(self, case_id: uuid.UUID, current_user: User) -> Case:
         """Fetch Case by UUID enforcing role permissions (Citizens cannot view general police Cases)."""
@@ -197,6 +208,7 @@ class CaseService:
             data={"case_id": str(case.id), "case_number": case.case_number},
         )
 
+        await self._invalidate_case_cache(case.id)
         return updated
 
     async def update_case_status(
@@ -243,6 +255,7 @@ class CaseService:
             ip_address=client_ip,
         )
 
+        await self._invalidate_case_cache(case.id)
         return updated
 
     async def update_case(
@@ -275,6 +288,7 @@ class CaseService:
             ip_address=client_ip,
         )
 
+        await self._invalidate_case_cache(case.id)
         return updated
 
     async def add_note(
@@ -304,10 +318,19 @@ class CaseService:
             ip_address=client_ip,
         )
 
+        await self._invalidate_case_cache(case.id)
         return note
 
     async def get_timeline(self, case_id: uuid.UUID) -> List[CaseTimelineEventResponse]:
-        """Aggregate chronological timeline from Audit Logs and Case Notes."""
+        """Aggregate chronological timeline from Audit Logs and Case Notes with caching."""
+        cache_key = self.cache.keys.case_timeline(case_id)
+        cached_timeline = await self.cache.get(cache_key)
+        if cached_timeline is not None and isinstance(cached_timeline, list):
+            try:
+                return [CaseTimelineEventResponse.model_validate(item) for item in cached_timeline]
+            except Exception:
+                pass
+
         case = await self.case_repo.get_by_id(case_id)
         if not case:
             raise ResourceNotFoundException("Case", case_id)
@@ -359,6 +382,11 @@ class CaseService:
 
         # Sort chronologically ascending
         timeline.sort(key=lambda x: x.timestamp)
+        await self.cache.set(
+            cache_key,
+            [t.model_dump(mode="json") for t in timeline],
+            ttl=self.cache.ttl.TIMELINE,
+        )
         return timeline
 
     async def list_cases(
@@ -411,3 +439,94 @@ class CaseService:
             investigator_id=police_user.id,
             status=status,
         )
+
+    async def add_case_member(
+        self,
+        case_id: uuid.UUID,
+        user_id: uuid.UUID,
+        role: str,
+        assigned_by: User,
+        permissions: Optional[dict] = None,
+    ):
+        """Add an investigator, analyst, or specialist to an investigation team."""
+        case = await self.case_repo.get_by_id(case_id)
+        if not case:
+            raise ResourceNotFoundException("Case", case_id)
+
+        user = await self.user_repo.get_by_id(user_id)
+        if not user:
+            raise ResourceNotFoundException("User", user_id)
+
+        member = await self.case_repo.add_member(
+            case_id=case.id,
+            user_id=user.id,
+            role=role.upper(),
+            assigned_by_id=assigned_by.id,
+            permissions=permissions,
+        )
+
+        await self.audit_service.log_action(
+            action=AuditAction.CASE_ASSIGNED.value,
+            resource_type="case_member",
+            resource_id=str(member.id),
+            description=f"Assigned '{user.username}' as {role} to Case {case.case_number}",
+            user_id=assigned_by.id,
+        )
+
+        await self._invalidate_case_cache(case.id)
+        return member
+
+    async def list_case_members(self, case_id: uuid.UUID):
+        """List active members of a case investigation team."""
+        case = await self.case_repo.get_by_id(case_id)
+        if not case:
+            raise ResourceNotFoundException("Case", case_id)
+        return await self.case_repo.list_members(case.id)
+
+    async def remove_case_member(self, case_id: uuid.UUID, user_id: uuid.UUID, removed_by: User) -> bool:
+        """Deactivate an investigation team member."""
+        case = await self.case_repo.get_by_id(case_id)
+        if not case:
+            raise ResourceNotFoundException("Case", case_id)
+
+        removed = await self.case_repo.remove_member(case.id, user_id)
+        if removed:
+            await self.audit_service.log_action(
+                action=AuditAction.CASE_UPDATED.value,
+                resource_type="case_member",
+                resource_id=str(user_id),
+                description=f"Removed team member {user_id} from Case {case.case_number}",
+                user_id=removed_by.id,
+            )
+            await self._invalidate_case_cache(case.id)
+        return removed
+
+    async def soft_delete_case(self, case_id: uuid.UUID, user: User, reason: Optional[str] = None) -> Case:
+        """Safely close and archive a Case without destroying critical audit or blockchain evidence."""
+        case = await self.case_repo.get_by_id(case_id)
+        if not case:
+            raise ResourceNotFoundException("Case", case_id)
+
+        case.status = CaseStatus.CLOSED
+        case.closed_at = datetime.now(timezone.utc)
+        updated = await self.case_repo.update(case)
+
+        if reason:
+            await self.case_repo.add_note(
+                case_id=case.id,
+                author_id=user.id,
+                note_text=f"[Archival Note]: {reason.strip()}",
+            )
+
+        await self.audit_service.log_action(
+            action=AuditAction.CASE_STATUS_CHANGED.value,
+            resource_type="case",
+            resource_id=str(case.id),
+            description=f"Case {case.case_number} archived by {user.username}. Reason: {reason or 'Closed'}",
+            user_id=user.id,
+            old_value={"status": "ACTIVE"},
+            new_value={"status": "CLOSED", "reason": reason},
+        )
+        await self._invalidate_case_cache(case.id)
+        return updated
+

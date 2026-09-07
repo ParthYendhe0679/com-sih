@@ -25,6 +25,7 @@ from app.repositories.notification_repository import NotificationRepository
 from app.repositories.user_repository import UserRepository
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
+from app.services.cache_service import CacheService, cache_service
 from app.services.case_service import CaseService
 from app.services.dashboard_service import DashboardService
 from app.services.evidence_service import EvidenceService
@@ -35,6 +36,11 @@ from app.services.user_service import UserService
 from app.ai_ml.services.case_intelligence_service import CaseIntelligenceService
 from app.ai_ml.services.historical_search_service import HistoricalCaseSearchService
 from app.ai_ml.services.person_intelligence_service import PersonIntelligenceService
+from app.blockchain.repository import BlockchainRepository
+from app.blockchain.services.blockchain_service import BlockchainService
+from app.blockchain.services.custody_service import ChainOfCustodyService
+from app.blockchain.services.integrity_service import IntegrityService
+from app.blockchain.services.investigation_audit_service import InvestigationAuditService
 
 # Bearer token extractor (auto_error=False to allow custom exception handling)
 security = HTTPBearer(auto_error=False)
@@ -76,6 +82,10 @@ def get_audit_repo(session: AsyncSession = Depends(get_async_session)) -> AuditR
     return AuditRepository(session)
 
 
+def get_blockchain_repo(session: AsyncSession = Depends(get_async_session)) -> BlockchainRepository:
+    return BlockchainRepository(session)
+
+
 # -------------------------------------------------------------
 # Services
 # -------------------------------------------------------------
@@ -115,6 +125,10 @@ def get_fir_service(
     return FIRService(fir_repo, audit_service, notification_service, intelligence_service)
 
 
+def get_cache_service() -> CacheService:
+    return cache_service
+
+
 def get_case_service(
     case_repo: CaseRepository = Depends(get_case_repo),
     fir_repo: FIRRepository = Depends(get_fir_repo),
@@ -123,6 +137,7 @@ def get_case_service(
     notification_service: NotificationService = Depends(get_notification_service),
     intelligence_service: IntelligenceService = Depends(get_intelligence_service),
     graph_service: GraphService = Depends(get_graph_service),
+    cache: CacheService = Depends(get_cache_service),
 ) -> CaseService:
     return CaseService(
         case_repo,
@@ -132,6 +147,7 @@ def get_case_service(
         notification_service,
         intelligence_service,
         graph_service,
+        cache_service=cache,
     )
 
 
@@ -157,6 +173,7 @@ def get_dashboard_service(
     case_repo: CaseRepository = Depends(get_case_repo),
     audit_repo: AuditRepository = Depends(get_audit_repo),
     notification_repo: NotificationRepository = Depends(get_notification_repo),
+    cache: CacheService = Depends(get_cache_service),
 ) -> DashboardService:
     return DashboardService(
         user_repo,
@@ -164,20 +181,24 @@ def get_dashboard_service(
         case_repo,
         audit_repo,
         notification_repo,
+        cache_service=cache,
     )
 
 
 def get_search_service(
     fir_repo: FIRRepository = Depends(get_fir_repo),
     case_repo: CaseRepository = Depends(get_case_repo),
+    db: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
 ) -> SearchService:
-    return SearchService(fir_repo, case_repo)
+    return SearchService(fir_repo, case_repo, session=db, cache_service=cache)
 
 
 def get_case_intelligence_service(
     db: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
 ) -> CaseIntelligenceService:
-    return CaseIntelligenceService(db)
+    return CaseIntelligenceService(db, cache_service=cache)
 
 
 def get_historical_search_service(
@@ -190,6 +211,35 @@ def get_person_intelligence_service(
     db: AsyncSession = Depends(get_async_session),
 ) -> PersonIntelligenceService:
     return PersonIntelligenceService(db)
+
+
+def get_blockchain_service(
+    repo: BlockchainRepository = Depends(get_blockchain_repo),
+) -> BlockchainService:
+    return BlockchainService(repo)
+
+
+def get_custody_service(
+    repo: BlockchainRepository = Depends(get_blockchain_repo),
+    bc_service: BlockchainService = Depends(get_blockchain_service),
+) -> ChainOfCustodyService:
+    return ChainOfCustodyService(repo, bc_service)
+
+
+def get_investigation_audit_service(
+    repo: BlockchainRepository = Depends(get_blockchain_repo),
+    bc_service: BlockchainService = Depends(get_blockchain_service),
+) -> InvestigationAuditService:
+    return InvestigationAuditService(repo, bc_service)
+
+
+def get_integrity_service(
+    repo: BlockchainRepository = Depends(get_blockchain_repo),
+    bc_service: BlockchainService = Depends(get_blockchain_service),
+    custody_service: ChainOfCustodyService = Depends(get_custody_service),
+    audit_service: InvestigationAuditService = Depends(get_investigation_audit_service),
+) -> IntegrityService:
+    return IntegrityService(repo, bc_service, custody_service, audit_service)
 
 
 # -------------------------------------------------------------

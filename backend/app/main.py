@@ -30,6 +30,12 @@ async def lifespan(app: FastAPI):
         logger.info("Database engine and connection pools successfully disposed.")
     except Exception as e:
         logger.error(f"Error disposing database engine on shutdown: {e}")
+    try:
+        from app.services.cache_service import cache_service
+        await cache_service.close()
+        logger.info("Valkey cache connection pool successfully closed.")
+    except Exception as e:
+        logger.warning(f"Error closing cache pool: {e}")
 
 
 

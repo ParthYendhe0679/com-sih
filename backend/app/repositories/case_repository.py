@@ -129,3 +129,61 @@ class CaseRepository(BaseRepository[Case]):
         stmt = select(CaseNote).where(CaseNote.case_id == case_id).order_by(CaseNote.created_at.desc())
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def add_member(
+        self,
+        case_id: uuid.UUID,
+        user_id: uuid.UUID,
+        role: str = "INVESTIGATOR",
+        assigned_by_id: Optional[uuid.UUID] = None,
+        permissions: Optional[Dict] = None,
+    ):
+        """Add or update an investigation team member on a Case."""
+        from app.models.data_architecture import CaseMember
+        stmt = select(CaseMember).where(
+            CaseMember.case_id == case_id, CaseMember.user_id == user_id
+        )
+        res = await self.session.execute(stmt)
+        member = res.scalar_one_or_none()
+        if member:
+            member.role = role
+            member.is_active = True
+            member.permissions_json = permissions
+        else:
+            member = CaseMember(
+                id=uuid.uuid4(),
+                case_id=case_id,
+                user_id=user_id,
+                role=role,
+                assigned_by_id=assigned_by_id,
+                permissions_json=permissions,
+                is_active=True,
+            )
+            self.session.add(member)
+        await self.session.flush()
+        await self.session.refresh(member)
+        return member
+
+    async def list_members(self, case_id: uuid.UUID):
+        """List active members of an investigation Case."""
+        from app.models.data_architecture import CaseMember
+        stmt = select(CaseMember).where(
+            CaseMember.case_id == case_id, CaseMember.is_active == True
+        )
+        res = await self.session.execute(stmt)
+        return res.scalars().all()
+
+    async def remove_member(self, case_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """Deactivate an investigation team member."""
+        from app.models.data_architecture import CaseMember
+        stmt = select(CaseMember).where(
+            CaseMember.case_id == case_id, CaseMember.user_id == user_id
+        )
+        res = await self.session.execute(stmt)
+        member = res.scalar_one_or_none()
+        if member:
+            member.is_active = False
+            await self.session.flush()
+            return True
+        return False
+

@@ -55,7 +55,10 @@ class MasterIntelligenceEngine:
             payload={"case_number": case.case_number},
         ).emit()
 
-        entities = existing_entities or (case.entities if hasattr(case, "entities") and case.entities else [])
+        if existing_entities is not None:
+            entities = existing_entities
+        else:
+            entities = case.__dict__.get("entities") or []
 
         # 1. Entity Resolution (find duplicates / possible matches)
         matches: List[EntityMatch] = []
@@ -110,8 +113,9 @@ class MasterIntelligenceEngine:
         max_deg = max((m["degree_centrality"] for m in graph_metrics), default=0.0)
 
         # 8. Investigation Priority Scoring
+        evidence_list = case.__dict__.get("evidence") or []
         priority_info = self.scorer.calculate_investigation_priority(
-            evidence_count=len(getattr(case, "evidence", []) or []),
+            evidence_count=len(evidence_list),
             correlation_count=len(correlations),
             similar_case_count=len(similar_cases),
             anomaly_count=len(anomalies),

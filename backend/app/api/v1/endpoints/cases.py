@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 import uuid
 from fastapi import APIRouter, Depends, Query, Request, status
 from app.api.deps import (
+    get_cache_service,
     get_case_service,
     get_client_ip,
     get_current_user,
@@ -12,7 +13,9 @@ from app.api.deps import (
     require_roles,
 )
 from app.core.constants import CasePriority, CaseStatus, UserRole
+from app.core.exceptions import PermissionDeniedException
 from app.models.user import User
+from app.services.cache_service import CacheService
 from app.schemas.case import (
     CaseAssignRequest,
     CaseCreate,
@@ -129,7 +132,26 @@ async def get_case(
     case_id: uuid.UUID,
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
+    fir_service: FIRService = Depends(get_fir_service),
 ):
+    cache_key = cache.keys.case(case_id)
+    cached_data = await cache.get(cache_key)
+    if cached_data is not None and isinstance(cached_data, dict):
+        # Enforce security authorization before serving cached intelligence
+        if current_user.role == UserRole.CITIZEN:
+            fir_id_str = cached_data.get("fir_id")
+            if not fir_id_str:
+                raise PermissionDeniedException("Access restricted to authorized personnel.")
+            fir = await fir_service.get_fir_by_id(uuid.UUID(fir_id_str), current_user=current_user)
+            if not fir or fir.submitted_by_id != current_user.id:
+                raise PermissionDeniedException("Access restricted to authorized personnel.")
+        try:
+            detail = CaseDetailResponse.model_validate(cached_data)
+            return success_response(data=detail, message="Case details retrieved (cache).")
+        except Exception:
+            pass
+
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
     notes_resp = [
@@ -161,6 +183,7 @@ async def get_case(
         notes=notes_resp,
         evidence_count=len(case.evidence or []),
     )
+    await cache.set(cache_key, detail.model_dump(mode="json"), ttl=cache.ttl.CASE)
     return success_response(data=detail, message="Case details retrieved.")
 
 
@@ -329,7 +352,16 @@ async def get_case_network(
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
     fir_service: FIRService = Depends(get_fir_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
+    cache_key = cache.keys.case_network(case_id)
+    cached_network = await cache.get(cache_key)
+    if cached_network is not None and isinstance(cached_network, dict):
+        return success_response(
+            data=cached_network,
+            message="Case network intelligence retrieved (cache).",
+        )
+
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
     case_node_id = f"CASE-{case.case_number}"
@@ -408,14 +440,17 @@ async def get_case_network(
             "confidence": 100,
         })
 
+    network_data = {
+        "case_id": str(case.id),
+        "case_number": case.case_number,
+        "nodes": nodes,
+        "edges": edges,
+        "total_nodes": len(nodes),
+        "total_edges": len(edges),
+    }
+    await cache.set(cache_key, network_data, ttl=cache.ttl.NETWORK)
+
     return success_response(
-        data={
-            "case_id": str(case.id),
-            "case_number": case.case_number,
-            "nodes": nodes,
-            "edges": edges,
-            "total_nodes": len(nodes),
-            "total_edges": len(edges),
-        },
+        data=network_data,
         message="Case network intelligence retrieved.",
     )

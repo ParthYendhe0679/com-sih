@@ -4,8 +4,10 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
     auth,
+    blockchain,
     cases,
     dashboard,
+    data_sync,
     evidence,
     firs,
     health,
@@ -31,3 +33,6 @@ api_v1_router.include_router(search.router, prefix="/search", tags=["Search"])
 api_v1_router.include_router(health.router, prefix="/health", tags=["System Health"])
 api_v1_router.include_router(intelligence.router, tags=["AI/ML Intelligence"])
 api_v1_router.include_router(intelligence.router, prefix="/intelligence", tags=["AI/ML Intelligence (Namespaced)"])
+api_v1_router.include_router(blockchain.router, tags=["Blockchain Evidence Integrity"])
+api_v1_router.include_router(data_sync.router, prefix="/sync", tags=["Data Synchronization"])
+

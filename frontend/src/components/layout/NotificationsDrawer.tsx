@@ -1,76 +1,35 @@
 'use client';
 
-import React from 'react';
-import { X, Bell, History, Network, Activity, AlertTriangle, FileText, Bookmark, Camera, Check } from 'lucide-react';
-import { useAppDispatch } from '@/store/hooks';
-import { openInspector } from '@/store/slices/uiSlice';
+import React, { useCallback, useEffect, useState } from 'react';
+import { X, Bell, Network, Activity, AlertTriangle, FileText, FolderOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { notificationsApi, type BackendNotification } from '@/lib/api/notifications';
+import { EmptyState, ErrorState, LoadingState } from '@/components/ui';
 
-export interface NotificationItem {
-  id: string;
-  type: string;
-  title: string;
-  subtitle: string;
-  time: string;
-  unread: boolean;
-  targetId?: string;
-  targetType?: string;
-  href?: string;
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diff = Date.now() - then;
+  const mins = Math.round(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hr ago`;
+  const days = Math.round(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
 }
 
-const initialNotifications: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    type: 'anomaly',
-    title: 'Circadian Anomaly Spike',
-    subtitle: 'PERSON-014 observed active at 03:14 AM in Bandra (Score: 0.87)',
-    time: '2 mins ago',
-    unread: true,
-    targetId: 'PERSON-014',
-    targetType: 'Person',
-    href: '/anomaly',
-  },
-  {
-    id: 'notif-2',
-    type: 'network',
-    title: 'New Association Path Established',
-    subtitle: 'High-confidence link verified between PERSON-014 & PERSON-021',
-    time: '8 mins ago',
-    unread: true,
-    targetId: 'CASE-102',
-    targetType: 'Case',
-    href: '/network',
-  },
-  {
-    id: 'notif-3',
-    type: 'historical',
-    title: 'Archival Case Match',
-    subtitle: '89% pattern similarity detected with CASE-087 (2023 Westside Ring)',
-    time: '25 mins ago',
-    unread: true,
-    targetId: 'CASE-087',
-    targetType: 'HistoricalCase',
-    href: '/historical',
-  },
-  {
-    id: 'notif-4',
-    type: 'complaint',
-    title: 'New Citizen Complaint Filed',
-    subtitle: 'CMP-2026-0904 received for Online Investment Fraud in Andheri',
-    time: '1 hour ago',
-    unread: false,
-    href: '/police',
-  },
-  {
-    id: 'notif-5',
-    type: 'contradiction',
-    title: 'Evidence Contradiction Flagged',
-    subtitle: 'Juhu CCTV timestamp conflicts with Khalapur Expressway ANPR log',
-    time: '2 hours ago',
-    unread: false,
-    href: '/forensics',
-  },
-];
+function iconFor(type?: string | null) {
+  switch ((type || '').toLowerCase()) {
+    case 'anomaly': return <Activity size={15} style={{ color: 'var(--error)' }} />;
+    case 'network': return <Network size={15} style={{ color: 'var(--accent)' }} />;
+    case 'case': return <FolderOpen size={15} style={{ color: 'var(--accent)' }} />;
+    case 'fir': return <FileText size={15} style={{ color: 'var(--warning)' }} />;
+    case 'contradiction': return <AlertTriangle size={15} style={{ color: 'var(--error)' }} />;
+    default: return <Bell size={15} style={{ color: 'var(--accent)' }} />;
+  }
+}
 
 export default function NotificationsDrawer({
   isOpen,
@@ -79,36 +38,52 @@ export default function NotificationsDrawer({
   isOpen: boolean;
   onClose: () => void;
 }) {
-  const dispatch = useAppDispatch();
   const router = useRouter();
-  const [notifications, setNotifications] = React.useState(initialNotifications);
+  const [items, setItems] = useState<BackendNotification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setItems(await notificationsApi.list({ size: 50 }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load notifications.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) load();
+  }, [isOpen, load]);
 
   if (!isOpen) return null;
 
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
-  };
+  const unreadCount = items.filter((n) => !n.is_read).length;
 
-  const handleClick = (n: NotificationItem) => {
-    setNotifications((prev) =>
-      prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
-    );
-    if (n.targetId && n.targetType) {
-      dispatch(openInspector({ id: n.targetId, type: n.targetType }));
-    } else if (n.href) {
-      router.push(n.href);
+  const markAllAsRead = async () => {
+    const previous = items;
+    setItems((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    try {
+      await notificationsApi.markAllRead();
+    } catch {
+      setItems(previous); // Roll back so the badge never lies.
     }
-    onClose();
   };
 
-  const getIcon = (type: string) => {
-    switch (type) {
-      case 'anomaly': return <Activity size={14} className="text-[var(--error)]" />;
-      case 'network': return <Network size={14} className="text-[var(--accent)]" />;
-      case 'historical': return <History size={14} className="text-[var(--info)]" />;
-      case 'complaint': return <FileText size={14} className="text-[var(--warning)]" />;
-      case 'contradiction': return <AlertTriangle size={14} className="text-[var(--error)]" />;
-      default: return <Bell size={14} className="text-[var(--accent)]" />;
+  const handleClick = async (n: BackendNotification) => {
+    if (!n.is_read) {
+      setItems((prev) => prev.map((i) => (i.id === n.id ? { ...i, is_read: true } : i)));
+      notificationsApi.markRead(n.id).catch(() => {});
+    }
+    if (n.related_case_id) {
+      router.push(`/cases/${n.related_case_id}`);
+      onClose();
+    } else if (n.related_fir_id) {
+      router.push('/fir');
+      onClose();
     }
   };
 
@@ -119,65 +94,97 @@ export default function NotificationsDrawer({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-[380px] max-w-full h-full glass-panel-elevated flex flex-col border-l shadow-2xl animate-slide-in-right"
-        style={{ borderColor: 'var(--border-strong)' }}
+        role="dialog"
+        aria-label="Notifications"
+        className="w-[400px] max-w-full h-full flex flex-col border-l shadow-2xl animate-slide-in-right"
+        style={{ background: 'var(--surface-1)', borderColor: 'var(--border-strong)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="flex items-center gap-2">
-            <Bell size={16} className="text-[var(--accent)]" />
-            <h3 className="font-semibold text-[14px]" style={{ color: 'var(--ink-primary)' }}>
-              Operational Notifications
-            </h3>
-            <span className="text-[10px] font-mono-id px-1.5 py-0.2 rounded-full bg-[var(--accent-muted)] text-[var(--accent)] font-bold">
-              {notifications.filter((n) => n.unread).length} new
-            </span>
+        <div
+          className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+          style={{ borderColor: 'var(--border)' }}
+        >
+          <div className="flex items-center gap-2.5">
+            <Bell size={17} style={{ color: 'var(--accent)' }} />
+            <h3 className="card-title">Notifications</h3>
+            {unreadCount > 0 && (
+              <span
+                className="text-[11.5px] px-2 py-0.5 rounded-full font-bold"
+                style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
+              >
+                {unreadCount} new
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-1">
+            {unreadCount > 0 && (
+              <button onClick={markAllAsRead} className="btn-ghost text-[13px] px-2.5 py-1.5">
+                Mark all read
+              </button>
+            )}
             <button
-              onClick={markAllAsRead}
-              className="text-[11px] text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)] px-2 py-1 rounded"
-              title="Mark all as read"
+              onClick={onClose}
+              aria-label="Close notifications"
+              className="p-1.5 rounded-lg hover:bg-[var(--surface-2)]"
+              style={{ color: 'var(--ink-secondary)' }}
             >
-              Mark read
-            </button>
-            <button onClick={onClose} className="p-1 rounded hover:bg-[var(--surface-2)]">
-              <X size={15} />
+              <X size={17} />
             </button>
           </div>
         </div>
 
-        {/* Notifications List */}
-        <div className="flex-1 overflow-y-auto divide-y" style={{ borderColor: 'var(--border)' }}>
-          {notifications.map((n) => (
-            <div
-              key={n.id}
-              onClick={() => handleClick(n)}
-              className="p-3.5 hover:bg-[var(--accent-muted)] cursor-pointer transition-colors space-y-1"
-              style={{
-                background: n.unread ? 'var(--glass-1)' : 'transparent',
-              }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  {getIcon(n.type)}
-                  <span className="font-semibold text-[12px]" style={{ color: 'var(--ink-primary)' }}>
-                    {n.title}
-                  </span>
-                </div>
-                <span className="text-[10px] font-mono-id" style={{ color: 'var(--ink-tertiary)' }}>
-                  {n.time}
-                </span>
-              </div>
-              <p className="text-[12px] leading-relaxed line-clamp-2" style={{ color: 'var(--ink-secondary)' }}>
-                {n.subtitle}
-              </p>
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <LoadingState message="Loading notifications…" />
+          ) : error ? (
+            <ErrorState
+              title="Unable to load notifications"
+              message={error}
+              onRetry={load}
+            />
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={Bell}
+              title="No notifications"
+              description="Case assignments, FIR reviews and intelligence alerts will appear here."
+            />
+          ) : (
+            <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
+              {items.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => handleClick(n)}
+                  className="w-full text-left px-5 py-4 hover:bg-[var(--accent-muted)] transition-colors space-y-1.5"
+                  style={{ background: n.is_read ? 'transparent' : 'var(--surface-2)' }}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2 min-w-0">
+                      <span className="mt-0.5 shrink-0">{iconFor(n.notification_type)}</span>
+                      <span
+                        className="text-[14px] font-semibold leading-snug"
+                        style={{ color: 'var(--ink-primary)' }}
+                      >
+                        {n.title}
+                      </span>
+                    </div>
+                    <span
+                      className="text-[12px] shrink-0 tabular-nums"
+                      style={{ color: 'var(--ink-tertiary)' }}
+                    >
+                      {relativeTime(n.created_at)}
+                    </span>
+                  </div>
+                  <p
+                    className="text-[13.5px] leading-relaxed pl-[23px]"
+                    style={{ color: 'var(--ink-secondary)' }}
+                  >
+                    {n.message}
+                  </p>
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-
-        <div className="p-3 border-t text-center text-[11px] font-mono-id" style={{ borderColor: 'var(--border)', color: 'var(--ink-tertiary)' }}>
-          Synthetic Automated Trigger Stream
+          )}
         </div>
       </div>
     </div>

@@ -186,21 +186,21 @@ export default function CasesPage() {
   ];
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-          Investigation Cases
-        </h1>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="page-title">Investigation Cases</h1>
+          <p className="page-subtitle">Manage and track all active investigations</p>
+        </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => router.push('/fir')}
-            className="px-3.5 py-2 rounded-xl text-[13px] font-semibold text-white flex items-center gap-1.5 transition-all shadow-sm hover:opacity-90 cursor-pointer"
-            style={{ background: 'var(--accent)' }}
+            className="btn-primary"
           >
-            <Plus size={14} />
-            <span>Ingest FIR / Create Case</span>
+            <Plus size={16} />
+            <span>New Case / FIR</span>
           </button>
         </div>
       </div>

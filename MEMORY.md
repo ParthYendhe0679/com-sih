@@ -63,3 +63,8 @@ This document serves as the persistent context ledger and architectural memory f
 ### Zero Mock Fallback Principle
 - **Gotcha**: Silently falling back to static mock data when an API call fails or when an ID doesn't exist masks network failures and leads to misleading investigation data (e.g., showing wrong person dossier).
 - **Fix**: Display dedicated, styled empty states and 404 error boundaries rather than silently falling back to mock fixtures.
+
+### Case Ingestion Zero-State Defensiveness
+- **Gotcha**: When dummy data is purged and the case database is empty (`[]`), dereferencing active case metadata (`currentCase.id`, `currentCase.title`) in intelligence dashboards causes runtime `TypeError: Cannot read properties of undefined (reading 'id')`.
+- **Fix**: Use optional chaining (`currentCase?.id`) or safe fallback strings (`currentCase?.id || 'FIR Scope'`) in all UI nodes, and guard action dispatchers so navigation only triggers if an active case exists.
+

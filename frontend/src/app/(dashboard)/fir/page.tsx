@@ -43,8 +43,6 @@ export default function FIRIntakePage() {
   // Real file selection & FIR form
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [firTitle, setFirTitle] = useState('');
-  const [crimeCategory, setCrimeCategory] = useState('Cybercrime');
-  const [incidentLocation, setIncidentLocation] = useState('Bandra Kurla Complex, Mumbai');
   const [incidentDate, setIncidentDate] = useState(new Date().toISOString().slice(0, 10));
   
   // Real backend extraction response
@@ -111,8 +109,6 @@ export default function FIRIntakePage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
       formData.append('title', firTitle || selectedFile.name);
-      formData.append('crime_category', crimeCategory);
-      formData.append('incident_location', incidentLocation);
       formData.append('incident_date', incidentDate);
 
       setOcrProgress(55);
@@ -380,7 +376,7 @@ export default function FIRIntakePage() {
               </div>
 
               {/* FIR Metadata Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
                   <label className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)' }}>
                     FIR Title / Reference
@@ -389,44 +385,20 @@ export default function FIRIntakePage() {
                     type="text"
                     value={firTitle}
                     onChange={(e) => setFirTitle(e.target.value)}
-                    placeholder="e.g. Bandra Financial Fraud Case"
+                    placeholder="e.g. Bandra Financial Fraud Case (optional)"
                     className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-[var(--surface-0)]"
                     style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)' }}>
-                    Crime Category
-                  </label>
-                  <select
-                    value={crimeCategory}
-                    onChange={(e) => setCrimeCategory(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-[var(--surface-0)]"
-                    style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
-                  >
-                    <option value="Cybercrime">Cybercrime</option>
-                    <option value="Financial Fraud">Financial Fraud</option>
-                    <option value="Extortion">Extortion</option>
-                    <option value="Vehicle Theft">Vehicle Theft</option>
-                    <option value="Robbery">Robbery</option>
-                    <option value="Narcotics">Narcotics</option>
-                    <option value="General Crime">General Crime</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)' }}>
-                    Incident Location
-                  </label>
-                  <input
-                    type="text"
-                    value={incidentLocation}
-                    onChange={(e) => setIncidentLocation(e.target.value)}
-                    placeholder="e.g. Andheri West, Mumbai"
-                    className="w-full px-3.5 py-2.5 rounded-xl border text-[13px] bg-[var(--surface-0)]"
-                    style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
-                  />
+                <div className="p-3.5 rounded-xl border bg-indigo-500/5 border-indigo-500/20 flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="text-[12px] leading-snug text-[var(--ink-secondary)]">
+                    <span className="font-semibold text-white block">Auto-Extraction Enabled</span>
+                    Crime category and incident location are automatically identified from document text.
+                  </div>
                 </div>
               </div>
 

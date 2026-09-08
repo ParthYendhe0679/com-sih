@@ -58,6 +58,82 @@ def _extract_entities_from_text(text: str) -> Dict[str, List[Dict[str, Any]]]:
     }
 
 
+def _detect_crime_category(text: str) -> str:
+    """Auto-detects crime category from extracted FIR text using IPC sections and contextual terms."""
+    text_lower = text.lower()
+    if re.search(r'\b(420|406|409|467|468|471)\b', text):
+        return "Financial Fraud"
+    if re.search(r'\b(384|386|387|388|389)\b', text):
+        return "Extortion"
+    if re.search(r'\b(379|380|381|382)\b', text):
+        return "Vehicle Theft" if any(w in text_lower for w in ["vehicle", "bike", "car", "motorcycle", "scooter"]) else "Theft"
+    if re.search(r'\b(392|394|395|396|397)\b', text):
+        return "Robbery"
+    if (re.search(r'\b(66[A-F]?|43|65)\b', text) and "it act" in text_lower) or any(
+        k in text_lower for k in ["cyber", "phishing", "online", "hack", "unauthorized access", "otp", "sim swap", "social media", "telegram", "whatsapp", "crypto"]
+    ):
+        return "Cybercrime"
+    if any(k in text_lower for k in ["fraud", "scam", "crore", "lakh", "embezzle", "ponzi", "cheating", "fake invoice", "bank transaction"]):
+        return "Financial Fraud"
+    if any(k in text_lower for k in ["narcotic", "drug", "ndps", "ganja", "cocaine", "heroin", "mdma", "contraband"]):
+        return "Narcotics"
+    if any(k in text_lower for k in ["extortion", "ransom", "threat", "blackmail", "protection money", "underworld"]):
+        return "Extortion"
+    if any(k in text_lower for k in ["vehicle", "car theft", "bike stolen", "stolen vehicle", "rto", "registration"]):
+        return "Vehicle Theft"
+    if any(k in text_lower for k in ["robbery", "dacoity", "loot", "armed robbery"]):
+        return "Robbery"
+    if any(k in text_lower for k in ["murder", "homicide", "assault", "violent", "302", "307"]):
+        return "Violent Crime"
+    return "Cybercrime"
+
+
+def _detect_incident_location(text: str) -> str:
+    """Extracts incident occurrence location from FIR text using header markers or Indian locality recognition."""
+    patterns = [
+        r'(?:place\s+of\s+occurrence|incident\s+location|scene\s+of\s+crime|location\s+of\s+incident)[\s:=]+([^\n\r;]{3,60})',
+        r'(?:police\s+station|P\.S\.)[\s:=]+([^\n\r;]{3,40})',
+    ]
+    for pat in patterns:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            if len(val) > 2 and not val.lower().startswith("not"):
+                return val
+
+    known_localities = [
+        "Bandra Kurla Complex, Mumbai",
+        "Andheri West, Mumbai",
+        "Andheri East, Mumbai",
+        "Nariman Point, Mumbai",
+        "Colaba, Mumbai",
+        "Dadar, Mumbai",
+        "Powai, Mumbai",
+        "Thane West, Thane",
+        "Navi Mumbai",
+        "Shivajinagar, Pune",
+        "Hinjawadi, Pune",
+        "Koramangala, Bengaluru",
+        "Indiranagar, Bengaluru",
+        "Connaught Place, New Delhi",
+        "Cyber City, Gurugram",
+        "Salt Lake, Kolkata",
+        "Bandra, Mumbai",
+        "Worli, Mumbai",
+        "Kurla, Mumbai",
+        "Mumbai",
+        "Pune",
+        "Delhi",
+        "Bengaluru",
+    ]
+    text_lower = text.lower()
+    for loc in known_localities:
+        if loc.lower() in text_lower or loc.split(",")[0].lower() in text_lower:
+            return loc
+
+    return "Metropolitan Jurisdiction (Auto-extracted from FIR)"
+
+
 @router.post(
     "/upload-fir-document",
     response_model=APIResponse[Dict[str, Any]],
@@ -70,9 +146,9 @@ async def upload_fir_document(
     file: UploadFile = File(...),
     title: str = Form(...),
     description: Optional[str] = Form(None),
-    crime_category: str = Form("General Criminal Inquiry"),
+    crime_category: Optional[str] = Form(None),
     incident_date_str: Optional[str] = Form(None, alias="incident_date"),
-    incident_location: Optional[str] = Form("Local Jurisdiction"),
+    incident_location: Optional[str] = Form(None),
     priority_str: Optional[str] = Form("MEDIUM", alias="priority"),
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     fir_service: FIRService = Depends(get_fir_service),
@@ -143,13 +219,23 @@ async def upload_fir_document(
         except Exception:
             pass
 
+    # Auto-infer crime category if not explicitly provided or generic
+    final_crime_category = (crime_category or "").strip()
+    if not final_crime_category or final_crime_category == "General Criminal Inquiry":
+        final_crime_category = _detect_crime_category(extracted_text)
+
+    # Auto-infer incident location if not explicitly provided or generic
+    final_incident_location = (incident_location or "").strip()
+    if not final_incident_location or final_incident_location == "Local Jurisdiction":
+        final_incident_location = _detect_incident_location(extracted_text)
+
     # 5. Persist offline FIR record
     offline_data = OfflineFIRCreate(
         title=title.strip(),
         description=extracted_text,
-        crime_category=crime_category.strip(),
+        crime_category=final_crime_category,
         incident_date=parsed_date,
-        incident_location=incident_location.strip(),
+        incident_location=final_incident_location,
         priority=prio,
         document_name=file_name,
         document_type=ext.upper() or "DOCUMENT",

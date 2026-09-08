@@ -1,0 +1,37 @@
+FIRST INFORMATION REPORT
+(Under Section 154 Cr.P.C.)
+MAHARASHTRA POLICE DEPARTMENT
+
+1. District: Mumbai Suburban
+   Police Station: BKC Cyber Police Station
+   FIR No: FIR-MUM-2026-CR-00101
+   Date & Time of FIR: 14/02/2026 at 06:30 hrs
+
+2. Acts & Sections:
+   Information Technology Act 2000: Sections 43, 66, 66C, 66D
+   Indian Penal Code: Sections 379, 420, 120-B
+
+3. Occurrence of Offence:
+   Day: Saturday, Date: 14/02/2026, Time: Approx 02:45 hrs
+   Place of Occurrence: ATM Kiosk No. 4, G-Block, Bandra Kurla Complex (BKC), Mumbai - 400051
+
+4. Complainant / Informant:
+   Name: Rohan Deshmukh, Chief Security Officer, National Apex Bank
+   Father's Name: Madhav Deshmukh
+   Address: G-Block, BKC, Mumbai - 400051
+   Contact: +91-98200-11223
+
+5. Details of Suspects / Accused:
+   (i) Unknown male operative identified by alias "Shadow" (approx 30-35 years, athletic build, dark cap).
+   (ii) Associate operative communicating on mobile number +91-98201-44912.
+   (iii) Vehicle observed at scene: Black Hyundai Creta bearing registration number MH-02-DN-4821.
+
+6. Brief Narrative / Statement of Complainant:
+   I, Rohan Deshmukh, CSO of National Apex Bank, report that during automated network telemetry monitoring at 02:45 AM on 14th February 2026, our automated SIEM system alerted on anomalous outgoing encrypted data bursts from ATM Terminal BKC-ATM-04.
+   Upon physical inspection by bank technicians at 05:00 AM, a deep-insert magnetic read-head skimmer (0.38mm flex-PCB) was recovered inside the motorized card reader aperture. Furthermore, forensic memory dump of the ATM controller revealed a malware payload disguised as a printer spooler service exfiltrating magnetic stripe track-2 customer dumps to an offshore relay.
+   CCTV review showed an individual wearing a dark windbreaker and cap entering the kiosk at 02:41 AM and departing at 02:48 AM, entering a black Hyundai Creta MH-02-DN-4821 parked 40 meters away towards Asian Heart Hospital junction. Telemetry confirms contact was made to mobile number +91-98201-44912 immediately prior to insertion.
+   I request prompt registration of FIR and forensic investigation to intercept this cross-jurisdictional syndicate.
+
+7. Investigating Officer Assigned:
+   Inspector Devendra Patil, BKC Cyber Police Station
+   Badge No: MUM-CYB-8812

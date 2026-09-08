@@ -1,0 +1,36 @@
+FIRST INFORMATION REPORT
+(Under Section 154 Cr.P.C.)
+MAHARASHTRA POLICE DEPARTMENT - NAVI MUMBAI COMMISSIONERATE
+
+1. District: Navi Mumbai
+   Police Station: Vashi Police Station
+   FIR No: FIR-NAV-2026-CR-00307
+   Date & Time of FIR: 01/03/2026 at 21:00 hrs
+
+2. Acts & Sections:
+   Information Technology Act 2000: Sections 43, 66, 66C, 66D
+   Indian Penal Code: Sections 384, 420, 120-B
+
+3. Occurrence of Offence:
+   Day: Sunday, Date: 01/03/2026, Time: 19:30 hrs
+   Place of Occurrence: Ocean Gateway Logistics Clearing House, Sector 17, Vashi, Navi Mumbai - 400703
+
+4. Complainant:
+   Name: Pranav Kulkarni, Operations Director
+   Father's Name: Shrikant Kulkarni
+   Address: Sector 17, Vashi, Navi Mumbai
+   Contact: +91-98335-77661
+
+5. Suspects / Accused:
+   (i) Female crypto asset handler identified as Priya Nair alias "Cipher", residing in Nerul/Vashi.
+   (ii) Anonymous extortion coordinator calling from +91-98201-44912.
+   (iii) Destination Ethereum/Polygon wallet: 0x7F41A92B6E324881A4513B902CFD88902A1EC48B.
+
+6. Narrative / Details:
+   On 01/03/2026 at 19:30 hrs, four high-value container consignment customs clearance passes handled by our agency were maliciously revoked after our cloud credentials were leaked via spear-phishing.
+   Shortly thereafter, our dispatch desk received urgent WhatsApp audio calls from mobile +91-98201-44912 demanding a 50,000 USDT (Tether) ransom payment to release the clearance digital token. The caller directed us to send USDT to ERC-20 address 0x7F41A92B6E324881A4513B902CFD88902A1EC48B, managed by operative Priya Nair ("Cipher").
+   Our internal security team noted that the communication echoed previous attacks reported in Thane bullion markets and BKC banking networks.
+   We urgently request cyber forensic analysis, blockchain wallet freeze notice to cryptocurrency exchanges, and apprehension of Priya Nair and callers operating phone +91-98201-44912.
+
+7. Investigating Officer:
+   ACP Sunita Sawant / PI Rajesh Kadam, Vashi Police Station

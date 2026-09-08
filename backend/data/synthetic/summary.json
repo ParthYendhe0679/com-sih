@@ -1,0 +1,21 @@
+{
+  "generated_at": "2026-09-08T11:03:52.843019Z",
+  "demo_seed": 42,
+  "record_counts": {
+    "dataset_1_cases": 1000,
+    "dataset_2_persons": 1000,
+    "dataset_3_objects": 1000,
+    "dataset_4_relationships": 1000,
+    "dataset_5_geo_events": 1000,
+    "total_records": 5000
+  },
+  "provenance": {
+    "is_synthetic": true,
+    "data_source": "KRITAGAS_DEMO",
+    "jurisdictions": [
+      "Mumbai",
+      "Thane",
+      "Navi Mumbai"
+    ]
+  }
+}

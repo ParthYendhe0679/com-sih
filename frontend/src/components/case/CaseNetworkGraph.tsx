@@ -119,10 +119,10 @@ export default function CaseNetworkGraph({
     let isMounted = true;
 
     async function initGraph() {
-      if (!containerRef.current) return;
+      if (!containerRef.current || caseNodes.length === 0) return;
       try {
         const cytoscapeLib = (await import('cytoscape')).default;
-        if (!isMounted) return;
+        if (!isMounted || !containerRef.current || caseNodes.length === 0) return;
 
         // Safeguard edges: only include edges where BOTH source and target exist in caseNodes
         const nodeIds = new Set(caseNodes.map((n) => n.id));
@@ -154,6 +154,8 @@ export default function CaseNetworkGraph({
             },
           })),
         ];
+
+        if (!isMounted || !containerRef.current) return;
 
         cyInstance = cytoscapeLib({
           container: containerRef.current,
@@ -359,6 +361,11 @@ export default function CaseNetworkGraph({
             cyInstance.center(initEle);
           }
         }
+        if (!isMounted) {
+          cyInstance.destroy();
+          return;
+        }
+        cyRef.current = cyInstance;
       } catch (err) {
         console.error('Failed to init Cytoscape:', err);
       }
@@ -572,7 +579,7 @@ export default function CaseNetworkGraph({
             <Loader2 size={32} className="animate-spin text-[var(--accent)] mb-2" />
             <p className="text-[13px]">Retrieving case relationship network...</p>
           </div>
-        ) : networkData && networkData.nodes.length === 0 ? (
+        ) : (networkData && networkData.nodes.length === 0) || caseNodes.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[var(--ink-tertiary)]">
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-[var(--accent)] mb-3 bg-[var(--surface-2)]">
               <NetworkIcon size={28} />

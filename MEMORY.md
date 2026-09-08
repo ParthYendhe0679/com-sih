@@ -68,3 +68,8 @@ This document serves as the persistent context ledger and architectural memory f
 - **Gotcha**: When dummy data is purged and the case database is empty (`[]`), dereferencing active case metadata (`currentCase.id`, `currentCase.title`) in intelligence dashboards causes runtime `TypeError: Cannot read properties of undefined (reading 'id')`.
 - **Fix**: Use optional chaining (`currentCase?.id`) or safe fallback strings (`currentCase?.id || 'FIR Scope'`) in all UI nodes, and guard action dispatchers so navigation only triggers if an active case exists.
 
+### Cytoscape Lifecycle & Zero-Node Race Guard
+- **Gotcha**: When a case has 0 graph nodes, the UI unmounts the `<div ref={containerRef} />` container to display the "No Intelligence Network" empty state. If an asynchronous `import('cytoscape')` is pending concurrently, Cytoscape attempts to instantiate with `container: null`, throwing `Cannot read properties of null (reading 'className')`.
+- **Fix**: Check `if (!containerRef.current || caseNodes.length === 0) return;` before and after all async imports, and immediately before invoking `cytoscapeLib(...)`.
+
+

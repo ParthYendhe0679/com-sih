@@ -259,7 +259,7 @@ export default function CaseSearcherPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search across all intelligence entities (e.g., CASE-102, Aarav Mehta, Fortuner, Juhu)..."
+              placeholder="Search across all intelligence entities (e.g. Case Number, Suspect Name, Vehicle Reg, Location)..."
               className="w-full h-11 pl-10 pr-4 rounded-xl border bg-[var(--surface-0)] text-[13px] text-[var(--ink-primary)] outline-none focus:border-[var(--accent)]"
               style={{ borderColor: 'var(--border)' }}
               autoFocus
@@ -287,11 +287,11 @@ export default function CaseSearcherPage() {
         {/* Suggested Quick Searches */}
         <div className="flex flex-wrap items-center gap-2 text-[12px] pt-1">
           <span style={{ color: 'var(--ink-tertiary)' }}>Suggested Queries:</span>
-          {['CASE-102', 'PERSON-014', 'Nexus Trading', 'MH-02-CD-4411', 'Juhu Tara Road', 'FIR-2026-0102'].map((tag) => (
+          {['Cybercrime', 'Financial Fraud', 'Narcotics', 'Robbery', 'Forgery'].map((tag) => (
             <button
               key={tag}
               onClick={() => setSearchQuery(tag)}
-              className="px-2.5 py-1 rounded-md text-[11px] font-mono-id border hover:bg-[var(--surface-2)] transition-colors"
+              className="px-2.5 py-1 rounded-md text-[11px] font-mono-id border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
               style={{ borderColor: 'var(--border)', color: 'var(--accent)' }}
             >
               {tag}

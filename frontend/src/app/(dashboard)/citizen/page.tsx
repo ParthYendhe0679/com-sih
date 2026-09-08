@@ -56,12 +56,12 @@ function CitizenContent() {
   const [submitting, setSubmitting] = useState(false);
 
   // Form states
-  const [complainantName, setComplainantName] = useState('Rahul Verma');
-  const [phone, setPhone] = useState('+91 98201 55667');
-  const [email, setEmail] = useState('citizen.rahul@gmail.com');
+  const [complainantName, setComplainantName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [crimeType, setCrimeType] = useState<CrimeType>('Fraud');
-  const [description, setDescription] = useState('Unauthorized debit from banking account through spoofed SMS OTP communication.');
-  const [location, setLocation] = useState('Bandra West, Mumbai');
+  const [description, setDescription] = useState('');
+  const [location, setLocation] = useState('');
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
   const fetchComplaints = async () => {
@@ -268,13 +268,13 @@ function CitizenContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>Complainant Name</label>
-                  <input type="text" value={complainantName} onChange={(e) => setComplainantName(e.target.value)}
+                  <input type="text" value={complainantName} onChange={(e) => setComplainantName(e.target.value)} placeholder="e.g. Rahul Verma"
                     className="w-full h-11 px-4 rounded-xl border text-[14px] bg-[var(--surface-0)] outline-none focus:border-[#16A34A] transition-colors"
                     style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }} />
                 </div>
                 <div>
                   <label className="block text-[12px] font-semibold mb-1.5 uppercase tracking-wide" style={{ color: 'var(--ink-tertiary)' }}>Contact Phone</label>
-                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                  <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="e.g. +91 98201 55667"
                     className="w-full h-11 px-4 rounded-xl border text-[14px] bg-[var(--surface-0)] outline-none focus:border-[#16A34A] transition-colors"
                     style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }} />
                 </div>

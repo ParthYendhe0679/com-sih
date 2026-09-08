@@ -13,12 +13,17 @@ export default function HistoricalIntelligencePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const [query, setQuery] = useState('CASE-102');
+  const [query, setQuery] = useState('');
   const [results, setResults] = useState<HistoricalCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState<HistoricalCase | null>(null);
 
   const handleSearch = useCallback(async (q: string) => {
+    if (!q || !q.trim()) {
+      setResults([]);
+      setSelectedCase(null);
+      return;
+    }
     setLoading(true);
     try {
       // 1. Check if q matches a real case in the database
@@ -62,16 +67,12 @@ export default function HistoricalIntelligencePage() {
     });
   }, []);
 
-  useEffect(() => {
-    handleSearch('CASE-102');
-  }, [handleSearch]);
-
   const quickQueries = [
-    'CASE-102 (Flagship)',
-    'PERSON-014 (Aarav Mehta)',
-    'Nexus Trading Corp',
-    'VEHICLE-044',
+    'Financial Fraud',
+    'Cybercrime',
     'Money Laundering',
+    'Robbery',
+    'Identity Theft',
   ];
 
   return (
@@ -132,10 +133,10 @@ export default function HistoricalIntelligencePage() {
             <button
               key={tag}
               onClick={() => {
-                setQuery(tag.split(' ')[0]);
-                handleSearch(tag.split(' ')[0]);
+                setQuery(tag);
+                handleSearch(tag);
               }}
-              className="px-2.5 py-1 rounded-md text-[11px] font-medium border hover:bg-[var(--surface-2)] transition-colors"
+              className="px-2.5 py-1 rounded-md text-[11px] font-medium border hover:bg-[var(--surface-2)] transition-colors cursor-pointer"
               style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
             >
               {tag}
@@ -180,7 +181,9 @@ export default function HistoricalIntelligencePage() {
             </div>
           ) : results.length === 0 ? (
             <div className="p-12 text-center border rounded-xl" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-              <p className="text-[13px] text-[var(--ink-tertiary)]">No historical cases matched query &quot;{query}&quot;</p>
+              <p className="text-[13px] text-[var(--ink-tertiary)]">
+                {query ? `No historical cases matched query "${query}"` : 'Enter a case reference or select a category above to find historical pattern matches.'}
+              </p>
             </div>
           ) : (
             results.map((hc) => {
@@ -270,7 +273,9 @@ export default function HistoricalIntelligencePage() {
                 </div>
                 <div className="flex justify-between">
                   <span style={{ color: 'var(--ink-secondary)' }}>Relationship Confidence:</span>
-                  <span className="font-mono-id font-semibold text-[var(--success)]">Confirmed Link (CASE-102)</span>
+                  <span className="font-mono-id font-semibold text-[var(--success)]">
+                    {selectedCase.relatedCaseId ? `Confirmed Link (${selectedCase.relatedCaseId})` : 'Statistical Pattern Match'}
+                  </span>
                 </div>
               </div>
 
@@ -327,15 +332,21 @@ export default function HistoricalIntelligencePage() {
                   Inspect in Right Drawer
                 </button>
                 <button
-                  onClick={() => router.push(`/cases/${selectedCase?.relatedCaseId || selectedCase?.id || 'CASE-102'}?tab=historical`)}
-                  className="w-full py-2 rounded-lg text-[13px] font-medium text-white shadow-sm hover:opacity-90"
+                  onClick={() => router.push(selectedCase.relatedCaseId ? `/cases/${selectedCase.relatedCaseId}?tab=historical` : '/cases')}
+                  className="w-full py-2 rounded-lg text-[13px] font-medium text-white shadow-sm hover:opacity-90 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
-                  Correlate with Active Case ({selectedCase?.relatedCaseId || selectedCase?.id})
+                  {selectedCase.relatedCaseId ? `Correlate with Active Case (${selectedCase.relatedCaseId})` : 'View in Case Database'}
                 </button>
               </div>
             </div>
-          ) : null}
+          ) : (
+            <div className="p-8 rounded-xl border text-center" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+              <p className="text-[13px] text-[var(--ink-tertiary)]">
+                Select a match from the results list to inspect archival case details.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

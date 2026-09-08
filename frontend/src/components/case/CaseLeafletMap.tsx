@@ -54,295 +54,9 @@ export interface CaseMapRoute {
   legs: RouteLeg[];
 }
 
-export const caseLocationsData: CaseMapMarker[] = [
-  {
-    id: 'LOC-INCIDENT',
-    name: 'Andheri West Incident Base',
-    category: 'incident',
-    coordinates: [19.1364, 72.8296],
-    address: 'SV Road, Near Andheri Station West',
-    city: 'Mumbai',
-    relatedEntityName: 'Karan Verma / Nexus Trading',
-    relatedEntityId: 'PERSON-019',
-    eventsCount: 8,
-    description: 'Primary incident locus recorded in FIR-2026-0102. Hub of fraudulent shell property dealings.',
-    stepNumber: 1,
-  },
-  {
-    id: 'LOC-087',
-    name: 'Nexus Trading Corp Headquarters',
-    category: 'business',
-    coordinates: [19.1075, 72.8263],
-    address: '22 Juhu Tara Road, Juhu',
-    city: 'Mumbai',
-    relatedEntityName: 'Karan Verma (MD)',
-    relatedEntityId: 'PERSON-019',
-    eventsCount: 14,
-    description: 'Registered corporate address for primary shell company. Multiple transactions routed here.',
-    stepNumber: 2,
-  },
-  {
-    id: 'LOC-088',
-    name: 'Carter Road Residence',
-    category: 'person',
-    coordinates: [19.0626, 72.8259],
-    address: '66 Carter Road, Bandra West',
-    city: 'Mumbai',
-    relatedEntityName: 'Rahul Thakur / Vikram Sharma',
-    relatedEntityId: 'PERSON-016',
-    eventsCount: 6,
-    description: 'Key associate operational base. Frequent nocturnal communications observed.',
-    stepNumber: 3,
-  },
-  {
-    id: 'LOC-CARTER',
-    name: 'Bandra Bandstand Meeting Point',
-    category: 'person',
-    coordinates: [19.0435, 72.8194],
-    address: 'BJ Road, Bandstand Promenade',
-    city: 'Mumbai',
-    relatedEntityName: 'Karan Verma & Rahul Thakur',
-    relatedEntityId: 'PERSON-019',
-    eventsCount: 2,
-    description: 'Physical rendezvous point identified from cell-tower CDR triangulation.',
-    stepNumber: 4,
-  },
-  {
-    id: 'LOC-089',
-    name: 'Versova Business Centre',
-    category: 'business',
-    coordinates: [19.1332, 72.8120],
-    address: 'Plot 12, JP Road, Versova',
-    city: 'Mumbai',
-    relatedEntityName: 'Nisha Kapoor',
-    relatedEntityId: 'PERSON-015',
-    eventsCount: 5,
-    description: 'Real estate advisory office linked to illegal asset liquidation transfers.',
-    stepNumber: 5,
-  },
-  {
-    id: 'LOC-TOLL',
-    name: 'Khalapur Toll Plaza Surveillance',
-    category: 'evidence',
-    coordinates: [18.8315, 73.2842],
-    address: 'Mumbai-Pune Expressway Km 38',
-    city: 'Maharashtra',
-    relatedEntityName: 'Vehicle MH-01-AB-1234',
-    relatedEntityId: 'VEHICLE-044',
-    eventsCount: 3,
-    description: 'ANPR camera evidence recorded suspect vehicle movement contradicting alibi statement.',
-    stepNumber: 6,
-  },
-  {
-    id: 'LOC-023',
-    name: 'Pune Regional Operations',
-    category: 'business',
-    coordinates: [18.5204, 73.8567],
-    address: '55 FC Road, Deccan Gymkhana',
-    city: 'Pune',
-    relatedEntityName: 'GlobalProp Realty',
-    relatedEntityId: 'ORG-016',
-    eventsCount: 4,
-    description: 'Regional corporate branch used for interstate hawala routing.',
-    stepNumber: 7,
-  },
-];
+export const caseLocationsData: CaseMapMarker[] = [];
 
-export const caseRoutesData: CaseMapRoute[] = [
-  {
-    id: 'ROUTE-SUSPECT',
-    title: 'Suspect Movement & Escape Corridor',
-    badge: 'ANPR & FASTag Verified',
-    color: '#10B981', // Neon Emerald
-    category: 'movement',
-    vehicleOrEntity: 'Mercedes MH-01-AB-1234 (Karan Verma & Rahul Thakur)',
-    totalDistanceKm: 168.4,
-    estimatedTime: '3h 30m',
-    description: 'Chronological escape & transit corridor following the fraudulent transaction. Correlated with CDR cell handoffs and FASTag Lane 4 capture at Khalapur Expressway Toll.',
-    legs: [
-      {
-        id: 'LEG-1',
-        fromId: 'LOC-INCIDENT',
-        fromName: 'Andheri West Incident Base',
-        toId: 'LOC-087',
-        toName: 'Nexus Trading Corp HQ (Juhu)',
-        fromCoords: [19.1364, 72.8296],
-        toCoords: [19.1075, 72.8263],
-        distanceKm: 3.4,
-        estMinutes: 18,
-        timestamp: '2026-08-14 21:15 IST',
-        evidenceBasis: 'CCTV Juhu Circle & CDR tower handoff',
-        details: 'Suspect departed incident base in vehicle MH-01-AB-1234 with briefcase of shell entity documents.',
-      },
-      {
-        id: 'LEG-2',
-        fromId: 'LOC-087',
-        fromName: 'Nexus Trading Corp HQ',
-        toId: 'LOC-088',
-        toName: 'Carter Road Residence (Bandra)',
-        fromCoords: [19.1075, 72.8263],
-        toCoords: [19.0626, 72.8259],
-        distanceKm: 5.8,
-        estMinutes: 25,
-        timestamp: '2026-08-14 22:30 IST',
-        evidenceBasis: 'Mobile GPS tower triangulation (+91 98765 43210)',
-        details: 'Stop at Rahul Thakur residence; encrypted VoIP call logged with offshore destination.',
-      },
-      {
-        id: 'LEG-3',
-        fromId: 'LOC-088',
-        fromName: 'Carter Road Residence',
-        toId: 'LOC-CARTER',
-        toName: 'Bandra Bandstand Meeting Point',
-        fromCoords: [19.0626, 72.8259],
-        toCoords: [19.0435, 72.8194],
-        distanceKm: 2.3,
-        estMinutes: 10,
-        timestamp: '2026-08-15 00:45 IST',
-        evidenceBasis: 'Promenade physical surveillance sighting',
-        details: 'Quick physical exchange between Karan Verma and Nisha Kapoor; burner SIM card swapped.',
-      },
-      {
-        id: 'LEG-4',
-        fromId: 'LOC-CARTER',
-        fromName: 'Bandra Bandstand Meeting Point',
-        toId: 'LOC-TOLL',
-        toName: 'Khalapur Toll Plaza (Expressway)',
-        fromCoords: [19.0435, 72.8194],
-        toCoords: [18.8315, 73.2842],
-        distanceKm: 74.6,
-        estMinutes: 75,
-        timestamp: '2026-08-15 02:18 IST',
-        evidenceBasis: 'FASTag Lane 04 Hit + ANPR Camera High-Res Frame',
-        details: 'Black Mercedes MH-01-AB-1234 captured passing southbound at 104 km/h.',
-      },
-      {
-        id: 'LEG-5',
-        fromId: 'LOC-TOLL',
-        fromName: 'Khalapur Toll Plaza',
-        toId: 'LOC-023',
-        toName: 'Pune Regional Operations',
-        fromCoords: [18.8315, 73.2842],
-        toCoords: [18.5204, 73.8567],
-        distanceKm: 82.3,
-        estMinutes: 82,
-        timestamp: '2026-08-15 04:10 IST',
-        evidenceBasis: 'FC Road Branch Basement CCTV log',
-        details: 'Suspect vehicle entered Deccan Gymkhana safehouse garage; vehicle parked till next morning.',
-      },
-    ],
-  },
-  {
-    id: 'ROUTE-HAWALA',
-    title: 'Hawala Fund Laundering Corridor',
-    badge: 'Financial Audit Verified',
-    color: '#F59E0B', // Amber Gold
-    category: 'financial',
-    vehicleOrEntity: '₹1.26 Crore Layered Funds (Nexus & GlobalProp)',
-    totalDistanceKm: 163.2,
-    estimatedTime: 'Multi-hop Routing',
-    description: 'Physical cash token and hawala remittance corridor identified in audit report EVIDENCE-049 linking Mumbai shell companies to Pune distribution network.',
-    legs: [
-      {
-        id: 'LEG-H1',
-        fromId: 'LOC-089',
-        fromName: 'Versova Business Centre',
-        toId: 'LOC-087',
-        toName: 'Nexus Trading Corp HQ (Juhu)',
-        fromCoords: [19.1332, 72.8120],
-        toCoords: [19.1075, 72.8263],
-        distanceKm: 3.8,
-        estMinutes: 20,
-        timestamp: '2026-08-13 16:30 IST',
-        evidenceBasis: 'Ledger seizure EVIDENCE-046',
-        details: 'Initial consignment of cash vouchers transferred by courier.',
-      },
-      {
-        id: 'LEG-H2',
-        fromId: 'LOC-087',
-        fromName: 'Nexus Trading Corp HQ',
-        toId: 'LOC-INCIDENT',
-        toName: 'Andheri West Incident Base',
-        fromCoords: [19.1075, 72.8263],
-        toCoords: [19.1364, 72.8296],
-        distanceKm: 3.4,
-        estMinutes: 15,
-        timestamp: '2026-08-14 11:00 IST',
-        evidenceBasis: 'Bank deposit receipts',
-        details: 'Token validation for fraudulent sale deed execution.',
-      },
-      {
-        id: 'LEG-H3',
-        fromId: 'LOC-INCIDENT',
-        fromName: 'Andheri West Incident Base',
-        toId: 'LOC-023',
-        toName: 'Pune Regional Operations',
-        fromCoords: [19.1364, 72.8296],
-        toCoords: [18.5204, 73.8567],
-        distanceKm: 156.0,
-        estMinutes: 190,
-        timestamp: '2026-08-14 19:45 IST',
-        evidenceBasis: 'Hawala operator confession & phone logs',
-        details: 'Interstate Hawala remittance wire equivalent of ₹1.26 Cr.',
-      },
-    ],
-  },
-  {
-    id: 'ROUTE-LIAISON',
-    title: 'Syndicate Operational Meeting Circuit',
-    badge: 'Surveillance Triangulated',
-    color: '#8B5CF6', // Purple
-    category: 'liaison',
-    vehicleOrEntity: 'Karan Verma, Rahul Thakur & Nisha Kapoor',
-    totalDistanceKm: 16.8,
-    estimatedTime: '1h 15m Loop',
-    description: 'Pre-crime liaison circuit across Mumbai suburban coastal corridor for planning deed execution.',
-    legs: [
-      {
-        id: 'LEG-L1',
-        fromId: 'LOC-088',
-        fromName: 'Carter Road Residence',
-        toId: 'LOC-CARTER',
-        toName: 'Bandra Bandstand Meeting Point',
-        fromCoords: [19.0626, 72.8259],
-        toCoords: [19.0435, 72.8194],
-        distanceKm: 2.3,
-        estMinutes: 8,
-        timestamp: '2026-08-12 23:00 IST',
-        evidenceBasis: 'CDR proximity alert',
-        details: 'Coordination meeting between Rahul Thakur and Karan Verma.',
-      },
-      {
-        id: 'LEG-L2',
-        fromId: 'LOC-CARTER',
-        fromName: 'Bandra Bandstand Meeting Point',
-        toId: 'LOC-089',
-        toName: 'Versova Business Centre',
-        fromCoords: [19.0435, 72.8194],
-        toCoords: [19.1332, 72.8120],
-        distanceKm: 12.4,
-        estMinutes: 45,
-        timestamp: '2026-08-13 14:00 IST',
-        evidenceBasis: 'Office visitor logbook & CCTV',
-        details: 'Consultation with Nisha Kapoor on asset liquidation timing.',
-      },
-      {
-        id: 'LEG-L3',
-        fromId: 'LOC-089',
-        fromName: 'Versova Business Centre',
-        toId: 'LOC-INCIDENT',
-        toName: 'Andheri West Incident Base',
-        fromCoords: [19.1332, 72.8120],
-        toCoords: [19.1364, 72.8296],
-        distanceKm: 2.1,
-        estMinutes: 12,
-        timestamp: '2026-08-14 09:30 IST',
-        evidenceBasis: 'Physical observation',
-        details: 'Arrival at incident base prior to complainant meeting.',
-      },
-    ],
-  },
-];
+export const caseRoutesData: CaseMapRoute[] = [];
 
 const categoryColors: Record<string, { color: string; label: string; bg: string }> = {
   incident: { color: '#DC2626', label: 'Crime Incident', bg: 'rgba(220,38,38,0.15)' },
@@ -371,10 +85,10 @@ export default function CaseLeafletMap({
 
   const [searchQuery, setSearchQuery] = useState('');
   const [connectPoints, setConnectPoints] = useState(true);
-  const [selectedRouteId, setSelectedRouteId] = useState<string>('ROUTE-SUSPECT');
-  const [selectedLeg, setSelectedLeg] = useState<RouteLeg | null>(caseRoutesData[0].legs[0]);
-  const [selectedLocation, setSelectedLocation] = useState<CaseMapMarker | null>(caseLocationsData[0]);
-  const [inspectorMode, setInspectorMode] = useState<'route' | 'point'>('route');
+  const [selectedRouteId, setSelectedRouteId] = useState<string>('');
+  const [selectedLeg, setSelectedLeg] = useState<RouteLeg | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<CaseMapMarker | null>(null);
+  const [inspectorMode, setInspectorMode] = useState<'route' | 'point'>('point');
   const [isPlayingReplay, setIsPlayingReplay] = useState(false);
 
   const [activeLayers, setActiveLayers] = useState<Record<string, boolean>>({
@@ -386,7 +100,7 @@ export default function CaseLeafletMap({
   });
 
   const activeRoute = useMemo(() => {
-    return caseRoutesData.find((r) => r.id === selectedRouteId) || caseRoutesData[0];
+    return caseRoutesData.find((r) => r.id === selectedRouteId) || caseRoutesData[0] || null;
   }, [selectedRouteId]);
 
   // Filter markers based on search and active layers
@@ -667,7 +381,7 @@ export default function CaseLeafletMap({
 
   // Simulate trajectory replay animation
   const handleReplayTrajectory = () => {
-    if (!mapInstanceRef.current || !activeRoute) return;
+    if (!mapInstanceRef.current || !activeRoute || !activeRoute.legs?.length) return;
     setIsPlayingReplay(true);
     toast.info(`Simulating chronological trajectory: ${activeRoute.title}`);
 
@@ -826,12 +540,14 @@ export default function CaseLeafletMap({
         </div>
 
         {/* Selected Route Pill */}
-        <div className="flex items-center gap-2 font-mono-id text-[11px]">
-          <span className="text-[var(--ink-tertiary)]">Active Route:</span>
-          <span className="font-bold px-2 py-0.5 rounded" style={{ background: `${activeRoute.color}20`, color: activeRoute.color }}>
-            {activeRoute.title} • {activeRoute.totalDistanceKm} km
-          </span>
-        </div>
+        {activeRoute && (
+          <div className="flex items-center gap-2 font-mono-id text-[11px]">
+            <span className="text-[var(--ink-tertiary)]">Active Route:</span>
+            <span className="font-bold px-2 py-0.5 rounded" style={{ background: `${activeRoute.color}20`, color: activeRoute.color }}>
+              {activeRoute.title} • {activeRoute.totalDistanceKm} km
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Main Map Area + Detail Sidebar Split */}
@@ -869,203 +585,219 @@ export default function CaseLeafletMap({
             </div>
 
             {/* ── MODE 1: ROUTE & TRAJECTORY DETAILS ──────────────── */}
-            {inspectorMode === 'route' && activeRoute && (
-              <div className="space-y-3.5">
-                {/* Route Header Card */}
-                <div className="p-3.5 rounded-2xl border"
-                  style={{ background: `${activeRoute.color}10`, borderColor: `${activeRoute.color}40` }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md"
-                      style={{ background: `${activeRoute.color}25`, color: activeRoute.color }}>
-                      {activeRoute.badge}
-                    </span>
-                    <span className="text-[11.5px] font-mono-id font-bold" style={{ color: activeRoute.color }}>
-                      {activeRoute.totalDistanceKm} km • {activeRoute.estimatedTime}
-                    </span>
-                  </div>
-                  <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
-                    {activeRoute.title}
-                  </h3>
-                  <div className="text-[12px] font-medium mt-1" style={{ color: activeRoute.color }}>
-                    {activeRoute.vehicleOrEntity}
-                  </div>
-                  <p className="text-[11.5px] text-[var(--ink-secondary)] mt-2 leading-relaxed">
-                    {activeRoute.description}
-                  </p>
-                </div>
-
-                {/* Route Legs & Connected Waypoints Sequence */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
-                      Connected Sequence Legs ({activeRoute.legs.length} Waypoints)
-                    </span>
-                    <span className="text-[11px] text-[var(--ink-secondary)]">
-                      Click leg to jump
-                    </span>
+            {inspectorMode === 'route' && (
+              activeRoute ? (
+                <div className="space-y-3.5">
+                  {/* Route Header Card */}
+                  <div className="p-3.5 rounded-2xl border"
+                    style={{ background: `${activeRoute.color}10`, borderColor: `${activeRoute.color}40` }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md"
+                        style={{ background: `${activeRoute.color}25`, color: activeRoute.color }}>
+                        {activeRoute.badge}
+                      </span>
+                      <span className="text-[11.5px] font-mono-id font-bold" style={{ color: activeRoute.color }}>
+                        {activeRoute.totalDistanceKm} km • {activeRoute.estimatedTime}
+                      </span>
+                    </div>
+                    <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                      {activeRoute.title}
+                    </h3>
+                    <div className="text-[12px] font-medium mt-1" style={{ color: activeRoute.color }}>
+                      {activeRoute.vehicleOrEntity}
+                    </div>
+                    <p className="text-[11.5px] text-[var(--ink-secondary)] mt-2 leading-relaxed">
+                      {activeRoute.description}
+                    </p>
                   </div>
 
-                  <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                    {activeRoute.legs.map((leg, idx) => {
-                      const isSelected = selectedLeg?.id === leg.id;
-                      return (
-                        <div
-                          key={leg.id}
-                          onClick={() => handleFocusLeg(leg)}
-                          className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
-                            isSelected
-                              ? 'bg-[var(--surface-2)] border-[var(--accent)] shadow-md'
-                              : 'hover:bg-[var(--surface-2)]'
-                          }`}
-                          style={{ borderColor: isSelected ? 'var(--accent)' : 'var(--border)' }}
-                        >
-                          {/* Leg Header */}
-                          <div className="flex items-center justify-between text-[11.5px] mb-1.5">
-                            <div className="flex items-center gap-1.5 font-bold">
-                              <span className="w-4 h-4 rounded-full bg-[var(--accent)] text-white text-[10px] flex items-center justify-center">
-                                {idx + 1}
+                  {/* Route Legs & Connected Waypoints Sequence */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
+                        Connected Sequence Legs ({activeRoute.legs.length} Waypoints)
+                      </span>
+                      <span className="text-[11px] text-[var(--ink-secondary)]">
+                        Click leg to jump
+                      </span>
+                    </div>
+
+                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                      {activeRoute.legs.map((leg, idx) => {
+                        const isSelected = selectedLeg?.id === leg.id;
+                        return (
+                          <div
+                            key={leg.id}
+                            onClick={() => handleFocusLeg(leg)}
+                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all ${
+                              isSelected
+                                ? 'bg-[var(--surface-2)] border-[var(--accent)] shadow-md'
+                                : 'hover:bg-[var(--surface-2)]'
+                            }`}
+                            style={{ borderColor: isSelected ? 'var(--accent)' : 'var(--border)' }}
+                          >
+                            {/* Leg Header */}
+                            <div className="flex items-center justify-between text-[11.5px] mb-1.5">
+                              <div className="flex items-center gap-1.5 font-bold">
+                                <span className="w-4 h-4 rounded-full bg-[var(--accent)] text-white text-[10px] flex items-center justify-center">
+                                  {idx + 1}
+                                </span>
+                                <span style={{ color: 'var(--ink-primary)' }}>{leg.fromName.split('(')[0]}</span>
+                                <ChevronRight size={12} className="text-[var(--ink-tertiary)]" />
+                                <span style={{ color: 'var(--accent)' }}>{leg.toName.split('(')[0]}</span>
+                              </div>
+                              <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)] font-bold">
+                                {leg.distanceKm} km
                               </span>
-                              <span style={{ color: 'var(--ink-primary)' }}>{leg.fromName.split('(')[0]}</span>
-                              <ChevronRight size={12} className="text-[var(--ink-tertiary)]" />
-                              <span style={{ color: 'var(--accent)' }}>{leg.toName.split('(')[0]}</span>
                             </div>
-                            <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)] font-bold">
-                              {leg.distanceKm} km
-                            </span>
-                          </div>
 
-                          {/* Timestamp & Evidence Tag */}
-                          <div className="flex items-center justify-between text-[10.5px] mb-1 text-[var(--ink-secondary)]">
-                            <span className="flex items-center gap-1 font-mono-id">
-                              <Clock size={11} /> {leg.timestamp}
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded bg-[var(--surface-3)] font-medium text-[var(--ink-primary)]">
-                              {leg.evidenceBasis.split('+')[0]}
-                            </span>
-                          </div>
+                            {/* Timestamp & Evidence Tag */}
+                            <div className="flex items-center justify-between text-[10.5px] mb-1 text-[var(--ink-secondary)]">
+                              <span className="flex items-center gap-1 font-mono-id">
+                                <Clock size={11} /> {leg.timestamp}
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-[var(--surface-3)] font-medium text-[var(--ink-primary)]">
+                                {leg.evidenceBasis.split('+')[0]}
+                              </span>
+                            </div>
 
-                          {/* Detailed Investigative Insight */}
-                          <p className="text-[11px] leading-relaxed text-[var(--ink-secondary)] border-t pt-1.5 mt-1.5"
-                            style={{ borderColor: 'var(--border)' }}>
-                            {leg.details}
-                          </p>
-                        </div>
-                      );
-                    })}
+                            {/* Detailed Investigative Insight */}
+                            <p className="text-[11px] leading-relaxed text-[var(--ink-secondary)] border-t pt-1.5 mt-1.5"
+                              style={{ borderColor: 'var(--border)' }}>
+                              {leg.details}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <RouteIcon size={32} className="mx-auto text-[var(--ink-tertiary)] opacity-40 mb-2" />
+                  <h4 className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>No Route Corridors</h4>
+                  <p className="text-[12px] text-[var(--ink-secondary)]">No physical vehicle transit or suspect movement corridors logged for this case.</p>
+                </div>
+              )
             )}
 
             {/* ── MODE 2: POINT & LANDMARK DETAILS ──────────────── */}
-            {inspectorMode === 'point' && selectedLocation && (
-              <div className="space-y-3.5">
-                {/* Header */}
-                <div className="border-b pb-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span
-                      className="text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md inline-block"
-                      style={{
-                        background: categoryColors[selectedLocation.category]?.bg,
-                        color: categoryColors[selectedLocation.category]?.color,
-                      }}
-                    >
-                      {categoryColors[selectedLocation.category]?.label}
-                    </span>
-                    <span className="text-[11px] font-mono-id font-bold px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--accent)]">
-                      WAYPOINT {selectedLocation.stepNumber}
-                    </span>
-                  </div>
-                  <h3 className="text-[17px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-                    {selectedLocation.name}
-                  </h3>
-                  <p className="text-[12.5px] text-[var(--ink-secondary)] mt-0.5">
-                    {selectedLocation.address}, {selectedLocation.city}
-                  </p>
-                </div>
-
-                {/* Related Entity */}
-                <div className="p-3 rounded-xl border space-y-1.5"
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-                  <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
-                    Associated Investigation Entity
-                  </span>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>
-                      {selectedLocation.relatedEntityName}
-                    </span>
-                    {selectedLocation.relatedEntityId && (
-                      <span className="font-mono-id text-[11px] px-2 py-0.5 rounded bg-[var(--surface-3)]" style={{ color: 'var(--accent)' }}>
-                        {selectedLocation.relatedEntityId}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Coordinates & Events */}
-                <div className="grid grid-cols-2 gap-2 text-[12px]">
-                  <div className="p-2.5 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-                    <span className="text-[10px] text-[var(--ink-tertiary)] block">Coordinates</span>
-                    <span className="font-mono-id font-bold text-[11px]" style={{ color: 'var(--ink-primary)' }}>
-                      {selectedLocation.coordinates[0].toFixed(4)}, {selectedLocation.coordinates[1].toFixed(4)}
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-                    <span className="text-[10px] text-[var(--ink-tertiary)] block">Case Incidents</span>
-                    <span className="font-mono-id font-bold text-[12px]" style={{ color: 'var(--accent)' }}>
-                      {selectedLocation.eventsCount} records
-                    </span>
-                  </div>
-                </div>
-
-                {/* Description */}
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--ink-tertiary)' }}>
-                    Investigative Significance
-                  </span>
-                  <p className="text-[12px] leading-relaxed p-2.5 rounded-xl border"
-                    style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
-                    {selectedLocation.description}
-                  </p>
-                </div>
-
-                {/* Quick Jump List of Case Locations */}
-                <div>
-                  <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ink-tertiary)' }}>
-                    All Case Landmarks ({filteredMarkers.length})
-                  </span>
-                  <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
-                    {filteredMarkers.map((loc) => (
-                      <button
-                        key={loc.id}
-                        onClick={() => handleFocusLocation(loc)}
-                        className={`w-full flex items-center justify-between p-2 rounded-lg border text-left text-[11.5px] transition-colors ${
-                          selectedLocation.id === loc.id ? 'bg-[var(--surface-2)] border-[var(--accent)] font-semibold' : 'hover:bg-[var(--surface-2)]'
-                        }`}
-                        style={{ borderColor: selectedLocation.id === loc.id ? 'var(--accent)' : 'var(--border)' }}
+            {inspectorMode === 'point' && (
+              selectedLocation ? (
+                <div className="space-y-3.5">
+                  {/* Header */}
+                  <div className="border-b pb-3" style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span
+                        className="text-[10.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md inline-block"
+                        style={{
+                          background: categoryColors[selectedLocation.category]?.bg,
+                          color: categoryColors[selectedLocation.category]?.color,
+                        }}
                       >
-                        <div className="flex items-center gap-1.5 truncate">
-                          <span className="w-4 h-4 rounded-full bg-[var(--surface-3)] font-mono-id text-[10px] flex items-center justify-center">
-                            {loc.stepNumber}
-                          </span>
-                          <span className="truncate" style={{ color: 'var(--ink-primary)' }}>{loc.name}</span>
-                        </div>
-                        <span className="text-[10px] font-mono-id shrink-0" style={{ color: 'var(--ink-tertiary)' }}>
-                          {loc.city}
+                        {categoryColors[selectedLocation.category]?.label}
+                      </span>
+                      <span className="text-[11px] font-mono-id font-bold px-2 py-0.5 rounded bg-[var(--surface-3)] text-[var(--accent)]">
+                        WAYPOINT {selectedLocation.stepNumber}
+                      </span>
+                    </div>
+                    <h3 className="text-[17px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                      {selectedLocation.name}
+                    </h3>
+                    <p className="text-[12.5px] text-[var(--ink-secondary)] mt-0.5">
+                      {selectedLocation.address}, {selectedLocation.city}
+                    </p>
+                  </div>
+
+                  {/* Related Entity */}
+                  <div className="p-3 rounded-xl border space-y-1.5"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
+                      Associated Investigation Entity
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>
+                        {selectedLocation.relatedEntityName || 'Unassigned'}
+                      </span>
+                      {selectedLocation.relatedEntityId && (
+                        <span className="font-mono-id text-[11px] px-2 py-0.5 rounded bg-[var(--surface-3)]" style={{ color: 'var(--accent)' }}>
+                          {selectedLocation.relatedEntityId}
                         </span>
-                      </button>
-                    ))}
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Coordinates & Events */}
+                  <div className="grid grid-cols-2 gap-2 text-[12px]">
+                    <div className="p-2.5 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
+                      <span className="text-[10px] text-[var(--ink-tertiary)] block">Coordinates</span>
+                      <span className="font-mono-id font-bold text-[11px]" style={{ color: 'var(--ink-primary)' }}>
+                        {selectedLocation.coordinates[0].toFixed(4)}, {selectedLocation.coordinates[1].toFixed(4)}
+                      </span>
+                    </div>
+                    <div className="p-2.5 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
+                      <span className="text-[10px] text-[var(--ink-tertiary)] block">Case Incidents</span>
+                      <span className="font-mono-id font-bold text-[12px]" style={{ color: 'var(--accent)' }}>
+                        {selectedLocation.eventsCount} records
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1" style={{ color: 'var(--ink-tertiary)' }}>
+                      Investigative Significance
+                    </span>
+                    <p className="text-[12px] leading-relaxed p-2.5 rounded-xl border"
+                      style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
+                      {selectedLocation.description}
+                    </p>
+                  </div>
+
+                  {/* Quick Jump List of Case Locations */}
+                  <div>
+                    <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ink-tertiary)' }}>
+                      All Case Landmarks ({filteredMarkers.length})
+                    </span>
+                    <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
+                      {filteredMarkers.map((loc) => (
+                        <button
+                          key={loc.id}
+                          onClick={() => handleFocusLocation(loc)}
+                          className={`w-full flex items-center justify-between p-2 rounded-lg border text-left text-[11.5px] transition-colors ${
+                            selectedLocation.id === loc.id ? 'bg-[var(--surface-2)] border-[var(--accent)] font-semibold' : 'hover:bg-[var(--surface-2)]'
+                          }`}
+                          style={{ borderColor: selectedLocation.id === loc.id ? 'var(--accent)' : 'var(--border)' }}
+                        >
+                          <div className="flex items-center gap-1.5 truncate">
+                            <span className="w-4 h-4 rounded-full bg-[var(--surface-3)] font-mono-id text-[10px] flex items-center justify-center">
+                              {loc.stepNumber}
+                            </span>
+                            <span className="truncate" style={{ color: 'var(--ink-primary)' }}>{loc.name}</span>
+                          </div>
+                          <span className="text-[10px] font-mono-id shrink-0" style={{ color: 'var(--ink-tertiary)' }}>
+                            {loc.city}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-8 text-center space-y-2">
+                  <MapPin size={32} className="mx-auto text-[var(--ink-tertiary)] opacity-40 mb-2" />
+                  <h4 className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>No Waypoints Selected</h4>
+                  <p className="text-[12px] text-[var(--ink-secondary)]">Select a map marker or ingest location-tagged evidence to view coordinate telemetry.</p>
+                </div>
+              )
             )}
           </div>
 
           {/* Bottom Actions */}
           <div className="pt-3 border-t space-y-2 mt-4" style={{ borderColor: 'var(--border)' }}>
-            {onViewInNetwork && (
+            {onViewInNetwork && selectedLocation?.relatedEntityId && (
               <button
-                onClick={() => onViewInNetwork(selectedLocation?.relatedEntityId || 'PERSON-019')}
+                onClick={() => onViewInNetwork(selectedLocation.relatedEntityId!)}
                 className="w-full py-2.5 rounded-xl text-[12.5px] font-semibold flex items-center justify-center gap-1.5 transition-all border hover:bg-[var(--surface-2)]"
                 style={{ borderColor: 'var(--accent)', color: 'var(--accent)' }}
               >

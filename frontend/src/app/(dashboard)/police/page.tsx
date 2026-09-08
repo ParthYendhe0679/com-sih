@@ -20,8 +20,8 @@ export default function PolicePortalPage() {
   // Real FIR upload state
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [firTitle, setFirTitle] = useState('Offline FIR Ingestion');
-  const [station, setStation] = useState('Andheri East Police Station');
+  const [firTitle, setFirTitle] = useState('');
+  const [station, setStation] = useState('');
   const [crimeCategory, setCrimeCategory] = useState('Cybercrime');
   const [uploadResult, setUploadResult] = useState<UploadFirResponse | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -332,6 +332,7 @@ export default function PolicePortalPage() {
                   type="text"
                   value={firTitle}
                   onChange={(e) => setFirTitle(e.target.value)}
+                  placeholder="e.g. Physical FIR Ingestion"
                   className="w-full px-3 py-2 rounded-lg border text-[13px] bg-[var(--surface-0)] font-medium"
                   style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
                 />
@@ -345,6 +346,7 @@ export default function PolicePortalPage() {
                   type="text"
                   value={station}
                   onChange={(e) => setStation(e.target.value)}
+                  placeholder="e.g. Andheri East Police Station"
                   className="w-full px-3 py-2 rounded-lg border text-[13px] bg-[var(--surface-0)] font-medium"
                   style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
                 />

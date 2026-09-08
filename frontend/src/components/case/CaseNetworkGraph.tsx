@@ -75,17 +75,11 @@ export default function CaseNetworkGraph({
           caseIds: (e as any).caseIds || [caseId],
         }));
         setNetworkData({ nodes: mappedNodes, edges: mappedEdges });
-      } else if (caseId === 'CASE-102') {
-        setNetworkData({ nodes: networkNodes, edges: networkEdges });
       } else {
         setNetworkData({ nodes: [], edges: [] });
       }
     } catch {
-      if (caseId === 'CASE-102') {
-        setNetworkData({ nodes: networkNodes, edges: networkEdges });
-      } else {
-        setNetworkData({ nodes: [], edges: [] });
-      }
+      setNetworkData({ nodes: [], edges: [] });
     } finally {
       setLoadingNetwork(false);
     }
@@ -357,7 +351,7 @@ export default function CaseNetworkGraph({
           });
         });
 
-        // Select initial entity if provided (e.g. Karan Verma)
+        // Select initial entity if provided
         if (initialSelectedEntityId) {
           const initEle = cyInstance.getElementById(initialSelectedEntityId);
           if (initEle.length > 0) {
@@ -776,15 +770,19 @@ export default function CaseNetworkGraph({
                   Related Historical Cases
                 </span>
                 <div className="flex flex-wrap gap-1.5">
-                  {['CASE-102', 'CASE-087', 'CASE-041'].map((cId) => (
-                    <span
-                      key={cId}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-mono-id font-semibold border"
-                      style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--accent)' }}
-                    >
-                      {cId}
-                    </span>
-                  ))}
+                  {((selectedNode.data?.caseIds as string[]) || (caseId ? [caseId] : [])).length > 0 ? (
+                    ((selectedNode.data?.caseIds as string[]) || (caseId ? [caseId] : [])).map((cId) => (
+                      <span
+                        key={cId}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-mono-id font-semibold border"
+                        style={{ background: 'var(--surface-2)', borderColor: 'var(--border)', color: 'var(--accent)' }}
+                      >
+                        {cId}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-[12px] text-[var(--ink-secondary)]">No cross-case linkages recorded</span>
+                  )}
                 </div>
               </div>
 

@@ -10,7 +10,7 @@ import {
 import { toast } from 'sonner';
 
 export default function InvestigationReplayPage() {
-  const [selectedCaseId, setSelectedCaseId] = useState('CASE-102');
+  const [selectedCaseId, setSelectedCaseId] = useState('');
   const [availableCases, setAvailableCases] = useState<CaseListItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -20,6 +20,7 @@ export default function InvestigationReplayPage() {
     casesApi.listCases({ size: 10 }).then((res) => {
       if (res.items && res.items.length > 0) {
         setAvailableCases(res.items);
+        setSelectedCaseId(res.items[0].id);
       }
     }).catch(() => {});
   }, []);
@@ -107,7 +108,6 @@ export default function InvestigationReplayPage() {
               className="h-9 px-3 rounded-lg border text-[12px] bg-[var(--surface-2)] text-[var(--ink-primary)] outline-none"
               style={{ borderColor: 'var(--border)' }}
             >
-              <option value="CASE-102">CASE-102 (Flagship Demo)</option>
               {availableCases.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.case_number} — {c.title.slice(0, 24)}
@@ -157,33 +157,52 @@ export default function InvestigationReplayPage() {
         </div>
       </div>
 
-      {/* Synchronized Slider Scrub Track */}
-      <div
-        className="p-3.5 rounded-xl border space-y-2"
-        style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
-      >
-        <div className="flex items-center justify-between text-[11px] font-mono-id">
-          <span style={{ color: 'var(--ink-tertiary)' }}>15-AUG 09:32 (Complaint)</span>
-          <span className="font-bold text-[var(--accent)] text-[12px]">
-            {currentEvent ? currentEvent.timestamp.replace('T', ' ') : '—'} IST
-          </span>
-          <span style={{ color: 'var(--ink-tertiary)' }}>03-SEP 12:00 (Checkpoint)</span>
+      {caseEvents.length === 0 ? (
+        <div
+          className="p-12 text-center border rounded-2xl space-y-4"
+          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        >
+          <div className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center bg-[var(--surface-2)] text-[var(--accent)]">
+            <Clock size={24} />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              No Investigation Milestones Available
+            </h3>
+            <p className="text-[13px] text-[var(--ink-secondary)]">
+              No chronological events or evidentiary observations have been logged for this investigation. Once milestone records are registered, the 4-stream synchronized replay will activate automatically.
+            </p>
+          </div>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={caseEvents.length - 1}
-          value={currentIndex}
-          onChange={(e) => {
-            setIsPlaying(false);
-            setCurrentIndex(Number(e.target.value));
-          }}
-          className="w-full accent-[var(--accent)] h-1.5 bg-[var(--surface-2)] rounded-lg cursor-pointer"
-        />
-      </div>
+      ) : (
+        <>
+          {/* Synchronized Slider Scrub Track */}
+          <div
+            className="p-3.5 rounded-xl border space-y-2"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+          >
+            <div className="flex items-center justify-between text-[11px] font-mono-id">
+              <span style={{ color: 'var(--ink-tertiary)' }}>Earliest Milestone</span>
+              <span className="font-bold text-[var(--accent)] text-[12px]">
+                {currentEvent ? currentEvent.timestamp.replace('T', ' ') : '—'} IST
+              </span>
+              <span style={{ color: 'var(--ink-tertiary)' }}>Latest Checkpoint</span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={caseEvents.length - 1}
+              value={currentIndex}
+              onChange={(e) => {
+                setIsPlaying(false);
+                setCurrentIndex(Number(e.target.value));
+              }}
+              className="w-full accent-[var(--accent)] h-1.5 bg-[var(--surface-2)] rounded-lg cursor-pointer"
+            />
+          </div>
 
-      {/* 4 Synchronized Streams Cockpit Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* 4 Synchronized Streams Cockpit Layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* STREAM 1: TIMELINE EVENT HIGHLIGHT */}
         <div
           className="p-4 rounded-xl border flex flex-col justify-between h-[280px]"
@@ -212,7 +231,7 @@ export default function InvestigationReplayPage() {
 
           <div className="text-[11px] font-mono-id pt-2 border-t flex justify-between" style={{ borderColor: 'var(--border)', color: 'var(--ink-tertiary)' }}>
             <span>Category: {currentEvent.type}</span>
-            <span>Target: {currentEvent.entityId || 'CASE-102'}</span>
+            <span>Target: {currentEvent.entityId || selectedCaseId || 'Active Case'}</span>
           </div>
         </div>
 
@@ -230,23 +249,29 @@ export default function InvestigationReplayPage() {
             </span>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
-                {matchedNode.id}
-              </span>
-              <span className="badge badge-medium">{matchedNode.type}</span>
+          {matchedNode ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                  {matchedNode.id}
+                </span>
+                <span className="badge badge-medium">{matchedNode.type}</span>
+              </div>
+              <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                {matchedNode.label}
+              </h3>
+              <div className="p-2.5 rounded-lg border text-[12px] bg-[var(--surface-2)]" style={{ borderColor: 'var(--border)' }}>
+                Entity active at milestone {currentEvent?.id || 'event'}. Connected with verified association edges.
+              </div>
             </div>
-            <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
-              {matchedNode.label}
-            </h3>
-            <div className="p-2.5 rounded-lg border text-[12px] bg-[var(--surface-2)]" style={{ borderColor: 'var(--border)' }}>
-              Entity active at milestone {currentEvent.id}. Connected into CASE-102 central cluster with verified association edges.
+          ) : (
+            <div className="py-8 text-center text-xs text-gray-500">
+              No graph entity linked to this milestone
             </div>
-          </div>
+          )}
 
           <div className="text-[11px] font-mono-id pt-2 border-t text-[var(--ink-tertiary)]" style={{ borderColor: 'var(--border)' }}>
-            Node Status: Selected &amp; Focused in Graph
+            Node Status: {matchedNode ? 'Focused in Graph' : 'None'}
           </div>
         </div>
 
@@ -260,30 +285,36 @@ export default function InvestigationReplayPage() {
               <MapPin size={13} /> 3. Geolocated Hotspot Focus
             </span>
             <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)]">
-              {matchedLocation.city}
+              {matchedLocation?.city || 'Location Stream'}
             </span>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
-                {matchedLocation.id}
-              </span>
-              <span className="badge badge-low">{matchedLocation.type}</span>
+          {matchedLocation ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                  {matchedLocation.id}
+                </span>
+                <span className="badge badge-low">{matchedLocation.type}</span>
+              </div>
+              <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                {matchedLocation.name}
+              </h3>
+              <p className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
+                {matchedLocation.address}, {matchedLocation.city}
+              </p>
+              <div className="text-[11px] font-mono-id text-[var(--ink-tertiary)]">
+                Coordinates: [{matchedLocation.coordinates?.join(', ') || '0, 0'}]
+              </div>
             </div>
-            <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
-              {matchedLocation.name}
-            </h3>
-            <p className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
-              {matchedLocation.address}, {matchedLocation.city}
-            </p>
-            <div className="text-[11px] font-mono-id text-[var(--ink-tertiary)]">
-              Coordinates: [{matchedLocation.coordinates.join(', ')}]
+          ) : (
+            <div className="py-8 text-center text-xs text-gray-500">
+              No geolocation tagged for this milestone
             </div>
-          </div>
+          )}
 
           <div className="text-[11px] font-mono-id pt-2 border-t text-[var(--ink-tertiary)]" style={{ borderColor: 'var(--border)' }}>
-            GPS Status: Synchronized Ping Active
+            GPS Status: {matchedLocation ? 'Synchronized Ping Active' : 'Idle'}
           </div>
         </div>
 
@@ -301,29 +332,37 @@ export default function InvestigationReplayPage() {
             </span>
           </div>
 
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
-                {matchedEvidence.id}
-              </span>
-              <span className="badge badge-active">{matchedEvidence.status}</span>
+          {matchedEvidence ? (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                  {matchedEvidence.id}
+                </span>
+                <span className="badge badge-active">{matchedEvidence.status}</span>
+              </div>
+              <h3 className="text-[16px] font-bold truncate" style={{ color: 'var(--ink-primary)' }}>
+                {matchedEvidence.title}
+              </h3>
+              <p className="text-[12px] line-clamp-2" style={{ color: 'var(--ink-secondary)' }}>
+                {matchedEvidence.description}
+              </p>
+              <div className="text-[11px] font-mono-id text-[var(--ink-tertiary)]">
+                Hash: {matchedEvidence.integrity?.hash ? `${matchedEvidence.integrity.hash.slice(0, 24)}...` : 'Unsealed'}
+              </div>
             </div>
-            <h3 className="text-[16px] font-bold truncate" style={{ color: 'var(--ink-primary)' }}>
-              {matchedEvidence.title}
-            </h3>
-            <p className="text-[12px] line-clamp-2" style={{ color: 'var(--ink-secondary)' }}>
-              {matchedEvidence.description}
-            </p>
-            <div className="text-[11px] font-mono-id text-[var(--ink-tertiary)]">
-              Hash: {matchedEvidence.integrity.hash.slice(0, 24)}...
+          ) : (
+            <div className="py-8 text-center text-xs text-gray-500">
+              No physical/digital evidence linked
             </div>
-          </div>
+          )}
 
           <div className="text-[11px] font-mono-id pt-2 border-t text-[var(--success)] font-medium" style={{ borderColor: 'var(--border)' }}>
-            ✓ Sealed &amp; Cryptographically Anchored
+            {matchedEvidence ? '✓ Sealed & Cryptographically Anchored' : 'Chain of Custody Idle'}
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

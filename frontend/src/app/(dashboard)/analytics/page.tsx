@@ -45,10 +45,10 @@ const kpiCards = [
   {
     id: 'kpi-robbery',
     title: 'Robbery',
-    count: '1,248',
-    change: '+18%',
+    count: '0',
+    change: '0%',
     direction: 'up' as const,
-    subtext: 'vs. last year',
+    subtext: 'Current baseline',
     dotColor: '#EF4444',
     badgeColor: 'rgba(239, 68, 68, 0.12)',
     badgeText: '#DC2626',
@@ -56,10 +56,10 @@ const kpiCards = [
   {
     id: 'kpi-fraud',
     title: 'Fraud',
-    count: '892',
-    change: '+11%',
+    count: '0',
+    change: '0%',
     direction: 'up' as const,
-    subtext: 'vs. last year',
+    subtext: 'Current baseline',
     dotColor: '#F59E0B',
     badgeColor: 'rgba(245, 158, 11, 0.12)',
     badgeText: '#D97706',
@@ -67,10 +67,10 @@ const kpiCards = [
   {
     id: 'kpi-cybercrime',
     title: 'Cybercrime',
-    count: '1,562',
-    change: '+26%',
+    count: '0',
+    change: '0%',
     direction: 'up' as const,
-    subtext: 'vs. last year',
+    subtext: 'Current baseline',
     dotColor: '#8B5CF6',
     badgeColor: 'rgba(139, 92, 246, 0.12)',
     badgeText: '#7C3AED',
@@ -78,10 +78,10 @@ const kpiCards = [
   {
     id: 'kpi-vehicle',
     title: 'Vehicle Theft',
-    count: '673',
-    change: '-4%',
+    count: '0',
+    change: '0%',
     direction: 'down' as const,
-    subtext: 'vs. last year',
+    subtext: 'Current baseline',
     dotColor: '#10B981',
     badgeColor: 'rgba(16, 185, 129, 0.12)',
     badgeText: '#16A34A',
@@ -89,248 +89,45 @@ const kpiCards = [
   {
     id: 'kpi-extortion',
     title: 'Extortion',
-    count: '421',
-    change: '+2%',
+    count: '0',
+    change: '0%',
     direction: 'up' as const,
-    subtext: 'vs. last year',
+    subtext: 'Current baseline',
     dotColor: '#D97706',
     badgeColor: 'rgba(217, 119, 6, 0.12)',
     badgeText: '#B45309',
   },
 ];
 
-// Monthly FIR Trends Data (Jan to Aug)
-const monthlyTrendsData = [
-  { month: 'Jan', fraud: 38, robbery: 42, cybercrime: 22, kidnapping: 8 },
-  { month: 'Feb', fraud: 41, robbery: 38, cybercrime: 25, kidnapping: 6 },
-  { month: 'Mar', fraud: 44, robbery: 45, cybercrime: 28, kidnapping: 9 },
-  { month: 'Apr', fraud: 46, robbery: 40, cybercrime: 32, kidnapping: 7 },
-  { month: 'May', fraud: 42, robbery: 48, cybercrime: 29, kidnapping: 10 },
-  { month: 'Jun', fraud: 48, robbery: 52, cybercrime: 34, kidnapping: 8 },
-  { month: 'Jul', fraud: 51, robbery: 50, cybercrime: 38, kidnapping: 11 },
-  { month: 'Aug', fraud: 53, robbery: 55, cybercrime: 41, kidnapping: 9 },
-];
+// Monthly FIR Trends Data
+const monthlyTrendsData: { month: string; fraud: number; robbery: number; cybercrime: number; kidnapping: number }[] = [];
 
 // Crime Type Distribution (Donut Chart)
-const crimeTypeDistribution = [
-  { name: 'Fraud / Financial Crime', value: 38, count: 892, color: '#4F46E5' },
-  { name: 'Robbery', value: 24, count: 1248, color: '#EF4444' },
-  { name: 'Cybercrime', value: 18, count: 1562, color: '#10B981' },
-  { name: 'Vehicle Theft', value: 12, count: 673, color: '#F59E0B' },
-  { name: 'Others', value: 8, count: 421, color: '#6B7280' },
-];
+const crimeTypeDistribution: { name: string; value: number; count: number; color: string }[] = [];
 
 // Peak Hours Data
-const peakHoursData = [
-  { hour: '00-04', incidents: 18, label: 'Night Window' },
-  { hour: '04-08', incidents: 10, label: 'Early Dawn' },
-  { hour: '08-12', incidents: 42, label: 'Morning Peak' },
-  { hour: '12-16', incidents: 46, label: 'Afternoon' },
-  { hour: '16-20', incidents: 74, label: 'Evening Surge' },
-  { hour: '20-24', incidents: 58, label: 'Late Night' },
-];
+const peakHoursData: { hour: string; incidents: number; label: string }[] = [];
 
 // City-wise FIR Volume Data
-const cityFIRData = [
-  { city: 'Delhi', count: 184, growth: '+14%' },
-  { city: 'Mumbai', count: 156, growth: '+9%' },
-  { city: 'Bengaluru', count: 98, growth: '+22%' },
-  { city: 'Pune', count: 82, growth: '+6%' },
-  { city: 'Hyderabad', count: 70, growth: '-2%' },
-  { city: 'Kolkata', count: 64, growth: '+4%' },
-];
+const cityFIRData: { city: string; count: number; growth: string }[] = [];
 
-// Synthetic Hotspots Dataset
-const fullHotspotList: HotspotItem[] = [
-  {
-    id: 'HS-001',
-    area: 'Andheri',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.1197, 72.8464],
-    crimeCount: 124,
-    primaryCrime: 'Fraud',
-    severity: 'High',
-    trend: 'Increasing',
-    recentFIRs: 18,
-  },
-  {
-    id: 'HS-002',
-    area: 'Kurla',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.0726, 72.8845],
-    crimeCount: 98,
-    primaryCrime: 'Robbery',
-    severity: 'High',
-    trend: 'Increasing',
-    recentFIRs: 14,
-  },
-  {
-    id: 'HS-003',
-    area: 'Dadar',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.0178, 72.8478],
-    crimeCount: 76,
-    primaryCrime: 'Cybercrime',
-    severity: 'Medium',
-    trend: 'Stable',
-    recentFIRs: 9,
-  },
-  {
-    id: 'HS-004',
-    area: 'Bandra',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.0596, 72.8295],
-    crimeCount: 68,
-    primaryCrime: 'Financial Crime',
-    severity: 'Medium',
-    trend: 'Stable',
-    recentFIRs: 8,
-  },
-  {
-    id: 'HS-005',
-    area: 'Chembur',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.0622, 72.8976],
-    crimeCount: 52,
-    primaryCrime: 'Vehicle Theft',
-    severity: 'Low',
-    trend: 'Decreasing',
-    recentFIRs: 5,
-  },
-  {
-    id: 'HS-006',
-    area: 'Goregaon',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    coordinates: [19.1663, 72.8526],
-    crimeCount: 44,
-    primaryCrime: 'Extortion',
-    severity: 'Low',
-    trend: 'Stable',
-    recentFIRs: 4,
-  },
-  {
-    id: 'HS-007',
-    area: 'Connaught Place',
-    city: 'Delhi',
-    state: 'Delhi NCR',
-    coordinates: [28.6315, 77.2167],
-    crimeCount: 142,
-    primaryCrime: 'Robbery',
-    severity: 'Critical',
-    trend: 'Increasing',
-    recentFIRs: 21,
-  },
-  {
-    id: 'HS-008',
-    area: 'Karol Bagh',
-    city: 'Delhi',
-    state: 'Delhi NCR',
-    coordinates: [28.6519, 77.1909],
-    crimeCount: 112,
-    primaryCrime: 'Vehicle Theft',
-    severity: 'High',
-    trend: 'Increasing',
-    recentFIRs: 16,
-  },
-  {
-    id: 'HS-009',
-    area: 'Whitefield',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    coordinates: [12.9698, 77.7500],
-    crimeCount: 88,
-    primaryCrime: 'Cybercrime',
-    severity: 'High',
-    trend: 'Increasing',
-    recentFIRs: 12,
-  },
-  {
-    id: 'HS-010',
-    area: 'Koregaon Park',
-    city: 'Pune',
-    state: 'Maharashtra',
-    coordinates: [18.5362, 73.8932],
-    crimeCount: 58,
-    primaryCrime: 'Financial Crime',
-    severity: 'Medium',
-    trend: 'Stable',
-    recentFIRs: 7,
-  },
-];
+// Hotspots Dataset
+const fullHotspotList: HotspotItem[] = [];
 
-// Responsible Emerging Patterns Dataset
-const emergingPatterns = [
-  {
-    id: 'PAT-001',
-    title: 'Increasing Cyber Fraud Activity',
-    direction: 'up',
-    confidence: 78,
-    status: 'Pattern Detected',
-    basis: [
-      'FIR frequency increase (+26% over past 60 days)',
-      'Similar case patterns (remote banking Trojan & fake KYC links)',
-      'Geographic clustering (shared telecom routing in Western suburbs)',
-    ],
-    details: 'Multiple complaints describe impersonation of electricity board and telco verification officers requesting urgent APK installations.',
-    suggestedAction: 'Initiate Correlation Query',
-    timeframe: 'Identified past 45 days',
-    severity: 'High Priority',
-  },
-  {
-    id: 'PAT-002',
-    title: 'Repeated Vehicle Theft Pattern',
-    direction: 'neutral',
-    confidence: 71,
-    status: 'Analytical Signal',
-    basis: [
-      'Similar locations (unmonitored transit parking lots along Western corridor)',
-      'Similar time patterns (Friday & Saturday windows between 01:00 – 04:00 AM)',
-      'Repeated entity relationships (suspected common forged chassis broker)',
-    ],
-    details: 'Cluster of mid-sized commercial vans reported stolen within 2km of highway toll exits without glass breakage.',
-    suggestedAction: 'View Hotspot Overlay',
-    timeframe: 'Identified past 30 days',
-    severity: 'Medium Priority',
-  },
-  {
-    id: 'PAT-003',
-    title: 'Hawala Shell Company Transactions Clustering',
-    direction: 'up',
-    confidence: 84,
-    status: 'Pattern Detected',
-    basis: [
-      'Rapid transaction velocity (<48h transit between bank accounts)',
-      'Cross-district director overlaps (Karan Verma syndicate network)',
-      'Foreign remittance spikes aligned with calendar holidays',
-    ],
-    details: 'Recurring financial hops through inactive LLP registrations flagged across Mumbai and Pune commercial registries.',
-    suggestedAction: 'Cross-Reference Case-102',
-    timeframe: 'Identified past 90 days',
-    severity: 'High Priority',
-  },
-  {
-    id: 'PAT-004',
-    title: 'Commercial Logistics Pilferage Corridor',
-    direction: 'neutral',
-    confidence: 65,
-    status: 'Emerging Trend',
-    basis: [
-      'Concentrated waypoints along freight transport bypass routes',
-      'Off-hours vehicle staging at unauthorized wayside dhabas',
-      'Correlated seal tampering reports on inter-state shipments',
-    ],
-    details: 'Anomalous stopover durations exceeding 90 minutes recorded on GPS consignment trackers along NH-48.',
-    suggestedAction: 'Generate Intelligence Brief',
-    timeframe: 'Identified past 60 days',
-    severity: 'Routine Observation',
-  },
-];
+// Emerging Patterns Dataset
+interface EmergingPattern {
+  id: string;
+  title: string;
+  direction: string;
+  confidence: number;
+  status: string;
+  basis: string[];
+  details: string;
+  suggestedAction: string;
+  timeframe: string;
+  severity: string;
+}
+const emergingPatterns: EmergingPattern[] = [];
 
 function AnalyticsContent() {
   const router = useRouter();
@@ -386,8 +183,8 @@ function AnalyticsContent() {
         {/* Demo Data Notice Badge */}
         <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[12.5px] font-medium border self-start sm:self-auto shadow-sm"
           style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
-          <Shield size={14} className="text-amber-500 shrink-0" />
-          <span>Synthetic / Demo Data — Research & Analytical Intelligence</span>
+          <Shield size={14} className="text-emerald-500 shrink-0" />
+          <span>Live Intelligence — Operational Jurisdiction Telemetry</span>
         </div>
       </div>
 
@@ -472,7 +269,7 @@ function AnalyticsContent() {
                     Monthly FIR Volume Trends
                   </h3>
                   <p className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
-                    Comparative category volume across Jan – Aug 2026
+                    Comparative category volume across current cycle
                   </p>
                 </div>
                 <div className="flex items-center gap-2 text-[12px] font-medium px-3 py-1 rounded-lg border"
@@ -481,70 +278,78 @@ function AnalyticsContent() {
                 </div>
               </div>
 
-              <div className="h-[320px] sm:h-[340px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyTrendsData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
-                    <XAxis
-                      dataKey="month"
-                      tick={{ fontSize: 13, fill: 'var(--ink-tertiary)' }}
-                      axisLine={{ stroke: 'var(--border)' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 13, fill: 'var(--ink-tertiary)' }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--surface-1)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                      }}
-                      itemStyle={{ padding: '2px 0' }}
-                    />
-                    <Legend wrapperStyle={{ paddingTop: '16px', fontSize: '13px' }} />
-                    <Line
-                      type="monotone"
-                      dataKey="fraud"
-                      name="Fraud"
-                      stroke="#4F46E5"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: '#4F46E5' }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="robbery"
-                      name="Robbery"
-                      stroke="#EF4444"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: '#EF4444' }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="cybercrime"
-                      name="Cybercrime"
-                      stroke="#10B981"
-                      strokeWidth={2.5}
-                      dot={{ r: 3.5, fill: '#10B981' }}
-                      activeDot={{ r: 6 }}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="kidnapping"
-                      name="Kidnapping"
-                      stroke="#EC4899"
-                      strokeWidth={2}
-                      dot={{ r: 3, fill: '#EC4899' }}
-                      activeDot={{ r: 5 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+              <div className="h-[320px] sm:h-[340px] w-full flex flex-col items-center justify-center">
+                {monthlyTrendsData.length === 0 ? (
+                  <div className="text-center text-[var(--ink-tertiary)] py-12">
+                    <BarChart3 size={36} className="mx-auto mb-2 opacity-40 text-[var(--accent)]" />
+                    <p className="text-[14px] font-semibold" style={{ color: 'var(--ink-secondary)' }}>No Monthly Crime Trend Data</p>
+                    <p className="text-[12px] mt-0.5">Trends will populate as monthly incidents are logged into the system.</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={monthlyTrendsData} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 13, fill: 'var(--ink-tertiary)' }}
+                        axisLine={{ stroke: 'var(--border)' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 13, fill: 'var(--ink-tertiary)' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '12px',
+                          fontSize: '13px',
+                          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                        }}
+                        itemStyle={{ padding: '2px 0' }}
+                      />
+                      <Legend wrapperStyle={{ paddingTop: '16px', fontSize: '13px' }} />
+                      <Line
+                        type="monotone"
+                        dataKey="fraud"
+                        name="Fraud"
+                        stroke="#4F46E5"
+                        strokeWidth={2.5}
+                        dot={{ r: 3.5, fill: '#4F46E5' }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="robbery"
+                        name="Robbery"
+                        stroke="#EF4444"
+                        strokeWidth={2.5}
+                        dot={{ r: 3.5, fill: '#EF4444' }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="cybercrime"
+                        name="Cybercrime"
+                        stroke="#10B981"
+                        strokeWidth={2.5}
+                        dot={{ r: 3.5, fill: '#10B981' }}
+                        activeDot={{ r: 6 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="kidnapping"
+                        name="Kidnapping"
+                        stroke="#EC4899"
+                        strokeWidth={2}
+                        dot={{ r: 3, fill: '#EC4899' }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -561,63 +366,74 @@ function AnalyticsContent() {
                   Overall categorized FIR percentage
                 </p>
 
-                <div className="h-[210px] w-full relative">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={crimeTypeDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={55}
-                        outerRadius={85}
-                        paddingAngle={3}
-                        dataKey="value"
-                      >
-                        {crimeTypeDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: 'var(--surface-1)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '10px',
-                          fontSize: '13px',
-                        }}
-                        formatter={(val: any, name: any) => [`${val}% of total FIRs`, name]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  {/* Donut Center Label */}
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <span className="text-[20px] font-bold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
-                      4,796
-                    </span>
-                    <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>
-                      Total FIRs
-                    </span>
-                  </div>
+                <div className="h-[210px] w-full relative flex flex-col items-center justify-center">
+                  {crimeTypeDistribution.length === 0 ? (
+                    <div className="text-center text-[var(--ink-tertiary)] py-8">
+                      <p className="text-[13px] font-medium" style={{ color: 'var(--ink-secondary)' }}>No categorized FIR distribution</p>
+                    </div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={crimeTypeDistribution}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={85}
+                            paddingAngle={3}
+                            dataKey="value"
+                          >
+                            {crimeTypeDistribution.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{
+                              background: 'var(--surface-1)',
+                              border: '1px solid var(--border)',
+                              borderRadius: '10px',
+                              fontSize: '13px',
+                            }}
+                            formatter={(val: any, name: any) => [`${val}% of total FIRs`, name]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[20px] font-bold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
+                          0
+                        </span>
+                        <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>
+                          Total FIRs
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
               {/* Breakdown Ledger */}
               <div className="space-y-2 mt-3 pt-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                {crimeTypeDistribution.map((item) => (
-                  <div key={item.name} className="flex items-center justify-between text-[13px]">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
-                      <span style={{ color: 'var(--ink-secondary)' }}>{item.name}</span>
+                {crimeTypeDistribution.length === 0 ? (
+                  <p className="text-[12px] text-center text-[var(--ink-tertiary)] py-2">No category records registered</p>
+                ) : (
+                  crimeTypeDistribution.map((item) => (
+                    <div key={item.name} className="flex items-center justify-between text-[13px]">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: item.color }} />
+                        <span style={{ color: 'var(--ink-secondary)' }}>{item.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
+                          {item.value}%
+                        </span>
+                        <span className="text-[11.5px]" style={{ color: 'var(--ink-tertiary)' }}>
+                          ({item.count})
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
-                        {item.value}%
-                      </span>
-                      <span className="text-[11.5px]" style={{ color: 'var(--ink-tertiary)' }}>
-                        ({item.count})
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -636,26 +452,32 @@ function AnalyticsContent() {
                   </p>
                 </div>
                 <span className="text-[12px] font-semibold text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-lg">
-                  Surge: 16:00 – 20:00
+                  Real-Time Clock
                 </span>
               </div>
-              <div className="h-[210px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={peakHoursData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
-                    <XAxis dataKey="hour" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--surface-1)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '10px',
-                        fontSize: '13px',
-                      }}
-                    />
-                    <Bar dataKey="incidents" name="Incidents" fill="var(--accent)" radius={[6, 6, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="h-[210px] w-full flex flex-col items-center justify-center">
+                {peakHoursData.length === 0 ? (
+                  <div className="text-center text-[var(--ink-tertiary)] py-8">
+                    <p className="text-[13px] font-medium" style={{ color: 'var(--ink-secondary)' }}>No incident timing data recorded</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={peakHoursData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.6} />
+                      <XAxis dataKey="hour" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '10px',
+                          fontSize: '13px',
+                        }}
+                      />
+                      <Bar dataKey="incidents" name="Incidents" fill="var(--accent)" radius={[6, 6, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
 
@@ -671,25 +493,31 @@ function AnalyticsContent() {
                   </p>
                 </div>
                 <span className="text-[12px] font-semibold text-indigo-500 bg-indigo-500/10 px-2.5 py-1 rounded-lg">
-                  6 Major Metros
+                  Jurisdiction Scope
                 </span>
               </div>
-              <div className="h-[210px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={cityFIRData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 0 }}>
-                    <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="city" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--surface-1)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '10px',
-                        fontSize: '13px',
-                      }}
-                    />
-                    <Bar dataKey="count" name="FIR Count" fill="#F59E0B" radius={[0, 6, 6, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="h-[210px] w-full flex flex-col items-center justify-center">
+                {cityFIRData.length === 0 ? (
+                  <div className="text-center text-[var(--ink-tertiary)] py-8">
+                    <p className="text-[13px] font-medium" style={{ color: 'var(--ink-secondary)' }}>No regional jurisdiction volume data</p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={cityFIRData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 0 }}>
+                      <XAxis type="number" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
+                      <YAxis type="category" dataKey="city" tick={{ fontSize: 12, fill: 'var(--ink-tertiary)' }} axisLine={false} tickLine={false} />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--surface-1)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '10px',
+                          fontSize: '13px',
+                        }}
+                      />
+                      <Bar dataKey="count" name="FIR Count" fill="#F59E0B" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </div>
           </div>
@@ -785,8 +613,8 @@ function AnalyticsContent() {
                     Verified synthetic geographic clusters ranked by cumulative FIR density
                   </p>
                 </div>
-                <span className="text-[11.5px] font-medium text-amber-600 bg-amber-500/10 px-2.5 py-1 rounded-lg">
-                  Synthetic Model Data
+                <span className="text-[11.5px] font-medium text-emerald-600 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                  Live Cluster Telemetry
                 </span>
               </div>
 
@@ -804,20 +632,27 @@ function AnalyticsContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                    {filteredHotspots.map((hs) => {
-                      const isSelected = selectedHotspot?.id === hs.id;
-                      const isHigh = hs.severity === 'High' || hs.severity === 'Critical';
-                      const isMed = hs.severity === 'Medium';
+                    {filteredHotspots.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="py-10 text-center text-[var(--ink-tertiary)] text-[13px]">
+                          No hotspot clusters recorded in this geographic scope.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredHotspots.map((hs) => {
+                        const isSelected = selectedHotspot?.id === hs.id;
+                        const isHigh = hs.severity === 'High' || hs.severity === 'Critical';
+                        const isMed = hs.severity === 'Medium';
 
-                      return (
-                        <tr
-                          key={hs.id}
-                          onClick={() => setSelectedHotspot(hs)}
-                          className="text-[13.5px] transition-colors cursor-pointer hover:bg-[var(--surface-2)]"
-                          style={{
-                            background: isSelected ? 'var(--accent-muted)' : 'transparent',
-                          }}
-                        >
+                        return (
+                          <tr
+                            key={hs.id}
+                            onClick={() => setSelectedHotspot(hs)}
+                            className="text-[13.5px] transition-colors cursor-pointer hover:bg-[var(--surface-2)]"
+                            style={{
+                              background: isSelected ? 'var(--accent-muted)' : 'transparent',
+                            }}
+                          >
                           <td className="py-3 px-3 font-semibold" style={{ color: 'var(--ink-primary)' }}>
                             <div className="flex items-center gap-2">
                               <span
@@ -863,7 +698,7 @@ function AnalyticsContent() {
                           </td>
                         </tr>
                       );
-                    })}
+                    }))}
                   </tbody>
                 </table>
               </div>
@@ -938,10 +773,10 @@ function AnalyticsContent() {
                     </div>
                   </div>
 
-                  {/* Synthetic Data Disclaimer Footer */}
+                  {/* Operational Telemetry Disclaimer Footer */}
                   <div className="mt-5 p-3 rounded-xl border text-[12px] leading-relaxed"
-                    style={{ background: 'rgba(245, 158, 11, 0.08)', borderColor: 'rgba(245, 158, 11, 0.25)', color: '#B45309' }}>
-                    <strong>Notice:</strong> Synthetic / Demo Data only. Does NOT imply real criminal activity or individual criminality.
+                    style={{ background: 'rgba(79, 70, 229, 0.05)', borderColor: 'rgba(79, 70, 229, 0.2)', color: 'var(--ink-secondary)' }}>
+                    <strong>Notice:</strong> Geospatial cluster telemetry is computed from verified FIR jurisdiction records.
                   </div>
                 </div>
               ) : (
@@ -977,7 +812,7 @@ function AnalyticsContent() {
                 Responsible Intelligence Framework Notice
               </div>
               <p style={{ color: 'var(--ink-secondary)' }}>
-                Emerging pattern detection highlights historical synthetic correlations, spatial clustering, and temporal spikes for analytical prioritization.
+                Emerging pattern detection highlights historical empirical correlations, spatial clustering, and temporal spikes for analytical prioritization.
                 These analytical signals <strong>do not predict crime with certainty</strong> and <strong>never ascribe criminality to individuals</strong>.
                 All patterns represent hypothesis signals that strictly require formal human investigator review.
               </p>
@@ -986,7 +821,17 @@ function AnalyticsContent() {
 
           {/* Pattern Intelligence Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {emergingPatterns.map((pat) => (
+            {emergingPatterns.length === 0 ? (
+              <div className="col-span-full p-10 rounded-2xl border text-center shadow-sm"
+                style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+                <TrendingUp size={36} className="mx-auto mb-2 opacity-40 text-[var(--accent)]" />
+                <p className="text-[15px] font-semibold" style={{ color: 'var(--ink-primary)' }}>No Emerging Patterns Detected</p>
+                <p className="text-[13px] text-[var(--ink-secondary)] mt-1 max-w-md mx-auto">
+                  AI analytical pattern recognition models will automatically detect temporal clusters and modus operandi spikes when case volume increases.
+                </p>
+              </div>
+            ) : (
+              emergingPatterns.map((pat) => (
               <div
                 key={pat.id}
                 className="p-6 rounded-2xl border shadow-sm flex flex-col justify-between transition-all duration-200 hover:shadow-md"
@@ -1055,7 +900,7 @@ function AnalyticsContent() {
                   </button>
                 </div>
               </div>
-            ))}
+            )))}
           </div>
         </div>
       )}

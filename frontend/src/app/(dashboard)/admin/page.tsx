@@ -11,43 +11,30 @@ import { toast } from 'sonner';
 
 type TabKey = 'dashboard' | 'users' | 'roles' | 'audit' | 'security';
 
-const mockUsers = [
-  { id: 'USR-001', name: 'DCP R. Sharma', role: 'Supervisory Officer', dept: 'Economic Offences Wing', status: 'Active', badge: 'DCP/MUM/0456', lastActive: '2 min ago' },
-  { id: 'USR-002', name: 'ACP V. Patil', role: 'Lead Investigator', dept: 'Crime Branch Unit 3', status: 'Active', badge: 'ACP/MUM/0891', lastActive: '18 min ago' },
-  { id: 'USR-003', name: 'SI M. Khan', role: 'Field Intelligence Officer', dept: 'Cyber & Technical Cell', status: 'Active', badge: 'SI/MUM/1423', lastActive: '1 hr ago' },
-  { id: 'USR-004', name: 'DI P. Reddy', role: 'Forensic Analyst', dept: 'Digital Evidence Laboratory', status: 'Active', badge: 'DI/MUM/0912', lastActive: '3 hr ago' },
-  { id: 'USR-005', name: 'CI A. Nair', role: 'Intelligence Officer', dept: 'Anti-Narcotics Cell', status: 'Inactive', badge: 'CI/MUM/0334', lastActive: '2 days ago' },
-];
+const mockUsers: { id: string; name: string; role: string; dept: string; status: string; badge: string; lastActive: string }[] = [];
 
 const mockRoles = [
   {
     name: 'Citizen',
     color: '#16A34A',
-    users: 1240,
+    users: 0,
     permissions: ['File Complaint', 'View Own Complaint Status', 'Upload Supporting Documents', 'Receive Notifications'],
   },
   {
     name: 'Police Investigator',
     color: '#4F46E5',
-    users: 87,
+    users: 0,
     permissions: ['Case Management', 'Network Graph', 'Evidence Hub', 'FIR Intelligence', 'Live Feed', 'Historical Intelligence'],
   },
   {
     name: 'Administrator',
     color: '#D97706',
-    users: 4,
+    users: 0,
     permissions: ['All Police Permissions', 'User Management', 'Role Management', 'Audit Logs', 'Security Monitoring', 'System Health'],
   },
 ];
 
-const securityEvents = [
-  { time: '15:42:08', event: 'Successful login', user: 'DCP R. Sharma', ip: '192.168.1.45', severity: 'info' },
-  { time: '15:36:22', event: 'Evidence accessed', user: 'DI P. Reddy', ip: '192.168.1.92', severity: 'info' },
-  { time: '15:28:14', event: 'Failed login attempt', user: 'UNKNOWN', ip: '103.27.14.88', severity: 'warning' },
-  { time: '15:21:07', event: 'Role permission change', user: 'ADMIN', ip: '192.168.1.10', severity: 'warning' },
-  { time: '15:10:55', event: 'Case record exported', user: 'ACP V. Patil', ip: '192.168.1.72', severity: 'info' },
-  { time: '14:58:30', event: 'Access from unknown device', user: 'SI M. Khan', ip: '45.151.82.4', severity: 'critical' },
-];
+const securityEvents: { time: string; event: string; user: string; ip: string; severity: 'info' | 'warning' | 'critical' }[] = [];
 
 function AdminContent() {
   const searchParams = useSearchParams();
@@ -106,22 +93,22 @@ function AdminContent() {
             {[
               {
                 label: 'Total Users',
-                value: adminStats ? String(adminStats.total_users) : '1,331',
-                sub: adminStats ? `${adminStats.total_police_officers} officers` : '+12 this month',
+                value: adminStats ? String(adminStats.total_users) : '0',
+                sub: adminStats ? `${adminStats.total_police_officers} officers` : '0 officers',
                 color: '#4F46E5',
                 bg: 'rgba(79,70,229,0.08)'
               },
               {
                 label: 'Active Investigators',
-                value: adminStats ? String(adminStats.total_police_officers || adminStats.active_police_officers || 0) : '87',
+                value: adminStats ? String(adminStats.total_police_officers || adminStats.active_police_officers || 0) : '0',
                 sub: 'Assigned officers',
                 color: '#16A34A',
                 bg: 'rgba(22,163,74,0.08)'
               },
               {
                 label: 'Active Investigations',
-                value: adminStats ? String(adminStats.total_cases) : '128',
-                sub: adminStats ? `${adminStats.total_firs} FIRs filed` : '23 critical',
+                value: adminStats ? String(adminStats.total_cases) : '0',
+                sub: adminStats ? `${adminStats.total_firs} FIRs filed` : '0 critical',
                 color: '#D97706',
                 bg: 'rgba(217,119,6,0.08)'
               },
@@ -215,39 +202,47 @@ function AdminContent() {
                 </tr>
               </thead>
               <tbody>
-                {mockUsers.map((u) => (
-                  <tr key={u.id}>
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                          style={{ background: u.status === 'Active' ? 'var(--accent)' : 'var(--ink-tertiary)' }}>
-                          {u.name.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>{u.name}</div>
-                          <div className="text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{u.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td><span className="font-mono-id text-[12px]" style={{ color: 'var(--ink-secondary)' }}>{u.badge}</span></td>
-                    <td><span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-primary)' }}>{u.role}</span></td>
-                    <td><span className="text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>{u.dept}</span></td>
-                    <td><span className="text-[12px] font-mono-id" style={{ color: 'var(--ink-tertiary)' }}>{u.lastActive}</span></td>
-                    <td>
-                      <span className={`badge ${u.status === 'Active' ? 'badge-active' : 'badge-closed'}`}>{u.status}</span>
-                    </td>
-                    <td>
-                      <div className="flex gap-1.5">
-                        <button onClick={() => toast.info(`Viewing ${u.name}`)} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors" style={{ color: 'var(--ink-secondary)' }}>
-                          <Eye size={14} />
-                        </button>
-                        <button onClick={() => toast.info(`Editing ${u.name}`)} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors" style={{ color: 'var(--accent)' }}>
-                          <Edit2 size={14} />
-                        </button>
-                      </div>
+                {mockUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-12 text-center text-sm text-[var(--ink-secondary)]">
+                      No system users registered. Click &quot;+ Add User&quot; to provision department personnel.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  mockUsers.map((u) => (
+                    <tr key={u.id}>
+                      <td>
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                            style={{ background: u.status === 'Active' ? 'var(--accent)' : 'var(--ink-tertiary)' }}>
+                            {u.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="font-semibold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>{u.name}</div>
+                            <div className="text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{u.id}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className="font-mono-id text-[12px]" style={{ color: 'var(--ink-secondary)' }}>{u.badge}</span></td>
+                      <td><span className="text-[12.5px] font-medium" style={{ color: 'var(--ink-primary)' }}>{u.role}</span></td>
+                      <td><span className="text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>{u.dept}</span></td>
+                      <td><span className="text-[12px] font-mono-id" style={{ color: 'var(--ink-tertiary)' }}>{u.lastActive}</span></td>
+                      <td>
+                        <span className={`badge ${u.status === 'Active' ? 'badge-active' : 'badge-closed'}`}>{u.status}</span>
+                      </td>
+                      <td>
+                        <div className="flex gap-1.5">
+                          <button onClick={() => toast.info(`Viewing ${u.name}`)} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors" style={{ color: 'var(--ink-secondary)' }}>
+                            <Eye size={14} />
+                          </button>
+                          <button onClick={() => toast.info(`Editing ${u.name}`)} className="p-1.5 rounded-lg hover:bg-[var(--surface-2)] transition-colors" style={{ color: 'var(--accent)' }}>
+                            <Edit2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -346,35 +341,41 @@ function AdminContent() {
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Events (Today)</h3>
               <div className="space-y-2.5">
-                {securityEvents.map((ev, i) => (
-                  <div key={i} className="p-3.5 rounded-xl border"
-                    style={{
-                      background: 'var(--surface-2)',
-                      borderColor: ev.severity === 'critical' ? 'rgba(220,38,38,0.3)' : 'var(--border)',
-                    }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className={`badge ${ev.severity === 'critical' ? 'badge-critical' : ev.severity === 'warning' ? 'badge-review' : 'badge-low'}`}>
-                        {ev.severity}
-                      </span>
-                      <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{ev.time}</span>
-                    </div>
-                    <div className="text-[13px] font-medium" style={{ color: 'var(--ink-primary)' }}>{ev.event}</div>
-                    <div className="text-[11.5px] mt-0.5 font-mono-id" style={{ color: 'var(--ink-secondary)' }}>
-                      {ev.user} • {ev.ip}
-                    </div>
+                {securityEvents.length === 0 ? (
+                  <div className="py-8 text-center text-[var(--ink-tertiary)] text-[13px]">
+                    No security events or anomalies recorded today.
                   </div>
-                ))}
+                ) : (
+                  securityEvents.map((ev, i) => (
+                    <div key={i} className="p-3.5 rounded-xl border"
+                      style={{
+                        background: 'var(--surface-2)',
+                        borderColor: ev.severity === 'critical' ? 'rgba(220,38,38,0.3)' : 'var(--border)',
+                      }}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className={`badge ${ev.severity === 'critical' ? 'badge-critical' : ev.severity === 'warning' ? 'badge-review' : 'badge-low'}`}>
+                          {ev.severity}
+                        </span>
+                        <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{ev.time}</span>
+                      </div>
+                      <div className="text-[13px] font-medium" style={{ color: 'var(--ink-primary)' }}>{ev.event}</div>
+                      <div className="text-[11.5px] mt-0.5 font-mono-id" style={{ color: 'var(--ink-secondary)' }}>
+                        {ev.user} • {ev.ip}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Summary</h3>
               <div className="space-y-4">
                 {[
-                  { label: 'Login Attempts (24h)', value: '127', safe: true },
-                  { label: 'Failed Logins', value: '3', safe: false },
-                  { label: 'Active Sessions', value: '14', safe: true },
-                  { label: 'Access Violations', value: '1', safe: false },
-                  { label: 'Evidence Views Logged', value: '89', safe: true },
+                  { label: 'Login Attempts (24h)', value: '0', safe: true },
+                  { label: 'Failed Logins', value: '0', safe: true },
+                  { label: 'Active Sessions', value: '0', safe: true },
+                  { label: 'Access Violations', value: '0', safe: true },
+                  { label: 'Evidence Views Logged', value: '0', safe: true },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between p-3.5 rounded-xl"
                     style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>

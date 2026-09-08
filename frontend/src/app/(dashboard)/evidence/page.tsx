@@ -29,20 +29,9 @@ const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ size?: num
   { key: 'integrity', label: 'Integrity', icon: Database },
 ];
 
-const correlationLinks = [
-  { source: 'FIR-2026-0102', target: 'PERSON-014', relation: 'Names suspect', color: '#4F46E5' },
-  { source: 'CDR-441', target: 'PHONE-019', relation: 'Device match', color: '#D97706' },
-  { source: 'TRANSACTION-22', target: 'ORG-014', relation: 'Money transfer', color: '#DC2626' },
-  { source: 'CCTV-031', target: 'PERSON-014', relation: 'Facial match 96%', color: '#16A34A' },
-  { source: 'DOC-Cheque-044', target: 'ACCOUNT-012', relation: 'Account beneficiary', color: '#7C3AED' },
-];
+const correlationLinks: { source: string; target: string; relation: string; color: string }[] = [];
 
-const chainOfCustody = [
-  { time: '09:30', date: '06 Sep 2026', action: 'Evidence Collected', officer: 'Sub-Inspector P. Mehta', location: 'Crime Scene — Andheri West', icon: Package },
-  { time: '10:15', date: '06 Sep 2026', action: 'Transferred to Station', officer: 'Head Constable K. Rao', location: 'Versova Police Station', icon: ArrowRight },
-  { time: '13:45', date: '06 Sep 2026', action: 'Forensic Analysis', officer: 'Dr. S. Joshi (Forensic Expert)', location: 'FSL Mumbai', icon: FlaskConical },
-  { time: '16:20', date: '06 Sep 2026', action: 'Report Uploaded', officer: 'DCP R. Sharma', location: 'KRITAGAS Evidence Ledger', icon: CheckCircle2 },
-];
+const chainOfCustody: { time: string; date: string; action: string; officer: string; location: string; icon: any }[] = [];
 
 function getCategoryIcon(cat: string) {
   switch (cat) {
@@ -165,9 +154,7 @@ function EvidenceHubContent() {
       { label: 'Verified', value: 'Verified' }, { label: 'Under Analysis', value: 'Under Analysis' },
       { label: 'Flagged', value: 'Flagged' }, { label: 'Collected', value: 'Collected' },
     ]},
-    { key: 'case', label: 'Case', value: filters.case, options: caseOptions.length > 0 ? caseOptions : [
-      { label: 'CASE-102', value: 'CASE-102' }, { label: 'CASE-087', value: 'CASE-087' },
-    ]},
+    { key: 'case', label: 'Case', value: filters.case, options: caseOptions },
   ];
 
   const columns: ColumnDef<Evidence>[] = [
@@ -250,21 +237,27 @@ function EvidenceHubContent() {
         <div className="space-y-5 animate-fade-in">
           <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
             <h3 className="text-[17px] font-bold mb-5" style={{ color: 'var(--ink-primary)' }}>Evidence Correlation Map</h3>
-            <div className="space-y-3">
-              {correlationLinks.map((link, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-xl border"
-                  style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-                  <span className="font-mono-id font-bold text-[13px] min-w-[140px]" style={{ color: link.color }}>{link.source}</span>
-                  <div className="flex items-center gap-2 flex-1">
-                    <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
-                    <span className="text-[12px] px-3 py-1 rounded-full font-medium whitespace-nowrap"
-                      style={{ background: `${link.color}14`, color: link.color }}>{link.relation}</span>
-                    <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
+            {correlationLinks.length === 0 ? (
+              <div className="py-12 text-center text-[var(--ink-tertiary)] text-[13.5px]">
+                No cross-evidence correlations recorded. Links will appear when multi-source entities match.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {correlationLinks.map((link, i) => (
+                  <div key={i} className="flex items-center gap-4 p-4 rounded-xl border"
+                    style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
+                    <span className="font-mono-id font-bold text-[13px] min-w-[140px]" style={{ color: link.color }}>{link.source}</span>
+                    <div className="flex items-center gap-2 flex-1">
+                      <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
+                      <span className="text-[12px] px-3 py-1 rounded-full font-medium whitespace-nowrap"
+                        style={{ background: `${link.color}14`, color: link.color }}>{link.relation}</span>
+                      <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
+                    </div>
+                    <span className="font-mono-id font-bold text-[13px] min-w-[120px] text-right" style={{ color: link.color }}>{link.target}</span>
                   </div>
-                  <span className="font-mono-id font-bold text-[13px] min-w-[120px] text-right" style={{ color: link.color }}>{link.target}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -272,69 +265,85 @@ function EvidenceHubContent() {
       {/* ── Forensics Tab ─────────────────────────────────────── */}
       {activeTab === 'forensics' && (
         <div className="space-y-4 animate-fade-in">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {forensicRecords.map((record) => (
-              <div key={record.id} onClick={() => dispatch(openInspector({ id: record.id, type: 'ForensicRecord' }))}
-                className="p-5 rounded-2xl border cursor-pointer hover:border-[var(--accent)] transition-all"
-                style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    {getCategoryIcon(record.category)}
-                    <span className="font-semibold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>{record.category}</span>
-                  </div>
-                  <span className={`badge ${record.status === 'Complete' ? 'badge-active' : record.status === 'In Progress' ? 'badge-review' : 'badge-low'}`}>
-                    {record.status}
-                  </span>
-                </div>
-                <div className="space-y-1.5 text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>
-                  <div className="flex justify-between"><span>Record ID</span><span className="font-mono-id" style={{ color: 'var(--accent)' }}>{record.id}</span></div>
-                  <div className="flex justify-between"><span>Case</span><span className="font-mono-id">{record.caseId}</span></div>
-                  <div className="flex justify-between"><span>Match</span>
-                    <span className="font-bold font-mono-id" style={{ color: record.matchPercentage > 85 ? 'var(--success)' : 'var(--warning)' }}>
-                      {record.matchPercentage}%
+          {forensicRecords.length === 0 ? (
+            <div className="p-12 rounded-2xl border text-center text-[var(--ink-tertiary)]" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+              <FlaskConical size={32} className="mx-auto mb-2 opacity-40" />
+              <p className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-secondary)' }}>No Forensic Records Registered</p>
+              <p className="text-[12px] mt-1">Laboratory findings, DNA cross-matches, and ballistics data will display here.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {forensicRecords.map((record) => (
+                <div key={record.id} onClick={() => dispatch(openInspector({ id: record.id, type: 'ForensicRecord' }))}
+                  className="p-5 rounded-2xl border cursor-pointer hover:border-[var(--accent)] transition-all"
+                  style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      {getCategoryIcon(record.category)}
+                      <span className="font-semibold text-[13.5px]" style={{ color: 'var(--ink-primary)' }}>{record.category}</span>
+                    </div>
+                    <span className={`badge ${record.status === 'Complete' ? 'badge-active' : record.status === 'In Progress' ? 'badge-review' : 'badge-low'}`}>
+                      {record.status}
                     </span>
                   </div>
+                  <div className="space-y-1.5 text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>
+                    <div className="flex justify-between"><span>Record ID</span><span className="font-mono-id" style={{ color: 'var(--accent)' }}>{record.id}</span></div>
+                    <div className="flex justify-between"><span>Case</span><span className="font-mono-id">{record.caseId}</span></div>
+                    <div className="flex justify-between"><span>Match</span>
+                      <span className="font-bold font-mono-id" style={{ color: record.matchPercentage > 85 ? 'var(--success)' : 'var(--warning)' }}>
+                        {record.matchPercentage}%
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* ── Contradictions Tab ────────────────────────────────── */}
       {activeTab === 'contradictions' && (
         <div className="space-y-4 animate-fade-in">
-          {contraList.map((c) => (
-            <div key={c.id} className="p-5 rounded-2xl border"
-              style={{ background: 'var(--surface-1)', borderColor: c.status === 'Open' ? 'rgba(220,38,38,0.3)' : 'var(--border)' }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <AlertTriangle size={16} style={{ color: c.status === 'Open' ? '#DC2626' : 'var(--ink-tertiary)' }} />
-                  <span className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>{c.type}</span>
-                  <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{c.id}</span>
-                </div>
-                <span className={`badge ${c.status === 'Open' ? 'badge-critical' : c.status === 'Resolved' ? 'badge-active' : 'badge-low'}`}>{c.status}</span>
-              </div>
-              <p className="text-[13px] mb-3" style={{ color: 'var(--ink-secondary)' }}>{c.description}</p>
-              <div className="flex flex-wrap items-center gap-2 text-[12px] mb-3" style={{ color: 'var(--ink-tertiary)' }}>
-                <span>Source A: <span className="font-mono-id font-medium" style={{ color: 'var(--ink-primary)' }}>{c.sourceA.id} ({c.sourceA.type})</span></span>
-                <span>•</span>
-                <span>Source B: <span className="font-mono-id font-medium" style={{ color: 'var(--ink-primary)' }}>{c.sourceB.id} ({c.sourceB.type})</span></span>
-                <span>•</span>
-                <span>Case: <span className="font-mono-id font-medium" style={{ color: 'var(--accent)' }}>{c.caseId}</span></span>
-              </div>
-              {c.status === 'Open' && (
-                <div className="flex gap-2">
-                  <button onClick={() => { setContraList(p => p.map(x => x.id === c.id ? { ...x, status: 'Resolved' as const } : x)); toast.success(`${c.id} marked resolved.`); }}
-                    className="px-4 py-2 rounded-lg text-[12.5px] font-semibold text-white transition-all hover:opacity-90"
-                    style={{ background: 'var(--success)' }}>Mark Resolved</button>
-                  <button onClick={() => { setContraList(p => p.map(x => x.id === c.id ? { ...x, status: 'Dismissed' as const } : x)); toast.info(`${c.id} dismissed.`); }}
-                    className="px-4 py-2 rounded-lg text-[12.5px] font-medium border transition-all hover:bg-[var(--surface-2)]"
-                    style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>Dismiss</button>
-                </div>
-              )}
+          {contraList.length === 0 ? (
+            <div className="p-12 rounded-2xl border text-center text-[var(--ink-tertiary)]" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+              <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-500 opacity-60" />
+              <p className="text-[13.5px] font-semibold" style={{ color: 'var(--ink-secondary)' }}>No Contradictions Flagged</p>
+              <p className="text-[12px] mt-1">All evidentiary statements, alibi logs, and sensor timestamps are consistent.</p>
             </div>
-          ))}
+          ) : (
+            contraList.map((c) => (
+              <div key={c.id} className="p-5 rounded-2xl border"
+                style={{ background: 'var(--surface-1)', borderColor: c.status === 'Open' ? 'rgba(220,38,38,0.3)' : 'var(--border)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle size={16} style={{ color: c.status === 'Open' ? '#DC2626' : 'var(--ink-tertiary)' }} />
+                    <span className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>{c.type}</span>
+                    <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{c.id}</span>
+                  </div>
+                  <span className={`badge ${c.status === 'Open' ? 'badge-critical' : c.status === 'Resolved' ? 'badge-active' : 'badge-low'}`}>{c.status}</span>
+                </div>
+                <p className="text-[13px] mb-3" style={{ color: 'var(--ink-secondary)' }}>{c.description}</p>
+                <div className="flex flex-wrap items-center gap-2 text-[12px] mb-3" style={{ color: 'var(--ink-tertiary)' }}>
+                  <span>Source A: <span className="font-mono-id font-medium" style={{ color: 'var(--ink-primary)' }}>{c.sourceA.id} ({c.sourceA.type})</span></span>
+                  <span>•</span>
+                  <span>Source B: <span className="font-mono-id font-medium" style={{ color: 'var(--ink-primary)' }}>{c.sourceB.id} ({c.sourceB.type})</span></span>
+                  <span>•</span>
+                  <span>Case: <span className="font-mono-id font-medium" style={{ color: 'var(--accent)' }}>{c.caseId}</span></span>
+                </div>
+                {c.status === 'Open' && (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setContraList(p => p.map(x => x.id === c.id ? { ...x, status: 'Resolved' as const } : x)); toast.success(`${c.id} marked resolved.`); }}
+                      className="px-4 py-2 rounded-lg text-[12.5px] font-semibold text-white transition-all hover:opacity-90"
+                      style={{ background: 'var(--success)' }}>Mark Resolved</button>
+                    <button onClick={() => { setContraList(p => p.map(x => x.id === c.id ? { ...x, status: 'Dismissed' as const } : x)); toast.info(`${c.id} dismissed.`); }}
+                      className="px-4 py-2 rounded-lg text-[12.5px] font-medium border transition-all hover:bg-[var(--surface-2)]"
+                      style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>Dismiss</button>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -354,11 +363,11 @@ function EvidenceHubContent() {
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
-                { label: 'Evidence ID', value: 'EVIDENCE-044', icon: Package },
-                { label: 'Document Hash', value: 'A83F...X91D', icon: Hash },
-                { label: 'Block Number', value: '#892341', icon: Database },
-                { label: 'Transaction ID', value: 'TX-1298-AF92', icon: Lock },
-                { label: 'Timestamp', value: '06 Sep 2026', icon: Clock },
+                { label: 'Evidence ID', value: '—', icon: Package },
+                { label: 'Document Hash', value: '—', icon: Hash },
+                { label: 'Block Number', value: '—', icon: Database },
+                { label: 'Transaction ID', value: '—', icon: Lock },
+                { label: 'Timestamp', value: '—', icon: Clock },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
@@ -372,11 +381,11 @@ function EvidenceHubContent() {
               })}
             </div>
             <div className="mt-5 flex items-center gap-3 p-4 rounded-xl"
-              style={{ background: 'var(--success-muted)', border: '1px solid rgba(22,163,74,0.25)' }}>
-              <CheckCircle2 size={20} style={{ color: 'var(--success)' }} />
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+              <ShieldCheck size={20} style={{ color: 'var(--accent)' }} />
               <div>
-                <div className="font-bold text-[14px]" style={{ color: 'var(--success)' }}>✓ INTEGRITY VERIFIED</div>
-                <div className="text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>SHA-256 hash matches blockchain record. No tampering detected.</div>
+                <div className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>Cryptographic Ledger Online</div>
+                <div className="text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>Evidence objects are cryptographically signed with SHA-256 upon ingestion.</div>
               </div>
             </div>
           </div>
@@ -384,32 +393,38 @@ function EvidenceHubContent() {
           {/* Chain of Custody */}
           <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
             <h3 className="text-[17px] font-bold mb-5" style={{ color: 'var(--ink-primary)' }}>Chain of Custody</h3>
-            <div className="space-y-0">
-              {chainOfCustody.map((step, i) => {
-                const Icon = step.icon;
-                return (
-                  <div key={i} className="flex gap-4">
-                    <div className="flex flex-col items-center">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-                        style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
-                        <Icon size={16} />
+            {chainOfCustody.length === 0 ? (
+              <div className="py-8 text-center text-[var(--ink-tertiary)] text-[13px]">
+                No chain of custody log entries available.
+              </div>
+            ) : (
+              <div className="space-y-0">
+                {chainOfCustody.map((step, i) => {
+                  const Icon = step.icon;
+                  return (
+                    <div key={i} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                          style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
+                          <Icon size={16} />
+                        </div>
+                        {i < chainOfCustody.length - 1 && (
+                          <div className="w-0.5 flex-1 my-1" style={{ background: 'var(--border)' }} />
+                        )}
                       </div>
-                      {i < chainOfCustody.length - 1 && (
-                        <div className="w-0.5 flex-1 my-1" style={{ background: 'var(--border)' }} />
-                      )}
-                    </div>
-                    <div className="pb-6 flex-1">
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <span className="font-mono-id text-[12px] font-bold" style={{ color: 'var(--ink-tertiary)' }}>{step.time} • {step.date}</span>
+                      <div className="pb-6 flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-mono-id text-[12px] font-bold" style={{ color: 'var(--ink-tertiary)' }}>{step.time} • {step.date}</span>
+                        </div>
+                        <div className="text-[14px] font-semibold" style={{ color: 'var(--ink-primary)' }}>{step.action}</div>
+                        <div className="text-[12.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>{step.officer}</div>
+                        <div className="text-[12px] mt-0.5" style={{ color: 'var(--ink-tertiary)' }}>{step.location}</div>
                       </div>
-                      <div className="text-[14px] font-semibold" style={{ color: 'var(--ink-primary)' }}>{step.action}</div>
-                      <div className="text-[12.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>{step.officer}</div>
-                      <div className="text-[12px] mt-0.5" style={{ color: 'var(--ink-tertiary)' }}>{step.location}</div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}

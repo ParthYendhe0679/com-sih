@@ -17,52 +17,12 @@ import {
 } from 'recharts';
 
 // Active Investigation Activity telemetry feed
-const liveFeedData = [
-  { time: '10:45', color: '#6366F1', event: 'Investigation Agent completed multi-source synthesis', caseId: 'CASE-102' },
-  { time: '10:42', color: '#D97706', event: 'Investigator reviewed wire transfer evidence (EVIDENCE-046)', caseId: 'CASE-102' },
-  { time: '10:38', color: '#7C3AED', event: 'Historical case match detected: 87% similarity with CASE-087', caseId: 'CASE-102' },
-  { time: '10:35', color: '#4F46E5', event: 'New entity correlation found: Karan Verma ↔ MH-01-AB-1234', caseId: 'CASE-102' },
-  { time: '10:32', color: '#16A34A', event: 'CASE-102 dossier updated with Juhu PS FIR-2026-0102', caseId: 'CASE-102' },
-  { time: '10:18', color: '#0EA5E9', event: 'Approved online citizen complaint converted to investigation queue', caseId: 'CASE-119' },
-  { time: '10:05', color: '#4F46E5', event: 'Centrality analysis identified ORG-014 as primary financial hub', caseId: 'CASE-102' },
-  { time: '09:50', color: '#0369A1', event: 'Evidence integrity sealed: SHA-256 cryptographic verification', caseId: 'CASE-108' },
-];
+const liveFeedData: { time: string; color: string; event: string; caseId: string }[] = [];
 
-const aiInsights = [
-  {
-    id: 'AI-001',
-    title: '3 Hidden Connections Detected',
-    body: 'PERSON-014 has indirect links to PERSON-033 through 2 intermediary organizations not previously flagged.',
-    confidence: 91,
-    caseId: 'CASE-102',
-  },
-  {
-    id: 'AI-002',
-    title: 'Entity P-104 has High Network Centrality',
-    body: 'ORG-014 (Nexus Trading Corp) acts as a financial hub node with 14 connected entities and ₹4.7Cr traced flow.',
-    confidence: 87,
-    caseId: 'CASE-102',
-  },
-  {
-    id: 'AI-003',
-    title: 'Historical Match: 87% Similarity',
-    body: 'Current case pattern closely matches CASE-2019-042 — same crime type, overlapping location cluster, similar MO.',
-    confidence: 87,
-    caseId: 'CASE-102',
-  },
-];
+const aiInsights: { id: string; title: string; body: string; confidence: number; caseId: string }[] = [];
 
-// Fallback crime trend data matching screenshot exactly
-const fallbackCrimeTrends: CrimeTrendData[] = [
-  { month: 'Jan', robbery: 42, fraud: 38, kidnapping: 8, murder: 5, vehicleTheft: 28, cybercrime: 22 },
-  { month: 'Feb', robbery: 38, fraud: 41, kidnapping: 6, murder: 4, vehicleTheft: 25, cybercrime: 25 },
-  { month: 'Mar', robbery: 45, fraud: 44, kidnapping: 9, murder: 6, vehicleTheft: 30, cybercrime: 28 },
-  { month: 'Apr', robbery: 40, fraud: 46, kidnapping: 7, murder: 5, vehicleTheft: 27, cybercrime: 32 },
-  { month: 'May', robbery: 48, fraud: 42, kidnapping: 10, murder: 7, vehicleTheft: 32, cybercrime: 29 },
-  { month: 'Jun', robbery: 52, fraud: 48, kidnapping: 8, murder: 6, vehicleTheft: 35, cybercrime: 34 },
-  { month: 'Jul', robbery: 50, fraud: 51, kidnapping: 11, murder: 8, vehicleTheft: 29, cybercrime: 38 },
-  { month: 'Aug', robbery: 55, fraud: 53, kidnapping: 9, murder: 5, vehicleTheft: 33, cybercrime: 41 },
-];
+// Crime trend data
+const fallbackCrimeTrends: CrimeTrendData[] = [];
 
 interface TooltipPayloadItem {
   name: string;
@@ -204,7 +164,7 @@ export default function DashboardPage() {
     },
     {
       label: 'Case Leads',
-      value: '34',
+      value: stats ? String(stats.pending_fir_reviews ?? 0) : '0',
       sub: 'Ready for review',
       icon: AlertTriangle,
       href: '/cases',
@@ -213,12 +173,7 @@ export default function DashboardPage() {
     },
   ];
 
-  const topEntities = [
-    { id: 'PERSON-019', name: 'Karan Verma', role: 'Key POI / Operator', connections: 18, caseId: 'CASE-102' },
-    { id: 'PERSON-016', name: 'Rahul Thakur', role: 'Key Associate', connections: 12, caseId: 'CASE-102' },
-    { id: 'PERSON-015', name: 'Nisha Kapoor', role: 'Person of Interest', connections: 11, caseId: 'CASE-102' },
-    { id: 'ORG-014', name: 'Nexus Trading Corp', role: 'Shell Company', connections: 14, caseId: 'CASE-102' },
-  ];
+  const topEntities: { id: string; name: string; role: string; connections: number; caseId: string }[] = [];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -303,83 +258,93 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="h-[270px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={trends} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="cFraud" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25} />
-                    <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="cRobbery" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.22} />
-                    <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
-                  </linearGradient>
-                  <linearGradient id="cCyber" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.20} />
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fontSize: 12, fill: '#94A3B8' }}
-                  axisLine={{ stroke: '#E2E8F0' }}
-                  tickLine={false}
-                />
-                <YAxis
-                  ticks={[0, 15, 30, 45, 60]}
-                  domain={[0, 60]}
-                  tick={{ fontSize: 12, fill: '#94A3B8' }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip content={<CustomChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="robbery"
-                  stroke="#F59E0B"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#cRobbery)"
-                  name="Robbery"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="fraud"
-                  stroke="#4F46E5"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#cFraud)"
-                  name="Fraud"
-                />
-                <Area
-                  type="monotone"
-                  dataKey="cybercrime"
-                  stroke="#10B981"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#cCyber)"
-                  name="Cybercrime"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {trends.length === 0 ? (
+            <div className="h-[270px] w-full flex flex-col items-center justify-center text-slate-400">
+              <Activity className="mb-2 text-slate-300" size={32} />
+              <p className="text-[13px] font-medium text-slate-600">No crime trend data available</p>
+              <p className="text-[11.5px] text-slate-400">Monthly crime metrics will populate as FIR records are ingested</p>
+            </div>
+          ) : (
+            <>
+              <div className="h-[270px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={trends} margin={{ top: 10, right: 15, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="cFraud" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="cRobbery" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.22} />
+                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.0} />
+                      </linearGradient>
+                      <linearGradient id="cCyber" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.20} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fontSize: 12, fill: '#94A3B8' }}
+                      axisLine={{ stroke: '#E2E8F0' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      ticks={[0, 15, 30, 45, 60]}
+                      domain={[0, 60]}
+                      tick={{ fontSize: 12, fill: '#94A3B8' }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<CustomChartTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="robbery"
+                      stroke="#F59E0B"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#cRobbery)"
+                      name="Robbery"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="fraud"
+                      stroke="#4F46E5"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#cFraud)"
+                      name="Fraud"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="cybercrime"
+                      stroke="#10B981"
+                      strokeWidth={2.5}
+                      fillOpacity={1}
+                      fill="url(#cCyber)"
+                      name="Cybercrime"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
 
-          <div className="flex items-center gap-6 text-[12px] pt-3.5 border-t border-slate-100 mt-2 font-medium">
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]" />
-              Fraud (+11%)
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
-              Robbery (+18%)
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-700">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
-              Cybercrime (+26%)
-            </span>
-          </div>
+              <div className="flex items-center gap-6 text-[12px] pt-3.5 border-t border-slate-100 mt-2 font-medium">
+                <span className="flex items-center gap-1.5 text-slate-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4F46E5]" />
+                  Fraud
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#F59E0B]" />
+                  Robbery
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-700">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#10B981]" />
+                  Cybercrime
+                </span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Live Investigation Feed (4 cols) */}
@@ -399,36 +364,44 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto max-h-[330px] pr-1.5">
-            {liveFeedData.map((ev, i) => (
-              <div key={i} className="flex gap-3 text-[13px]">
-                <div className="flex flex-col items-center">
-                  <div
-                    className="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                    style={{ background: ev.color }}
-                  />
-                  {i < liveFeedData.length - 1 && (
-                    <div className="w-0.5 flex-1 mt-1 bg-slate-200/80 min-h-[24px]" />
-                  )}
-                </div>
-                <div className="pb-2.5 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-[11px] font-bold text-slate-400">
-                      {ev.time}
-                    </span>
-                    <Link
-                      href={`/cases/${ev.caseId}`}
-                      className="text-[10.5px] font-bold px-1.5 py-0.5 rounded font-mono bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
-                    >
-                      {ev.caseId}
-                    </Link>
-                  </div>
-                  <p className="text-[12.5px] leading-snug text-slate-800">
-                    {ev.event}
-                  </p>
-                </div>
+          <div className="flex-1 space-y-3 overflow-y-auto max-h-[330px] pr-1.5 flex flex-col justify-center">
+            {liveFeedData.length === 0 ? (
+              <div className="py-12 text-center text-slate-400">
+                <Activity className="mx-auto mb-2 text-slate-300" size={28} />
+                <p className="text-[13px] font-medium text-slate-600">No active activity logs</p>
+                <p className="text-[11.5px] text-slate-400 mt-0.5">Real-time investigative telemetry will display here</p>
               </div>
-            ))}
+            ) : (
+              liveFeedData.map((ev, i) => (
+                <div key={i} className="flex gap-3 text-[13px]">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                      style={{ background: ev.color }}
+                    />
+                    {i < liveFeedData.length - 1 && (
+                      <div className="w-0.5 flex-1 mt-1 bg-slate-200/80 min-h-[24px]" />
+                    )}
+                  </div>
+                  <div className="pb-2.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-[11px] font-bold text-slate-400">
+                        {ev.time}
+                      </span>
+                      <Link
+                        href={`/cases/${ev.caseId}`}
+                        className="text-[10.5px] font-bold px-1.5 py-0.5 rounded font-mono bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors"
+                      >
+                        {ev.caseId}
+                      </Link>
+                    </div>
+                    <p className="text-[12.5px] leading-snug text-slate-800">
+                      {ev.event}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </div>
@@ -501,42 +474,50 @@ export default function DashboardPage() {
               <p className="text-[12px] text-slate-500">Highest graph centrality</p>
             </div>
             <Link
-              href="/cases/CASE-102?tab=network"
+              href="/network"
               className="text-[13px] text-indigo-600 font-semibold hover:underline flex items-center gap-0.5"
             >
               Graph <ChevronRight size={13} />
             </Link>
           </div>
-          <div className="space-y-3 flex-1">
-            {topEntities.map((ent) => (
-              <div
-                key={ent.id}
-                onClick={() =>
-                  dispatch(
-                    openInspector({
-                      id: ent.id,
-                      type: ent.id.startsWith('PERSON') ? 'Person' : 'Organization',
-                    })
-                  )
-                }
-                className="p-3.5 rounded-xl border border-slate-200/70 bg-slate-50/70 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all flex items-center justify-between cursor-pointer"
-              >
-                <div>
-                  <div className="text-[13.5px] font-semibold text-slate-900">
-                    {ent.name}
-                  </div>
-                  <div className="text-[11.5px] text-slate-500 mt-0.5">
-                    {ent.role} • {ent.caseId}
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[16px] font-bold font-mono text-indigo-600">
-                    {ent.connections}
-                  </div>
-                  <div className="text-[10.5px] font-mono text-slate-400">links</div>
-                </div>
+          <div className="space-y-3 flex-1 flex flex-col justify-center">
+            {topEntities.length === 0 ? (
+              <div className="py-8 text-center text-slate-400">
+                <Users className="mx-auto mb-2 text-slate-300" size={28} />
+                <p className="text-[13px] font-medium text-slate-600">No network entities tracked</p>
+                <p className="text-[11.5px] text-slate-400 mt-0.5">Entities will be extracted upon case & FIR ingestion</p>
               </div>
-            ))}
+            ) : (
+              topEntities.map((ent) => (
+                <div
+                  key={ent.id}
+                  onClick={() =>
+                    dispatch(
+                      openInspector({
+                        id: ent.id,
+                        type: ent.id.startsWith('PERSON') ? 'Person' : 'Organization',
+                      })
+                    )
+                  }
+                  className="p-3.5 rounded-xl border border-slate-200/70 bg-slate-50/70 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all flex items-center justify-between cursor-pointer"
+                >
+                  <div>
+                    <div className="text-[13.5px] font-semibold text-slate-900">
+                      {ent.name}
+                    </div>
+                    <div className="text-[11.5px] text-slate-500 mt-0.5">
+                      {ent.role} • {ent.caseId}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-[16px] font-bold font-mono text-indigo-600">
+                      {ent.connections}
+                    </div>
+                    <div className="text-[10.5px] font-mono text-slate-400">links</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -556,38 +537,46 @@ export default function DashboardPage() {
               Ask AI <ChevronRight size={13} />
             </Link>
           </div>
-          <div className="space-y-3 flex-1">
-            {aiInsights.map((insight) => (
-              <div
-                key={insight.id}
-                className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/70"
-              >
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <h4 className="text-[13px] font-bold leading-tight text-slate-900">
-                    {insight.title}
-                  </h4>
-                </div>
-                <p className="text-[12px] leading-relaxed mb-2.5 text-slate-600">
-                  {insight.body}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="h-1.5 w-20 rounded-full overflow-hidden bg-slate-200">
-                      <div
-                        className="h-full rounded-full bg-indigo-600"
-                        style={{ width: `${insight.confidence}%` }}
-                      />
+          <div className="space-y-3 flex-1 flex flex-col justify-center">
+            {aiInsights.length === 0 ? (
+              <div className="py-8 text-center text-slate-400">
+                <Brain className="mx-auto mb-2 text-slate-300" size={28} />
+                <p className="text-[13px] font-medium text-slate-600">No active AI alerts</p>
+                <p className="text-[11.5px] text-slate-400 mt-0.5">Neural insights will compute as case links grow</p>
+              </div>
+            ) : (
+              aiInsights.map((insight) => (
+                <div
+                  key={insight.id}
+                  className="p-4 rounded-xl border border-slate-200/70 bg-slate-50/70"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <h4 className="text-[13px] font-bold leading-tight text-slate-900">
+                      {insight.title}
+                    </h4>
+                  </div>
+                  <p className="text-[12px] leading-relaxed mb-2.5 text-slate-600">
+                    {insight.body}
+                  </p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="h-1.5 w-20 rounded-full overflow-hidden bg-slate-200">
+                        <div
+                          className="h-full rounded-full bg-indigo-600"
+                          style={{ width: `${insight.confidence}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] font-semibold font-mono text-indigo-600">
+                        {insight.confidence}%
+                      </span>
                     </div>
-                    <span className="text-[11px] font-semibold font-mono text-indigo-600">
-                      {insight.confidence}%
+                    <span className="text-[10.5px] font-mono text-slate-400">
+                      {insight.caseId}
                     </span>
                   </div>
-                  <span className="text-[10.5px] font-mono text-slate-400">
-                    {insight.caseId}
-                  </span>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>

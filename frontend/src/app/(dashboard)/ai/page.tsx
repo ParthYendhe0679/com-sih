@@ -29,7 +29,7 @@ export default function KAVAAIPage() {
   const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Case Context
-  const [selectedCaseId, setSelectedCaseId] = useState('CASE-102');
+  const [selectedCaseId, setSelectedCaseId] = useState('');
   const [availableCases, setAvailableCases] = useState<{ id: string; title: string; crime: string; city: string }[]>(
     cases.map((c) => ({ id: c.id, title: c.title, crime: c.crime, city: c.city }))
   );
@@ -58,7 +58,7 @@ export default function KAVAAIPage() {
     };
   }, []);
 
-  const selectedCase = availableCases.find((c) => c.id === selectedCaseId) || availableCases[0];
+  const selectedCase = availableCases.find((c) => c.id === selectedCaseId) || availableCases[0] || null;
 
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -68,7 +68,7 @@ export default function KAVAAIPage() {
         'Welcome to **KAVA AI** — Criminal Case Intelligence Assistant.\n\nI am grounded in active investigation data. I cross-correlate underlying FIRs, network entities, relationships, verified banking ledgers, and historical precedents.\n\nYou can query entity connections, ask for evidentiary proof, inspect timeline anomalies, or analyze modus operandi similarities. Select a suggested inquiry below or enter your tactical question.',
       timestamp: new Date().toISOString(),
       confidence: 96,
-      sources: [{ id: 'CASE-102', type: 'Case', title: 'CASE-102 (Flagship)' }],
+      sources: [],
     },
   ]);
 
@@ -170,19 +170,24 @@ export default function KAVAAIPage() {
                     color: 'var(--ink-primary)',
                   }}
                 >
-                  {availableCases.map((c, idx) => (
-                    <option key={`${c.id}-${idx}`} value={c.id}>
-                      {c.id} — {c.crime} ({c.city})
-                    </option>
-                  ))}
+                  {availableCases.length === 0 ? (
+                    <option value="">No Active Cases Registered</option>
+                  ) : (
+                    availableCases.map((c, idx) => (
+                      <option key={`${c.id}-${idx}`} value={c.id}>
+                        {c.id} — {c.crime} ({c.city})
+                      </option>
+                    ))
+                  )}
                 </select>
                 <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
               </div>
             </div>
 
             <button
-              onClick={() => router.push(`/cases/${selectedCaseId}`)}
-              className="self-end sm:self-auto px-4 py-2.5 mt-4 rounded-xl text-[12.5px] font-semibold border hover:bg-[var(--surface-2)] transition-colors flex items-center gap-1.5 cursor-pointer"
+              onClick={() => selectedCaseId && router.push(`/cases/${selectedCaseId}`)}
+              disabled={!selectedCaseId}
+              className="self-end sm:self-auto px-4 py-2.5 mt-4 rounded-xl text-[12.5px] font-semibold border hover:bg-[var(--surface-2)] transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
             >
               <FolderOpen size={14} />
@@ -198,7 +203,7 @@ export default function KAVAAIPage() {
             <span>KAVA AI outputs provide investigative assistance only. The investigator remains the final decision maker.</span>
           </div>
           <div className="font-mono-id text-gray-400">
-            Target: <strong>{selectedCase.id}</strong> ({selectedCase.title})
+            Target: <strong>{selectedCase ? selectedCase.id : 'Active Workspace'}</strong> {selectedCase ? `(${selectedCase.title})` : ''}
           </div>
         </div>
       </div>
@@ -355,7 +360,7 @@ export default function KAVAAIPage() {
             value={inputQuery}
             onChange={(e) => setInputQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask KAVA AI about CASE-102 entities, evidence, or connections..."
+            placeholder={selectedCase ? `Ask KAVA AI about ${selectedCase.id} entities, evidence, or connections...` : "Select a case or ask KAVA AI about investigation patterns..."}
             className="flex-1 h-11 px-4 rounded-xl border text-[13.5px] outline-none transition-all focus:border-indigo-500"
             style={{
               background: 'var(--surface-1)',

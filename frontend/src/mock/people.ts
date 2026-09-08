@@ -1,65 +1,7 @@
 // ============================================================
-// KRITAGAS — Centralized Mock Data: People
+// KRITAGAS — People Dossiers Data (Clean / Live-Only)
 // ============================================================
 import { Person } from '@/types';
 
-export const people: Person[] = [
-  { id: 'PERSON-001', name: 'Rajesh Kumar', age: 42, gender: 'Male', address: '14 MG Road, Andheri West', city: 'Mumbai', phone: '+91 98201 43210', occupation: 'Business Owner', role: 'Person of Interest', caseIds: ['CASE-001','CASE-012'], vehicleIds: ['VEHICLE-001'], phoneIds: ['PHONE-001'], organizationIds: ['ORG-001'], associatedPersonIds: ['PERSON-002','PERSON-005'] },
-  { id: 'PERSON-002', name: 'Priya Sharma', age: 35, gender: 'Female', address: '28 Nehru Nagar, Bandra', city: 'Mumbai', phone: '+91 98201 55432', occupation: 'Accountant', role: 'Witness', caseIds: ['CASE-001'], vehicleIds: [], phoneIds: ['PHONE-002'], organizationIds: ['ORG-001'], associatedPersonIds: ['PERSON-001'] },
-  { id: 'PERSON-003', name: 'Amit Patel', age: 38, gender: 'Male', address: '45 SV Road, Borivali', city: 'Mumbai', phone: '+91 98205 67890', occupation: 'Trader', role: 'Suspect', caseIds: ['CASE-002','CASE-005'], vehicleIds: ['VEHICLE-003'], phoneIds: ['PHONE-003'], organizationIds: ['ORG-003'], associatedPersonIds: ['PERSON-007','PERSON-010'] },
-  { id: 'PERSON-004', name: 'Sunita Desai', age: 29, gender: 'Female', address: '67 JM Road, Shivajinagar', city: 'Pune', phone: '+91 98230 12345', occupation: 'Software Engineer', role: 'Victim', caseIds: ['CASE-003'], vehicleIds: [], phoneIds: ['PHONE-004'], organizationIds: [], associatedPersonIds: [] },
-  { id: 'PERSON-005', name: 'Vikram Singh', age: 45, gender: 'Male', address: '12 Civil Lines', city: 'Delhi', phone: '+91 98110 78901', occupation: 'Contractor', role: 'Person of Interest', caseIds: ['CASE-004','CASE-012'], vehicleIds: ['VEHICLE-005','VEHICLE-006'], phoneIds: ['PHONE-005'], organizationIds: ['ORG-002','ORG-005'], associatedPersonIds: ['PERSON-001','PERSON-006','PERSON-014'] },
-  { id: 'PERSON-006', name: 'Meena Reddy', age: 33, gender: 'Female', address: '89 Jubilee Hills', city: 'Hyderabad', phone: '+91 99490 23456', occupation: 'Real Estate Agent', role: 'Person of Interest', caseIds: ['CASE-005'], vehicleIds: ['VEHICLE-007'], phoneIds: ['PHONE-006'], organizationIds: ['ORG-004'], associatedPersonIds: ['PERSON-005','PERSON-009'] },
-  { id: 'PERSON-007', name: 'Arjun Nair', age: 40, gender: 'Male', address: '23 MG Road, Koramangala', city: 'Bengaluru', phone: '+91 98450 34567', occupation: 'Import/Export', role: 'Suspect', caseIds: ['CASE-006','CASE-002'], vehicleIds: ['VEHICLE-008'], phoneIds: ['PHONE-007'], organizationIds: ['ORG-003','ORG-006'], associatedPersonIds: ['PERSON-003','PERSON-008'] },
-  { id: 'PERSON-008', name: 'Deepak Joshi', age: 36, gender: 'Male', address: '56 Park Street', city: 'Kolkata', phone: '+91 98300 45678', occupation: 'Financial Advisor', role: 'Person of Interest', caseIds: ['CASE-007'], vehicleIds: ['VEHICLE-009'], phoneIds: ['PHONE-008'], organizationIds: ['ORG-006'], associatedPersonIds: ['PERSON-007','PERSON-012'] },
-  { id: 'PERSON-009', name: 'Kavita Iyer', age: 31, gender: 'Female', address: '34 Anna Salai', city: 'Chennai', phone: '+91 98410 56789', occupation: 'Lawyer', role: 'Complainant', caseIds: ['CASE-008'], vehicleIds: [], phoneIds: ['PHONE-009'], organizationIds: [], associatedPersonIds: ['PERSON-006'] },
-  { id: 'PERSON-010', name: 'Sanjay Gupta', age: 48, gender: 'Male', address: '78 Linking Road, Khar', city: 'Mumbai', phone: '+91 98201 67890', occupation: 'Jewelry Dealer', role: 'Suspect', caseIds: ['CASE-009','CASE-005','CASE-102'], vehicleIds: ['VEHICLE-010','VEHICLE-011'], phoneIds: ['PHONE-010'], organizationIds: ['ORG-007'], associatedPersonIds: ['PERSON-003','PERSON-014','PERSON-021'] },
-  { id: 'PERSON-011', name: 'Rohit Malhotra', age: 27, gender: 'Male', address: '91 Connaught Place', city: 'Delhi', phone: '+91 98110 78902', occupation: 'Unemployed', role: 'Suspect', caseIds: ['CASE-010'], vehicleIds: ['VEHICLE-012'], phoneIds: ['PHONE-011'], organizationIds: [], associatedPersonIds: ['PERSON-013'] },
-  { id: 'PERSON-012', name: 'Ananya Chatterjee', age: 34, gender: 'Female', address: '12 Salt Lake', city: 'Kolkata', phone: '+91 98300 89012', occupation: 'Bank Manager', role: 'Witness', caseIds: ['CASE-007','CASE-011'], vehicleIds: [], phoneIds: ['PHONE-012'], organizationIds: ['ORG-008'], associatedPersonIds: ['PERSON-008'] },
-  { id: 'PERSON-013', name: 'Farhan Sheikh', age: 30, gender: 'Male', address: '45 Mohammed Ali Road', city: 'Mumbai', phone: '+91 98201 90123', occupation: 'Auto Parts Dealer', role: 'Person of Interest', caseIds: ['CASE-010','CASE-013'], vehicleIds: ['VEHICLE-013','VEHICLE-014'], phoneIds: ['PHONE-013'], organizationIds: ['ORG-009'], associatedPersonIds: ['PERSON-011','PERSON-015'] },
-  // === FLAGSHIP CASE-102 Core People ===
-  { id: 'PERSON-014', name: 'Aarav Mehta', alias: 'AM', age: 39, gender: 'Male', address: '22 Juhu Tara Road, Juhu', city: 'Mumbai', phone: '+91 98201 01421', occupation: 'Business Consultant', role: 'Person of Interest', caseIds: ['CASE-102','CASE-087','CASE-004'], vehicleIds: ['VEHICLE-044','VEHICLE-018'], phoneIds: ['PHONE-014','PHONE-021'], organizationIds: ['ORG-014','ORG-019'], associatedPersonIds: ['PERSON-021','PERSON-015','PERSON-016','PERSON-010','PERSON-005'] },
-  { id: 'PERSON-015', name: 'Nisha Kapoor', age: 32, gender: 'Female', address: '8 Versova Lane, Andheri West', city: 'Mumbai', phone: '+91 98201 01522', occupation: 'Real Estate Developer', role: 'Person of Interest', caseIds: ['CASE-102','CASE-013'], vehicleIds: ['VEHICLE-019'], phoneIds: ['PHONE-015'], organizationIds: ['ORG-014','ORG-015'], associatedPersonIds: ['PERSON-014','PERSON-013','PERSON-017'] },
-  { id: 'PERSON-016', name: 'Rahul Thakur', alias: 'RT', age: 41, gender: 'Male', address: '34 Link Road, Bandra', city: 'Mumbai', phone: '+91 99887 65432', occupation: 'Shell Company Director', role: 'Person of Interest', caseIds: ['CASE-102','CASE-087'], vehicleIds: ['VEHICLE-020','VEHICLE-021'], phoneIds: ['PHONE-016'], organizationIds: ['ORG-014','ORG-016'], associatedPersonIds: ['PERSON-019','PERSON-014','PERSON-015','PERSON-018'] },
-  { id: 'PERSON-017', name: 'Pooja Bhatia', age: 28, gender: 'Female', address: '19 Linking Road, Bandra', city: 'Mumbai', phone: '+91 98201 01724', occupation: 'Digital Marketing', role: 'Witness', caseIds: ['CASE-102'], vehicleIds: [], phoneIds: ['PHONE-017'], organizationIds: ['ORG-015'], associatedPersonIds: ['PERSON-015'] },
-  { id: 'PERSON-018', name: 'Suresh Yadav', age: 50, gender: 'Male', address: '77 Model Town', city: 'Delhi', phone: '+91 98110 01825', occupation: 'Financial Intermediary', role: 'Person of Interest', caseIds: ['CASE-102','CASE-087'], vehicleIds: ['VEHICLE-022'], phoneIds: ['PHONE-018'], organizationIds: ['ORG-014'], associatedPersonIds: ['PERSON-016','PERSON-019'] },
-  { id: 'PERSON-019', name: 'Karan Verma', alias: 'KV', age: 38, gender: 'Male', address: 'Flat 402, Sea Green Apts, Andheri West', city: 'Mumbai', phone: '+91 98765 43210', occupation: 'Managing Director & Operator', role: 'Person of Interest', caseIds: ['CASE-102','CASE-087','CASE-041'], vehicleIds: ['VEHICLE-044','VEHICLE-023'], phoneIds: ['PHONE-014','PHONE-019'], organizationIds: ['ORG-014','ORG-019'], associatedPersonIds: ['PERSON-016','PERSON-015','PERSON-014','PERSON-021'] },
-  { id: 'PERSON-020', name: 'Divya Saxena', age: 37, gender: 'Female', address: '41 Koregaon Park', city: 'Pune', phone: '+91 98230 02027', occupation: 'Chartered Accountant', role: 'Person of Interest', caseIds: ['CASE-102'], vehicleIds: [], phoneIds: ['PHONE-020'], organizationIds: ['ORG-014','ORG-017'], associatedPersonIds: ['PERSON-019','PERSON-021'] },
-  { id: 'PERSON-021', name: 'Vikram Sharma', alias: 'VS', age: 41, gender: 'Male', address: '66 Carter Road, Bandra', city: 'Mumbai', phone: '+91 98201 02128', occupation: 'Logistics Manager', role: 'Person of Interest', caseIds: ['CASE-102','CASE-087'], vehicleIds: ['VEHICLE-024','VEHICLE-025'], phoneIds: ['PHONE-021'], organizationIds: ['ORG-014','ORG-018'], associatedPersonIds: ['PERSON-014','PERSON-010','PERSON-020','PERSON-022'] },
-  { id: 'PERSON-022', name: 'Lakshmi Menon', age: 35, gender: 'Female', address: '9 Marine Drive', city: 'Mumbai', phone: '+91 98201 02229', occupation: 'Investment Banker', role: 'Witness', caseIds: ['CASE-102'], vehicleIds: ['VEHICLE-026'], phoneIds: ['PHONE-022'], organizationIds: ['ORG-018'], associatedPersonIds: ['PERSON-021'] },
-  { id: 'PERSON-023', name: 'Manoj Tiwari', age: 46, gender: 'Male', address: '52 Hazratganj', city: 'Delhi', phone: '+91 98110 02330', occupation: 'Property Dealer', role: 'Complainant', caseIds: ['CASE-102'], vehicleIds: ['VEHICLE-027'], phoneIds: ['PHONE-023'], organizationIds: [], associatedPersonIds: [] },
-  // Additional people for data density
-  { id: 'PERSON-024', name: 'Anil Kapoor', age: 52, gender: 'Male', address: '15 Pali Hill', city: 'Mumbai', phone: '+91 98201 24001', occupation: 'Restaurateur', role: 'Witness', caseIds: ['CASE-014'], vehicleIds: ['VEHICLE-028'], phoneIds: ['PHONE-024'], organizationIds: ['ORG-010'], associatedPersonIds: [] },
-  { id: 'PERSON-025', name: 'Geeta Mishra', age: 29, gender: 'Female', address: '88 Ashok Vihar', city: 'Delhi', phone: '+91 98110 25002', occupation: 'Journalist', role: 'Witness', caseIds: ['CASE-015'], vehicleIds: [], phoneIds: ['PHONE-025'], organizationIds: [], associatedPersonIds: [] },
-  { id: 'PERSON-026', name: 'Harish Menon', age: 43, gender: 'Male', address: '31 Indiranagar', city: 'Bengaluru', phone: '+91 98450 26003', occupation: 'Pharma Rep', role: 'Suspect', caseIds: ['CASE-016','CASE-018'], vehicleIds: ['VEHICLE-029'], phoneIds: ['PHONE-026'], organizationIds: ['ORG-011'], associatedPersonIds: ['PERSON-027'] },
-  { id: 'PERSON-027', name: 'Ishaan Dutta', age: 25, gender: 'Male', address: '72 New Town', city: 'Kolkata', phone: '+91 98300 27004', occupation: 'Student', role: 'Victim', caseIds: ['CASE-017'], vehicleIds: [], phoneIds: ['PHONE-027'], organizationIds: [], associatedPersonIds: ['PERSON-026'] },
-  { id: 'PERSON-028', name: 'Jaya Prakash', age: 55, gender: 'Female', address: '60 T Nagar', city: 'Chennai', phone: '+91 98410 28005', occupation: 'Temple Trustee', role: 'Complainant', caseIds: ['CASE-019'], vehicleIds: ['VEHICLE-030'], phoneIds: ['PHONE-028'], organizationIds: ['ORG-012'], associatedPersonIds: [] },
-  { id: 'PERSON-029', name: 'Kumar Rajan', age: 37, gender: 'Male', address: '48 Gachibowli', city: 'Hyderabad', phone: '+91 99490 29006', occupation: 'IT Manager', role: 'Victim', caseIds: ['CASE-020'], vehicleIds: ['VEHICLE-031'], phoneIds: ['PHONE-029'], organizationIds: [], associatedPersonIds: [] },
-  { id: 'PERSON-030', name: 'Lalita Banerjee', age: 41, gender: 'Female', address: '26 Ballygunge', city: 'Kolkata', phone: '+91 98300 30007', occupation: 'Doctor', role: 'Witness', caseIds: ['CASE-021'], vehicleIds: [], phoneIds: ['PHONE-030'], organizationIds: ['ORG-013'], associatedPersonIds: [] },
-  ...Array.from({ length: 70 }, (_, i) => {
-    const idx = i + 31;
-    const cities = ['Mumbai','Delhi','Pune','Bengaluru','Hyderabad','Chennai','Kolkata'];
-    const roles = ['Witness','Suspect','Person of Interest','Complainant','Victim'];
-    const occupations = ['Business Owner','Teacher','Driver','Shop Owner','Clerk','Engineer','Doctor','Trader','Contractor','Mechanic','Student','Unemployed','Farmer','Tailor','Electrician'];
-    const firstNames = ['Arun','Bhanu','Chandan','Dhruv','Ekta','Faisal','Gauri','Hemant','Indira','Jai','Kamla','Lalit','Mohan','Neha','Om','Pallavi','Qasim','Rekha','Satish','Tanvi','Umesh','Vidya','Wasim','Yogesh','Zara','Aditya','Bhavna','Chirag','Deepa','Eshan','Fatima','Girish','Hema','Irfan','Jyoti','Kishore','Leela','Manish','Nandini','Omkar','Preeti','Rahul','Simran','Tarun','Urvashi','Varun','Waqar','Yamini','Zeenat','Ashok','Bindu','Chitra','Devendra','Eshwar','Falguni','Gopal','Hina','Jagdish','Kalpana','Laxman','Madhavi','Nitin','Padma','Ramesh','Savita','Tushar','Uma','Vinod','Yashwant'];
-    const lastNames = ['Agarwal','Bhatt','Choudhary','Das','Easwaran','Fernandes','Gowda','Hegde','Iyengar','Jain','Khan','Lobo','Mukherjee','Naidu','Ojha','Pandey','Qureshi','Rao','Shetty','Trivedi','Upadhyay','Varma','Wagh','Xavier','Yadav','Zaveri','Ahuja','Bose','Chauhan','Dalal','Nambiar','Ghosh','Pillai','Kohli','Luthra','Mathur','Negi','Prabhu','Shukla','Tandon'];
-    const city = cities[idx % cities.length];
-    const caseNum = (idx % 50) + 1;
-    return {
-      id: `PERSON-${String(idx).padStart(3,'0')}`,
-      name: `${firstNames[i % firstNames.length]} ${lastNames[i % lastNames.length]}`,
-      age: 22 + (idx % 40),
-      gender: (idx % 3 === 0 ? 'Female' : 'Male') as 'Male' | 'Female',
-      address: `${idx * 3} Sector ${idx % 20 + 1}`,
-      city,
-      phone: `+91 9${String(8000000000 + idx * 11111).slice(1)}`,
-      occupation: occupations[idx % occupations.length],
-      role: roles[idx % roles.length],
-      caseIds: [`CASE-${String(caseNum).padStart(3,'0')}`],
-      vehicleIds: idx % 3 === 0 ? [`VEHICLE-${String(idx).padStart(3,'0')}`] : [],
-      phoneIds: [`PHONE-${String(idx).padStart(3,'0')}`],
-      organizationIds: [],
-      associatedPersonIds: [],
-    };
-  }),
-];
+// Zero dummy data — person dossiers are populated exclusively from live database records
+export const people: Person[] = [];

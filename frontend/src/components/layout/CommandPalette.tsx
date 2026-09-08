@@ -243,7 +243,7 @@ export default function CommandPalette() {
                 </button>
               ))}
               <div className="px-4 py-3 text-[11px] border-t mt-2" style={{ color: 'var(--ink-tertiary)', borderColor: 'var(--border)' }}>
-                <span className="font-medium">Tip:</span> Search by ID (CASE-102, PERSON-014), name, or crime type
+                <span className="font-medium">Tip:</span> Search by Case ID, Person Name, Vehicle Plate, or Crime Type
               </div>
             </div>
           ) : query.length < 2 ? (

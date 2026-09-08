@@ -33,7 +33,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [demoLoading, setDemoLoading] = useState<UserRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await authApi.login(email, password);
+      const res = await authApi.login(email.trim(), password);
       const role: UserRole =
         res.role === 'ADMIN' ? 'admin' :
         res.role === 'CITIZEN' ? 'citizen' : 'police';
@@ -55,36 +55,38 @@ export default function LoginPage() {
     } catch (err: any) {
       // Fallback: try to match demo credentials
       const matchedRole = (Object.keys(demoCredentials) as UserRole[]).find(
-        (r) => demoCredentials[r].email === email && demoCredentials[r].password === password
+        (r) => demoCredentials[r].email.toLowerCase() === email.trim().toLowerCase() && demoCredentials[r].password === password
       );
       if (matchedRole) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('kritagas_token', `demo-token-${matchedRole}-${Date.now()}`);
+          localStorage.setItem('kritagas_role', matchedRole);
+          localStorage.setItem('kritagas_user', JSON.stringify({
+            username: demoCredentials[matchedRole].label,
+            role: matchedRole.toUpperCase(),
+            email: demoCredentials[matchedRole].email,
+          }));
+        }
         dispatch(setRole(matchedRole));
         toast.success(`Session initialized for ${demoCredentials[matchedRole].label}`);
         navigateToPortal(matchedRole);
       } else {
-        setError('Invalid credentials. Please check your email and password.');
+        setError('Invalid credentials. Please check your email and password or click one of the Demo buttons below.');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDemoSignIn = async (role: UserRole) => {
-    if (demoLoading || loading) return;
-    setDemoLoading(role);
-    setError('');
-
+  const handleSelectDemoRole = (role: UserRole) => {
     const cred = demoCredentials[role];
-    try {
-      const res = await authApi.login(cred.email, cred.password);
-      dispatch(setRole(role));
-      toast.success(`Authenticated as ${res.username} (${res.role})`);
-    } catch {
-      dispatch(setRole(role));
-      toast.info(`Demo session initialized for ${cred.label}`);
-    }
-    navigateToPortal(role);
-    setDemoLoading(null);
+    setEmail(cred.email);
+    setPassword(cred.password);
+    setSelectedRole(role);
+    setError('');
+    toast.info(`Filled credentials for ${cred.label}`, {
+      description: 'Click "Sign In" to access the portal.',
+    });
   };
 
   const navigateToPortal = (role: UserRole) => {
@@ -180,7 +182,7 @@ export default function LoginPage() {
                 placeholder="name@organization.gov.in"
                 className={`form-input ${isDark ? 'bg-[#1A1B28] border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-400' : ''}`}
                 autoComplete="email"
-                disabled={loading || !!demoLoading}
+                disabled={loading}
               />
             </div>
 
@@ -198,7 +200,7 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   className={`form-input pr-12 ${isDark ? 'bg-[#1A1B28] border-white/10 text-white placeholder:text-gray-500 focus:border-indigo-400' : ''}`}
                   autoComplete="current-password"
-                  disabled={loading || !!demoLoading}
+                  disabled={loading}
                 />
                 <button
                   type="button"
@@ -225,7 +227,7 @@ export default function LoginPage() {
             {/* Sign In Button */}
             <button
               type="submit"
-              disabled={loading || !!demoLoading}
+              disabled={loading}
               className="btn-primary w-full py-3.5 text-[15px]"
             >
               {loading ? (
@@ -251,31 +253,31 @@ export default function LoginPage() {
               const config = roleConfig[role];
               const cred = demoCredentials[role];
               const Icon = config.icon;
-              const isLoading = demoLoading === role;
+              const isSelected = selectedRole === role;
 
               return (
                 <button
                   key={role}
                   type="button"
-                  onClick={() => handleDemoSignIn(role)}
-                  disabled={loading || !!demoLoading}
+                  onClick={() => handleSelectDemoRole(role)}
+                  disabled={loading}
                   className={`flex flex-col items-center gap-2 py-3.5 px-3 rounded-xl border text-center transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${
-                    isDark
-                      ? 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
-                      : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
+                    isSelected
+                      ? 'border-indigo-500 bg-indigo-500/10 ring-2 ring-indigo-500/40 shadow-md'
+                      : isDark
+                        ? 'bg-white/[0.03] border-white/[0.08] hover:bg-white/[0.06] hover:border-white/[0.15]'
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100 hover:border-gray-300'
                   }`}
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center"
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center transition-transform ${
+                      isSelected ? 'scale-110 shadow-sm' : ''
+                    }`}
                     style={{ background: config.bg, color: config.color }}
                   >
-                    {isLoading ? (
-                      <Loader2 size={18} className="animate-spin-slow" />
-                    ) : (
-                      <Icon size={18} />
-                    )}
+                    <Icon size={18} />
                   </div>
-                  <span className={`text-[12.5px] font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <span className={`text-[12.5px] font-semibold ${isSelected ? 'text-indigo-500 font-bold' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {cred.label.split(' / ')[0]}
                   </span>
                 </button>

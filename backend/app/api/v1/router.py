@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
     admin,
+    analytics,
     auth,
     blockchain,
     cases,
@@ -37,4 +38,5 @@ api_v1_router.include_router(intelligence.router, prefix="/intelligence", tags=[
 api_v1_router.include_router(blockchain.router, tags=["Blockchain Evidence Integrity"])
 api_v1_router.include_router(data_sync.router, prefix="/sync", tags=["Data Synchronization"])
 api_v1_router.include_router(graph.router, prefix="/graph", tags=["Graph Intelligence"])
+api_v1_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics Hub"])
 

@@ -30,6 +30,12 @@ export interface BackendCase {
   updated_at?: string;
   notes?: BackendCaseNote[];
   evidence_count?: number;
+  city?: string | null;
+  region?: string | null;
+  police_station?: string | null;
+  area?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface CaseTimelineEvent {

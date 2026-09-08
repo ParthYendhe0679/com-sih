@@ -14,6 +14,15 @@ import {
   XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend
 } from 'recharts';
 import type { HotspotItem } from '@/components/analytics/AnalyticsHotspotMap';
+import {
+  analyticsApi,
+  AnalyticsKPICard,
+  MonthlyTrendItem,
+  CrimeDistributionItem,
+  PeakHourItem,
+  CityVolumeItem,
+  EmergingPatternItem,
+} from '@/lib/api/analytics';
 
 // Dynamically import Leaflet map to prevent SSR issues
 const AnalyticsHotspotMap = dynamic(
@@ -40,15 +49,15 @@ const tabs: { key: TabKey; label: string; icon: React.ComponentType<{ size?: num
   { key: 'patterns', label: 'Emerging Patterns', icon: BrainCircuit },
 ];
 
-// Top 5 Standardized KPI Cards
-const kpiCards = [
+// Top 5 Standardized Initial KPI Fallbacks
+const initialKpiCards: AnalyticsKPICard[] = [
   {
     id: 'kpi-robbery',
     title: 'Robbery',
-    count: '0',
+    count: '...',
     change: '0%',
-    direction: 'up' as const,
-    subtext: 'Current baseline',
+    direction: 'up',
+    subtext: 'Synchronizing...',
     dotColor: '#EF4444',
     badgeColor: 'rgba(239, 68, 68, 0.12)',
     badgeText: '#DC2626',
@@ -56,10 +65,10 @@ const kpiCards = [
   {
     id: 'kpi-fraud',
     title: 'Fraud',
-    count: '0',
+    count: '...',
     change: '0%',
-    direction: 'up' as const,
-    subtext: 'Current baseline',
+    direction: 'up',
+    subtext: 'Synchronizing...',
     dotColor: '#F59E0B',
     badgeColor: 'rgba(245, 158, 11, 0.12)',
     badgeText: '#D97706',
@@ -67,10 +76,10 @@ const kpiCards = [
   {
     id: 'kpi-cybercrime',
     title: 'Cybercrime',
-    count: '0',
+    count: '...',
     change: '0%',
-    direction: 'up' as const,
-    subtext: 'Current baseline',
+    direction: 'up',
+    subtext: 'Synchronizing...',
     dotColor: '#8B5CF6',
     badgeColor: 'rgba(139, 92, 246, 0.12)',
     badgeText: '#7C3AED',
@@ -78,10 +87,10 @@ const kpiCards = [
   {
     id: 'kpi-vehicle',
     title: 'Vehicle Theft',
-    count: '0',
+    count: '...',
     change: '0%',
-    direction: 'down' as const,
-    subtext: 'Current baseline',
+    direction: 'down',
+    subtext: 'Synchronizing...',
     dotColor: '#10B981',
     badgeColor: 'rgba(16, 185, 129, 0.12)',
     badgeText: '#16A34A',
@@ -89,45 +98,15 @@ const kpiCards = [
   {
     id: 'kpi-extortion',
     title: 'Extortion',
-    count: '0',
+    count: '...',
     change: '0%',
-    direction: 'up' as const,
-    subtext: 'Current baseline',
+    direction: 'up',
+    subtext: 'Synchronizing...',
     dotColor: '#D97706',
     badgeColor: 'rgba(217, 119, 6, 0.12)',
     badgeText: '#B45309',
   },
 ];
-
-// Monthly FIR Trends Data
-const monthlyTrendsData: { month: string; fraud: number; robbery: number; cybercrime: number; kidnapping: number }[] = [];
-
-// Crime Type Distribution (Donut Chart)
-const crimeTypeDistribution: { name: string; value: number; count: number; color: string }[] = [];
-
-// Peak Hours Data
-const peakHoursData: { hour: string; incidents: number; label: string }[] = [];
-
-// City-wise FIR Volume Data
-const cityFIRData: { city: string; count: number; growth: string }[] = [];
-
-// Hotspots Dataset
-const fullHotspotList: HotspotItem[] = [];
-
-// Emerging Patterns Dataset
-interface EmergingPattern {
-  id: string;
-  title: string;
-  direction: string;
-  confidence: number;
-  status: string;
-  basis: string[];
-  details: string;
-  suggestedAction: string;
-  timeframe: string;
-  severity: string;
-}
-const emergingPatterns: EmergingPattern[] = [];
 
 function AnalyticsContent() {
   const router = useRouter();
@@ -141,7 +120,69 @@ function AnalyticsContent() {
   const [selectedCountry, setSelectedCountry] = useState('India');
   const [selectedState, setSelectedState] = useState('Maharashtra');
   const [selectedCity, setSelectedCity] = useState('Mumbai');
-  const [selectedHotspot, setSelectedHotspot] = useState<HotspotItem | null>(fullHotspotList[0]);
+  const [selectedHotspot, setSelectedHotspot] = useState<HotspotItem | null>(null);
+
+  // Live Dynamic State
+  const [kpiCards, setKpiCards] = useState<AnalyticsKPICard[]>(initialKpiCards);
+  const [monthlyTrendsData, setMonthlyTrendsData] = useState<MonthlyTrendItem[]>([]);
+  const [crimeTypeDistribution, setCrimeTypeDistribution] = useState<CrimeDistributionItem[]>([]);
+  const [peakHoursData, setPeakHoursData] = useState<PeakHourItem[]>([]);
+  const [cityFIRData, setCityFIRData] = useState<CityVolumeItem[]>([]);
+  const [fullHotspotList, setFullHotspotList] = useState<HotspotItem[]>([]);
+  const [emergingPatterns, setEmergingPatterns] = useState<EmergingPatternItem[]>([]);
+  const [totalFIRs, setTotalFIRs] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [lastRefreshed, setLastRefreshed] = useState<string>('');
+
+  // Fetch telemetry from backend
+  const loadData = async (isManual: boolean = false) => {
+    if (isManual) setIsRefreshing(true);
+    try {
+      const data = await analyticsApi.getOverview(isManual);
+      if (data) {
+        if (data.kpis && data.kpis.length > 0) setKpiCards(data.kpis);
+        if (data.monthly_trends) setMonthlyTrendsData(data.monthly_trends);
+        if (data.crime_distribution) setCrimeTypeDistribution(data.crime_distribution);
+        if (data.peak_hours) setPeakHoursData(data.peak_hours);
+        if (data.city_volumes) setCityFIRData(data.city_volumes);
+        if (data.hotspots) {
+          setFullHotspotList(data.hotspots);
+          setSelectedHotspot((prev) => {
+            if (prev && data.hotspots.some((h) => h.id === prev.id)) {
+              return data.hotspots.find((h) => h.id === prev.id) || prev;
+            }
+            return data.hotspots[0] || null;
+          });
+        }
+        if (data.emerging_patterns) setEmergingPatterns(data.emerging_patterns);
+        if (typeof data.total_firs === 'number') setTotalFIRs(data.total_firs);
+        setLastRefreshed(data.last_refreshed || new Date().toLocaleTimeString());
+      }
+    } catch (err) {
+      console.error('Failed to load analytics telemetry:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  // Synchronize on mount and poll every 10 seconds
+  useEffect(() => {
+    let isMounted = true;
+    loadData(false);
+
+    const interval = setInterval(() => {
+      if (isMounted) {
+        loadData(false);
+      }
+    }, 10000); // 10-second automatic polling cycle
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   // Sync tab with URL parameter smoothly
   const handleTabChange = (key: TabKey) => {
@@ -156,16 +197,16 @@ function AnalyticsContent() {
       if (selectedCity !== 'all' && hs.city !== selectedCity) return false;
       return true;
     });
-  }, [selectedState, selectedCity]);
+  }, [selectedState, selectedCity, fullHotspotList]);
 
-  // Available cities based on selected state
+  // Available cities based on selected state and dataset
   const availableCities = useMemo(() => {
-    if (selectedState === 'all') return ['all', 'Mumbai', 'Delhi', 'Bengaluru', 'Pune'];
+    if (selectedState === 'all') return ['all', 'Mumbai', 'Thane', 'Navi Mumbai'];
     const citiesInState = Array.from(
       new Set(fullHotspotList.filter((h) => h.state === selectedState).map((h) => h.city))
     );
-    return ['all', ...citiesInState];
-  }, [selectedState]);
+    return ['all', ...(citiesInState.length > 0 ? citiesInState : ['Mumbai', 'Thane', 'Navi Mumbai'])];
+  }, [selectedState, fullHotspotList]);
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-7 animate-fade-in pb-12">
@@ -180,11 +221,33 @@ function AnalyticsContent() {
           </p>
         </div>
 
-        {/* Demo Data Notice Badge */}
-        <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[12.5px] font-medium border self-start sm:self-auto shadow-sm"
-          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
-          <Shield size={14} className="text-emerald-500 shrink-0" />
-          <span>Live Intelligence — Operational Jurisdiction Telemetry</span>
+        {/* Live Telemetry Notice Badge & Refresh Control */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <div
+            className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-[12.5px] font-medium border shadow-sm"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
+          >
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">Live Telemetry (10s sync)</span>
+            {lastRefreshed && (
+              <span className="text-[11px] font-mono-id text-[var(--ink-tertiary)] border-l pl-2 ml-1" style={{ borderColor: 'var(--border)' }}>
+                {lastRefreshed}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={() => loadData(true)}
+            disabled={isRefreshing}
+            title="Force refresh analytics from live database and update Valkey cache"
+            className="flex items-center justify-center p-2.5 rounded-xl border text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-2)] transition-all cursor-pointer disabled:opacity-50 shadow-sm"
+            style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+          >
+            <RefreshCw size={15} className={isRefreshing ? 'animate-spin text-[var(--accent)]' : ''} />
+          </button>
         </div>
       </div>
 
@@ -401,7 +464,7 @@ function AnalyticsContent() {
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <span className="text-[20px] font-bold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
-                          0
+                          {totalFIRs > 0 ? totalFIRs.toLocaleString() : '0'}
                         </span>
                         <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>
                           Total FIRs

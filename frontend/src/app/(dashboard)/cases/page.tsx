@@ -26,14 +26,14 @@ export default function CasesPage() {
   const fetchCases = async () => {
     setLoading(true);
     try {
-      const res = await casesApi.listCases();
+      const res = await casesApi.listCases({ size: 50 });
       const backendCases = res.items || [];
       const mapped: Case[] = backendCases.map((bc) => ({
         id: bc.case_number || bc.id,
         title: bc.title,
         crime: (bc.crime_category as any) || 'General Crime',
-        location: 'Police Station Jurisdiction',
-        city: 'Mumbai',
+        location: bc.area ? `${bc.area}, ${bc.city || 'Mumbai'}` : (bc.city || 'Mumbai Jurisdiction'),
+        city: bc.city || 'Mumbai',
         status: (bc.status === 'OPEN' ? 'Active' : bc.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
         priority: (bc.priority === 'CRITICAL' ? 'Critical' : bc.priority === 'HIGH' ? 'High' : 'Medium') as any,
         assignedOfficer: bc.lead_investigator_id ? 'Assigned Lead Officer' : 'Pending Allocation',

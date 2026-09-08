@@ -9,6 +9,7 @@ from app.models.data_architecture import (  # noqa: F401
     CaseMember,
     DataSource,
     EntityRelationship,
+    GeoTemporalEvent,
     InvestigationReport,
 )
 from app.models.evidence import Evidence  # noqa: F401

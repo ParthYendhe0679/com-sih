@@ -1,7 +1,7 @@
 """Case investigation request and response schemas."""
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime, time
 from typing import List, Optional
 from pydantic import BaseModel, ConfigDict, Field
 from app.core.constants import CasePriority, CaseStatus
@@ -12,6 +12,13 @@ class CaseCreate(BaseModel):
     title: str = Field(..., min_length=5, max_length=255)
     description: str = Field(..., min_length=20)
     crime_category: str = Field(..., min_length=3, max_length=100)
+    crime_type: Optional[str] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    police_station: Optional[str] = None
+    area: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
     priority: CasePriority = CasePriority.MEDIUM
     fir_id: Optional[uuid.UUID] = Field(None, description="Originating accepted FIR ID")
     lead_investigator_id: Optional[uuid.UUID] = Field(None, description="Assigned lead officer")
@@ -22,6 +29,15 @@ class CaseUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=5, max_length=255)
     description: Optional[str] = Field(None, min_length=20)
     priority: Optional[CasePriority] = None
+    crime_type: Optional[str] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    police_station: Optional[str] = None
+    area: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    resolution_status: Optional[str] = None
+    case_outcome: Optional[str] = None
 
 
 class CaseAssignRequest(BaseModel):
@@ -58,12 +74,27 @@ class CaseResponse(BaseModel):
     id: uuid.UUID
     case_number: str
     title: str
+    description: Optional[str] = None
     crime_category: str
+    crime_type: Optional[str] = None
     status: CaseStatus
     priority: CasePriority
     fir_id: Optional[uuid.UUID] = None
     lead_investigator_id: Optional[uuid.UUID] = None
-    created_by_id: uuid.UUID
+    created_by_id: Optional[uuid.UUID] = None
+    incident_date: Optional[date] = None
+    incident_time: Optional[time] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    police_station: Optional[str] = None
+    area: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    source: Optional[str] = None
+    is_synthetic: bool = False
+    data_source: str = "KRITAGAS_LIVE"
+    resolution_status: Optional[str] = None
+    case_outcome: Optional[str] = None
     opened_at: datetime
     closed_at: Optional[datetime] = None
     created_at: datetime
@@ -78,11 +109,25 @@ class CaseDetailResponse(BaseModel):
     title: str
     description: str
     crime_category: str
+    crime_type: Optional[str] = None
     status: CaseStatus
     priority: CasePriority
     fir_id: Optional[uuid.UUID] = None
     lead_investigator_id: Optional[uuid.UUID] = None
-    created_by_id: uuid.UUID
+    created_by_id: Optional[uuid.UUID] = None
+    incident_date: Optional[date] = None
+    incident_time: Optional[time] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    police_station: Optional[str] = None
+    area: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    source: Optional[str] = None
+    is_synthetic: bool = False
+    data_source: str = "KRITAGAS_LIVE"
+    resolution_status: Optional[str] = None
+    case_outcome: Optional[str] = None
     opened_at: datetime
     closed_at: Optional[datetime] = None
     created_at: datetime

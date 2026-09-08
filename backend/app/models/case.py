@@ -1,9 +1,9 @@
 """Case database model."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, Float, ForeignKey, String, Text, Time, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.constants import CasePriority, CaseStatus
@@ -25,6 +25,26 @@ class Case(Base, UUIDMixin, TimestampMixin):
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
     crime_category: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
+    crime_type: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+
+    incident_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True, index=True)
+    incident_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
+
+    # Geographic Demarcation (Mumbai, Thane, Navi Mumbai)
+    city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    region: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    police_station: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    area: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
+    latitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+    source: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Provenance & Case Resolution Lifecycle
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_source: Mapped[str] = mapped_column(String(50), default="KRITAGAS_LIVE", nullable=False)
+    resolution_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    case_outcome: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     status: Mapped[CaseStatus] = mapped_column(
         Enum(CaseStatus, name="case_status_enum"),

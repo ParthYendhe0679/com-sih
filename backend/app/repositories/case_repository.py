@@ -3,6 +3,7 @@
 from typing import Dict, List, Optional, Sequence
 import uuid
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import noload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import CasePriority, CaseStatus
@@ -31,7 +32,7 @@ class CaseRepository(BaseRepository[Case]):
         limit: int = 20,
     ) -> Sequence[Case]:
         """List cases assigned to a specific lead investigator."""
-        stmt = select(Case).where(Case.lead_investigator_id == investigator_id)
+        stmt = select(Case).options(noload("*")).where(Case.lead_investigator_id == investigator_id)
         if status is not None:
             stmt = stmt.where(Case.status == status)
         stmt = stmt.order_by(Case.created_at.desc()).offset(offset).limit(limit)
@@ -58,7 +59,7 @@ class CaseRepository(BaseRepository[Case]):
         limit: int = 20,
     ) -> Sequence[Case]:
         """List all cases with optional status and priority filters."""
-        stmt = select(Case)
+        stmt = select(Case).options(noload("*"))
         if status is not None:
             stmt = stmt.where(Case.status == status)
         if priority is not None:
@@ -89,7 +90,7 @@ class CaseRepository(BaseRepository[Case]):
     ) -> Sequence[Case]:
         """Search Cases across case_number, title, crime_category, or description."""
         pattern = f"%{query.strip()}%"
-        stmt = select(Case).where(
+        stmt = select(Case).options(noload("*")).where(
             or_(
                 Case.case_number.ilike(pattern),
                 Case.title.ilike(pattern),

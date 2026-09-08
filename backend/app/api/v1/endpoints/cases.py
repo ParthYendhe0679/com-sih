@@ -89,6 +89,8 @@ async def get_my_cases(
     return success_response(data=paginated, message="Assigned cases retrieved.")
 
 
+_IN_MEMORY_CASES_CACHE: dict = {}
+
 @router.get(
     "",
     response_model=APIResponse[PaginatedResponse[CaseResponse]],
@@ -102,7 +104,29 @@ async def list_cases(
     size: int = Query(20, ge=1, le=100),
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
+    global _IN_MEMORY_CASES_CACHE
+    import time
+    now = time.time()
+    cache_key = f"kritagas:cases:paginated:{status_filter}:{priority_filter}:{page}:{size}"
+
+    # 1. Ultra-fast in-memory cache check (<1ms)
+    if cache_key in _IN_MEMORY_CASES_CACHE:
+        entry_time, cached_res = _IN_MEMORY_CASES_CACHE[cache_key]
+        if now - entry_time < 60:
+            return success_response(data=cached_res, message="Cases retrieved successfully.")
+
+    # 2. Valkey distributed cache check
+    try:
+        cached_paginated = await cache.get(cache_key)
+        if cached_paginated:
+            validated = PaginatedResponse[CaseResponse].model_validate(cached_paginated)
+            _IN_MEMORY_CASES_CACHE[cache_key] = (now, validated)
+            return success_response(data=validated, message="Cases retrieved successfully.")
+    except Exception:
+        pass
+
     cases = await case_service.list_cases(
         status=status_filter,
         priority=priority_filter,
@@ -119,6 +143,13 @@ async def list_cases(
         total=total,
         total_pages=total_pages,
     )
+
+    _IN_MEMORY_CASES_CACHE[cache_key] = (now, paginated)
+    try:
+        await cache.set(cache_key, paginated.model_dump(mode="json"), ttl=120)
+    except Exception:
+        pass
+
     return success_response(data=paginated, message="Cases retrieved successfully.")
 
 

@@ -6,16 +6,18 @@ and Blockchain records into a unified, synchronized schema.
 """
 
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, time, timezone
 from typing import Any, Dict, List, Optional
 from sqlalchemy import (
     Boolean,
+    Date,
     DateTime,
     Float,
     ForeignKey,
     JSON,
     String,
     Text,
+    Time,
     UniqueConstraint,
     func,
 )
@@ -292,3 +294,41 @@ class InvestigationReport(Base, UUIDMixin, TimestampMixin):
     case = relationship("Case", backref="reports", lazy="selectin")
     generated_by = relationship("User", foreign_keys=[generated_by_id], lazy="selectin")
     blockchain_record = relationship("BlockchainRecord", lazy="selectin")
+
+
+class GeoTemporalEvent(Base, UUIDMixin, TimestampMixin):
+    """Geo-temporal intelligence event for crime hotspotting, pattern mining, and predictive spatial analysis."""
+
+    __tablename__ = "geo_temporal_events"
+
+    event_id: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    case_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        GUID(),
+        ForeignKey("cases.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    city: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    region: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    area: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    latitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+    longitude: Mapped[float] = mapped_column(Float, nullable=False, index=True)
+
+    incident_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    incident_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
+    crime_type: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+
+    time_bucket: Mapped[str] = mapped_column(String(50), default="NIGHT", nullable=False)  # MORNING, AFTERNOON, EVENING, NIGHT, LATE_NIGHT
+    location_cluster: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    risk_level: Mapped[str] = mapped_column(String(50), default="MEDIUM", nullable=False)  # LOW, MEDIUM, HIGH, CRITICAL
+
+    related_case_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    pattern_identifier: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSON, nullable=True)
+
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
+    data_source: Mapped[str] = mapped_column(String(50), default="KRITAGAS_DEMO", nullable=False)
+
+    # Relationship
+    case = relationship("Case", backref="geo_events", lazy="selectin")
+

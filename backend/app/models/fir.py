@@ -69,6 +69,8 @@ class FIR(Base, UUIDMixin, TimestampMixin):
         nullable=False,
         index=True,
     )
+    is_synthetic: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    data_source: Mapped[str] = mapped_column(String(50), default="KRITAGAS_LIVE", nullable=False)
 
     # Relationships
     submitted_by: Mapped["User"] = relationship(

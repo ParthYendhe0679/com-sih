@@ -72,4 +72,16 @@ This document serves as the persistent context ledger and architectural memory f
 - **Gotcha**: When a case has 0 graph nodes, the UI unmounts the `<div ref={containerRef} />` container to display the "No Intelligence Network" empty state. If an asynchronous `import('cytoscape')` is pending concurrently, Cytoscape attempts to instantiate with `container: null`, throwing `Cannot read properties of null (reading 'className')`.
 - **Fix**: Check `if (!containerRef.current || caseNodes.length === 0) return;` before and after all async imports, and immediately before invoking `cytoscapeLib(...)`.
 
+### asyncpg Multi-Statement DDL Constraints
+- **Gotcha**: `asyncpg` does not support executing multiple SQL statements delimited by semicolons inside a single prepared statement (`cannot insert multiple commands into a prepared statement`).
+- **Fix**: Split multi-statement DDL migrations by `;` and execute each DDL command individually through `conn.execute(text(cmd))`.
+
+### Neo4j Aura Cloud Batched UNWIND Pattern
+- **Gotcha**: Executing hundreds of individual sequential Cypher queries (e.g. `MATCH (s {id: ...}), (t {id: ...}) MERGE (s)-[:REL]->(t)`) over remote Aura SSL without indexing causes Cartesian graph scans, high network latency, and unconsumed result buffer stalls.
+- **Fix**: Group graph edges by relationship type and execute batched transactions using `UNWIND $batch AS r MATCH (s {id: r.src_id}) MATCH (t {id: r.tgt_id}) MERGE (s)-[rel:TYPE]->(t)` followed by explicit `await res.consume()`.
+
+### Windows Python User Scripts PATH & Uvicorn Invocation
+- **Gotcha**: On Windows systems where Python is installed globally in `Program Files`, `pip install` installs executables (like `uvicorn.exe`) into the per-user script directory `C:\Users\<user>\AppData\Roaming\Python\Python313\Scripts`. If this directory is not in User `PATH`, running `uvicorn` in PowerShell fails with `CommandNotFoundException`.
+- **Fix**: Add `C:\Users\<user>\AppData\Roaming\Python\Python313\Scripts` to User PATH. In PowerShell, invoke via `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload` or use the included `backend/uvicorn.cmd` / `backend/run_server.bat` scripts.
+
 

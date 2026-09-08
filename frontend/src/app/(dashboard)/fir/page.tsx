@@ -390,16 +390,6 @@ export default function FIRIntakePage() {
                     style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
                   />
                 </div>
-
-                <div className="p-3.5 rounded-xl border bg-indigo-500/5 border-indigo-500/20 flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
-                    <Sparkles size={16} />
-                  </div>
-                  <div className="text-[12px] leading-snug text-[var(--ink-secondary)]">
-                    <span className="font-semibold text-white block">Auto-Extraction Enabled</span>
-                    Crime category and incident location are automatically identified from document text.
-                  </div>
-                </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-2">

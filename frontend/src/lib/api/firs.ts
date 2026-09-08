@@ -49,6 +49,10 @@ export interface UploadFirResponse {
     transactions: { amount: string; confidence: number }[];
     legal_sections: { section: string; confidence: number }[];
     emails: { email: string; confidence: number }[];
+    persons?: { name: string; role?: string; confidence: number }[];
+    locations?: { location: string; confidence: number }[];
+    digital_identifiers?: { identifier: string; type?: string; confidence: number }[];
+    dates?: { date: string; confidence: number }[];
   };
   processing_status: string;
 }

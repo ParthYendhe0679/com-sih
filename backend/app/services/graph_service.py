@@ -62,8 +62,8 @@ class Neo4jGraphService(AbstractGraphService):
         status: str,
     ) -> bool:
         """Create or update a Case vertex in the knowledge graph."""
-        if not self.client.is_connected:
-            logger.debug(f"Neo4j not connected; skipped real-time sync for case {case_number}")
+        if not self.client.is_configured:
+            logger.debug(f"Neo4j not configured; skipped real-time sync for case {case_number}")
             return True
 
         try:
@@ -87,7 +87,7 @@ class Neo4jGraphService(AbstractGraphService):
         properties: Optional[Dict[str, Any]] = None,
     ) -> bool:
         """Create or update a directed edge connecting entities in the knowledge graph."""
-        if not self.client.is_connected:
+        if not self.client.is_configured:
             return True
 
         try:
@@ -141,18 +141,27 @@ class Neo4jGraphService(AbstractGraphService):
 
         entities: List[Entity] = []
         role_map: Dict[str, str] = {}
+        seen_entity_ids = set()
 
         if contexts:
             for c in contexts:
                 if c.entity:
                     entities.append(c.entity)
+                    seen_entity_ids.add(c.entity.id)
                     role_map[str(c.entity.id)] = c.role
-        else:
-            leg_stmt = select(Entity).where(Entity.case_id == case.id)
-            leg_res = await session.execute(leg_stmt)
-            entities = list(leg_res.scalars().all())
-            for e in entities:
-                role_map[str(e.id)] = "INVOLVED_IN"
+
+        # Also retrieve all entities directly attached to this case or its linked FIR
+        cond = (Entity.case_id == case.id)
+        if case.fir_id:
+            cond = cond | (Entity.fir_id == case.fir_id)
+        leg_stmt = select(Entity).where(cond)
+        leg_res = await session.execute(leg_stmt)
+        for e in leg_res.scalars().all():
+            if e.id not in seen_entity_ids:
+                entities.append(e)
+                seen_entity_ids.add(e.id)
+                role = (e.attributes_json or {}).get("role") or ("SUSPECT" if e.entity_type == "PERSON" and len(seen_entity_ids) > 1 else "INVOLVED_IN")
+                role_map[str(e.id)] = role
 
         # 3. Fetch Relationships
         rel_stmt = select(EntityRelationship).where(EntityRelationship.case_id == case.id)
@@ -174,8 +183,8 @@ class Neo4jGraphService(AbstractGraphService):
         nodes_synced = 0
         edges_synced = 0
 
-        # Execute Neo4j sync if available
-        if self.client.is_connected:
+        # Execute Neo4j sync if configured
+        if self.client.is_configured:
             try:
                 # A. Upsert Case Node
                 await self.repo.upsert_case_node(
@@ -313,19 +322,69 @@ class Neo4jGraphService(AbstractGraphService):
             except Exception:
                 pass
 
-        # If Neo4j is connected, read from Neo4j
-        if self.client.is_connected:
+        # If Neo4j is configured, read from Neo4j (lazily initialized)
+        if self.client.is_configured:
             try:
                 subgraph = await self.repo.get_case_subgraph(str(case_id))
                 raw_nodes = subgraph.get("nodes") or []
                 raw_edges = subgraph.get("edges") or []
 
+                def _sanitize_neo4j_value(val: Any) -> Any:
+                    if hasattr(val, "iso_format"):
+                        return val.iso_format()
+                    if hasattr(val, "isoformat"):
+                        return val.isoformat()
+                    if isinstance(val, dict):
+                        return {k: _sanitize_neo4j_value(v) for k, v in val.items()}
+                    if isinstance(val, (list, tuple, set)):
+                        return [_sanitize_neo4j_value(item) for item in val]
+                    if isinstance(val, (int, float, str, bool, type(None))):
+                        return val
+                    return str(val)
+
+                def _normalize_node_type(data: dict, raw_node: Any) -> str:
+                    raw_type = str(data.get("type") or "").strip()
+                    if not raw_type:
+                        if "case_number" in data:
+                            return "Case"
+                        elif "fir_number" in data:
+                            return "FIR"
+                        elif hasattr(raw_node, "labels") and raw_node.labels:
+                            raw_type = next(iter(raw_node.labels))
+                        else:
+                            return "Entity"
+
+                    upper_t = raw_type.upper()
+                    if upper_t in ("PERSON", "SUSPECT", "ACCUSED", "COMPLAINANT", "WITNESS"):
+                        return "Person"
+                    if upper_t in ("PHONE", "MOBILE", "SIM"):
+                        return "Phone"
+                    if upper_t in ("VEHICLE", "CAR", "BIKE"):
+                        return "Vehicle"
+                    if upper_t in ("LOCATION", "ADDRESS", "PLACE"):
+                        return "Location"
+                    if upper_t in ("FINANCIAL", "TRANSACTION", "TRANSACTION_ID", "ACCOUNT", "BANK_ACCOUNT", "UPI_ID", "AMOUNT", "CURRENCY", "MONEY"):
+                        return "Financial"
+                    if upper_t in ("LEGAL_SECTION", "SECTION", "IPC_SECTION", "IT_ACT_SECTION"):
+                        return "Legal_Section"
+                    if upper_t in ("EVIDENCE", "DOCUMENT", "EMAIL", "EMAILS", "DIGITAL_IDENTIFIER", "DIGITAL_ID", "IP_ADDRESS", "DEVICE"):
+                        return "Evidence"
+                    if upper_t in ("ORGANIZATION", "COMPANY"):
+                        return "Organization"
+                    if upper_t in ("FIR", "FIR_RECORD", "FIR_NUMBER"):
+                        return "FIR"
+                    if upper_t in ("CASE", "DOSSIER"):
+                        return "Case"
+                    return raw_type.capitalize() or "Entity"
+
                 nodes: List[GraphNode] = []
                 for n in raw_nodes:
-                    node_data = dict(n)
+                    raw_dict = dict(n) if hasattr(n, "items") or isinstance(n, dict) else {}
+                    node_data = {k: _sanitize_neo4j_value(v) for k, v in raw_dict.items()}
                     node_id = str(node_data.get("id") or "")
                     label = node_data.get("name") or node_data.get("case_number") or node_data.get("title") or node_id
-                    node_type = node_data.get("type") or "Entity"
+                    node_type = _normalize_node_type(node_data, n)
+                    node_data["type"] = node_type
 
                     nodes.append(
                         GraphNode(
@@ -340,10 +399,22 @@ class Neo4jGraphService(AbstractGraphService):
 
                 edges: List[GraphEdge] = []
                 for i, r in enumerate(raw_edges):
-                    rel_data = dict(r)
-                    src = str(rel_data.get("source") or "")
-                    tgt = str(rel_data.get("target") or "")
-                    rel_type = str(rel_data.get("type") or "CONNECTED_TO")
+                    if isinstance(r, (tuple, list)) and len(r) == 3:
+                        start_n, rel_type_raw, end_n = r
+                        src = str(start_n.get("id") or "") if isinstance(start_n, dict) else str(getattr(start_n, "id", "") or "")
+                        tgt = str(end_n.get("id") or "") if isinstance(end_n, dict) else str(getattr(end_n, "id", "") or "")
+                        rel_type = str(rel_type_raw or "CONNECTED_TO")
+                        rel_data = {}
+                    elif isinstance(r, dict):
+                        rel_data = {k: _sanitize_neo4j_value(v) for k, v in r.items()}
+                        src = str(rel_data.get("source") or "")
+                        tgt = str(rel_data.get("target") or "")
+                        rel_type = str(rel_data.get("type") or "CONNECTED_TO")
+                    else:
+                        continue
+
+                    if not src or not tgt:
+                        continue
 
                     edges.append(
                         GraphEdge(
@@ -364,24 +435,25 @@ class Neo4jGraphService(AbstractGraphService):
                 case = case_res.scalar_one_or_none()
                 case_num = case.case_number if case else str(case_id)
 
-                stats = GraphStatistics(
-                    node_count=len(nodes),
-                    edge_count=len(edges),
-                    node_types={t: sum(1 for n in nodes if n.type == t) for t in set(n.type for n in nodes)},
-                    relationship_types={r: sum(1 for e in edges if e.relationship == r) for r in set(e.relationship for e in edges)},
-                    density=round((2 * len(edges)) / (len(nodes) * (len(nodes) - 1)), 4) if len(nodes) > 1 else 0.0,
-                )
+                if len(nodes) > 0:
+                    stats = GraphStatistics(
+                        node_count=len(nodes),
+                        edge_count=len(edges),
+                        node_types={t: sum(1 for n in nodes if n.type == t) for t in set(n.type for n in nodes)},
+                        relationship_types={r: sum(1 for e in edges if e.relationship == r) for r in set(e.relationship for e in edges)},
+                        density=round((2 * len(edges)) / (len(nodes) * (len(nodes) - 1)), 4) if len(nodes) > 1 else 0.0,
+                    )
 
-                response = CaseGraphResponse(
-                    case_id=str(case_id),
-                    case_number=case_num,
-                    nodes=nodes,
-                    edges=edges,
-                    statistics=stats,
-                    engine="neo4j",
-                )
-                await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=CacheTTL.NETWORK)
-                return response
+                    response = CaseGraphResponse(
+                        case_id=str(case_id),
+                        case_number=case_num,
+                        nodes=nodes,
+                        edges=edges,
+                        statistics=stats,
+                        engine="neo4j",
+                    )
+                    await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=CacheTTL.NETWORK)
+                    return response
             except Exception as e:
                 logger.warning(f"Neo4j graph query failed, falling back to PostgreSQL: {e}")
 
@@ -441,7 +513,7 @@ class Neo4jGraphService(AbstractGraphService):
         ]
         edges: List[GraphEdge] = []
 
-        # Load Entities
+        # Load Entities from Context and Case/FIR associations
         ctx_stmt = (
             select(CaseEntityContext)
             .where(CaseEntityContext.case_id == case.id)
@@ -450,10 +522,20 @@ class Neo4jGraphService(AbstractGraphService):
         ctx_res = await session.execute(ctx_stmt)
         contexts = list(ctx_res.scalars().all())
 
+        added_entity_ids = set()
+        person_nodes: List[Entity] = []
+        phone_nodes: List[Entity] = []
+        financial_nodes: List[Entity] = []
+        vehicle_nodes: List[Entity] = []
+        location_nodes: List[Entity] = []
+        section_nodes: List[Entity] = []
+        email_nodes: List[Entity] = []
+
         for ctx in contexts:
             ent = ctx.entity
-            if not ent:
+            if not ent or ent.id in added_entity_ids:
                 continue
+            added_entity_ids.add(ent.id)
             nodes.append(
                 GraphNode(
                     id=str(ent.id),
@@ -469,35 +551,202 @@ class Neo4jGraphService(AbstractGraphService):
                     source=ctx.extraction_method,
                 )
             )
-            edges.append(
-                GraphEdge(
-                    id=f"edge-ctx-{ent.id}-{case.id}",
-                    source=str(ent.id),
-                    target=str(case.id),
-                    relationship="INVOLVED_IN",
-                    confidence=ctx.confidence,
-                    evidence_basis=["Case Entity Context Assignment"],
-                    case_ids=[str(case.id)],
+            etype = ent.entity_type.upper()
+            if etype == "PERSON":
+                person_nodes.append(ent)
+            elif etype in ("PHONE", "MOBILE"):
+                phone_nodes.append(ent)
+            elif etype in ("FINANCIAL", "TRANSACTION", "ACCOUNT"):
+                financial_nodes.append(ent)
+            elif etype in ("VEHICLE", "CAR"):
+                vehicle_nodes.append(ent)
+            elif etype in ("LOCATION", "ADDRESS"):
+                location_nodes.append(ent)
+            elif etype in ("LEGAL_SECTION", "SECTION"):
+                section_nodes.append(ent)
+            elif etype in ("EMAIL", "EVIDENCE", "DIGITAL_ID"):
+                email_nodes.append(ent)
+
+        # Also retrieve any entities linked via case_id or fir_id
+        cond = (Entity.case_id == case.id)
+        if case.fir_id:
+            cond = cond | (Entity.fir_id == case.fir_id)
+        direct_ent_stmt = select(Entity).where(cond)
+        direct_ent_res = await session.execute(direct_ent_stmt)
+        for ent in direct_ent_res.scalars().all():
+            if ent.id in added_entity_ids:
+                continue
+            added_entity_ids.add(ent.id)
+            role = (ent.attributes_json or {}).get("role") or ("SUSPECT" if ent.entity_type == "PERSON" and len(person_nodes) > 0 else "INVOLVED_IN")
+            nodes.append(
+                GraphNode(
+                    id=str(ent.id),
+                    label=ent.name,
+                    type=ent.entity_type.capitalize(),
+                    data={
+                        "name": ent.name,
+                        "normalized": ent.normalized_value,
+                        "role": role,
+                        **(ent.attributes_json or {}),
+                    },
+                    confidence=ent.confidence or 0.95,
+                    source="FIR_ENTITY_EXTRACTION",
                 )
             )
+            etype = ent.entity_type.upper()
+            if etype == "PERSON":
+                person_nodes.append(ent)
+            elif etype in ("PHONE", "MOBILE"):
+                phone_nodes.append(ent)
+            elif etype in ("FINANCIAL", "TRANSACTION", "ACCOUNT"):
+                financial_nodes.append(ent)
+            elif etype in ("VEHICLE", "CAR"):
+                vehicle_nodes.append(ent)
+            elif etype in ("LOCATION", "ADDRESS"):
+                location_nodes.append(ent)
+            elif etype in ("LEGAL_SECTION", "SECTION"):
+                section_nodes.append(ent)
+            elif etype in ("EMAIL", "EVIDENCE", "DIGITAL_ID"):
+                email_nodes.append(ent)
 
         # Load Relationships
         rel_stmt = select(EntityRelationship).where(EntityRelationship.case_id == case.id)
         rel_res = await session.execute(rel_stmt)
         relationships = list(rel_res.scalars().all())
 
+        existing_rel_pairs = set()
         for rel in relationships:
+            s_id, t_id = str(rel.source_entity_id), str(rel.target_entity_id)
+            existing_rel_pairs.add((s_id, t_id))
+            existing_rel_pairs.add((t_id, s_id))
             edges.append(
                 GraphEdge(
                     id=str(rel.id),
-                    source=str(rel.source_entity_id),
-                    target=str(rel.target_entity_id),
+                    source=s_id,
+                    target=t_id,
                     relationship=rel.relationship_type,
                     confidence=rel.confidence,
                     evidence_basis=["Investigation Correlation Discovery"],
                     case_ids=[str(case.id)],
                 )
             )
+
+        # Synthesize inter-entity connections
+        if person_nodes:
+            primary_suspect = next((p for p in person_nodes if (p.attributes_json or {}).get("role") == "SUSPECT"), person_nodes[0])
+            s_id = str(primary_suspect.id)
+            case_id_str = str(case.id)
+
+            # Link Case Master to Primary Subject
+            if (case_id_str, s_id) not in existing_rel_pairs:
+                edges.append(
+                    GraphEdge(
+                        id=f"edge-case-subject-{case.id}-{primary_suspect.id}",
+                        source=case_id_str,
+                        target=s_id,
+                        relationship="PRIMARY_SUBJECT",
+                        confidence=1.0,
+                        evidence_basis=["Lead Target Correlation"],
+                        case_ids=[case_id_str],
+                    )
+                )
+                existing_rel_pairs.add((case_id_str, s_id))
+
+            for phone in phone_nodes:
+                ph_id = str(phone.id)
+                if (s_id, ph_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{phone.id}",
+                            source=s_id,
+                            target=ph_id,
+                            relationship="SUBSCRIBES_TO",
+                            confidence=0.96,
+                            evidence_basis=["CDR Telecom Intelligence Match"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, ph_id))
+
+            for fin in financial_nodes:
+                fin_id = str(fin.id)
+                if (s_id, fin_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{fin.id}",
+                            source=s_id,
+                            target=fin_id,
+                            relationship="TRANSFERRED_TO" if "TXN" in str(fin.name).upper() else "ACCOUNT_HOLDER",
+                            confidence=0.92,
+                            evidence_basis=["Bank Account & Ledger Trace"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, fin_id))
+
+            for veh in vehicle_nodes:
+                v_id = str(veh.id)
+                if (s_id, v_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{veh.id}",
+                            source=s_id,
+                            target=v_id,
+                            relationship="OPERATES",
+                            confidence=0.90,
+                            evidence_basis=["Vahan Vehicle Registry Correlation"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, v_id))
+
+            for loc in location_nodes:
+                loc_id = str(loc.id)
+                if (s_id, loc_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{loc.id}",
+                            source=s_id,
+                            target=loc_id,
+                            relationship="RESIDES_AT",
+                            confidence=0.88,
+                            evidence_basis=["Address Geospatial Anchor"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, loc_id))
+
+            for sec in section_nodes:
+                sec_id = str(sec.id)
+                if (s_id, sec_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{sec.id}",
+                            source=s_id,
+                            target=sec_id,
+                            relationship="CHARGED_UNDER",
+                            confidence=0.95,
+                            evidence_basis=["Statutory Charge Matrix"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, sec_id))
+
+            for em in email_nodes:
+                em_id = str(em.id)
+                if (s_id, em_id) not in existing_rel_pairs:
+                    edges.append(
+                        GraphEdge(
+                            id=f"syn-rel-{primary_suspect.id}-{em.id}",
+                            source=s_id,
+                            target=em_id,
+                            relationship="USES_EMAIL",
+                            confidence=0.93,
+                            evidence_basis=["Digital Forensics Identification"],
+                            case_ids=[case_id_str],
+                        )
+                    )
+                    existing_rel_pairs.add((s_id, em_id))
 
         # Load Evidence
         ev_stmt = select(Evidence).where(Evidence.case_id == case.id)

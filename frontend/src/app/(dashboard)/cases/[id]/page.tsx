@@ -4,7 +4,14 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
-import { casesApi, BackendCase } from '@/lib/api/cases';
+import {
+  casesApi,
+  BackendCase,
+  CaseEntitiesData,
+  CaseEntityItem,
+  CaseRelationshipsData,
+  CaseRelationshipItem,
+} from '@/lib/api/cases';
 import { mockCaseService } from '@/services/mockServices';
 import type { Case } from '@/types';
 import {
@@ -12,13 +19,13 @@ import {
   evidence, alerts, timelineEvents, transactions, firs, forensicRecords
 } from '@/mock';
 import CaseNetworkGraph from '@/components/case/CaseNetworkGraph';
-import CaseLeafletMap from '@/components/case/CaseLeafletMap';
+import CaseLeafletMap, { buildCaseMapMarkers, CaseMapMarker } from '@/components/case/CaseLeafletMap';
 import {
   FolderOpen, User, Car, Phone as PhoneIcon, MapPin,
   Package, Network, Map, History, Clock, Bell, Bot, FileText,
   ShieldCheck, AlertTriangle, ArrowLeft, ArrowRight, GitFork, CheckCircle2,
   Calendar, FileCode, Check, Eye, RefreshCw, Share2, Sparkles,
-  Layers, ChevronRight, ExternalLink, HelpCircle, Plus, BrainCircuit, Search
+  Layers, ChevronRight, ExternalLink, HelpCircle, Plus, BrainCircuit, Search, DollarSign
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -62,6 +69,13 @@ function CaseDetailContent() {
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
   const [loading, setLoading] = useState(true);
 
+  // Live entity and relationship states
+  const [entitiesData, setEntitiesData] = useState<CaseEntitiesData | null>(null);
+  const [relationshipsData, setRelationshipsData] = useState<CaseRelationshipsData | null>(null);
+  const [caseMarkers, setCaseMarkers] = useState<CaseMapMarker[]>([]);
+  const [entitySearch, setEntitySearch] = useState<string>('');
+  const [entityTypeFilter, setEntityTypeFilter] = useState<string>('all');
+
   // Cross-tab interaction links
   const [focusedLocationName, setFocusedLocationName] = useState<string | null>(null);
   const [selectedEntityForNetwork, setSelectedEntityForNetwork] = useState<string | null>(null);
@@ -81,11 +95,37 @@ function CaseDetailContent() {
         }
 
         if (found) {
+          let entData: CaseEntitiesData | null = null;
+          let relData: CaseRelationshipsData | null = null;
+          try {
+            entData = await casesApi.getCaseEntities(found.id);
+            setEntitiesData(entData);
+            if (entData?.categorized.locations && entData.categorized.locations.length > 0) {
+              setCaseMarkers(buildCaseMapMarkers(entData.categorized.locations));
+            }
+          } catch (e) {
+            console.warn('Failed to load case entities:', e);
+          }
+
+          try {
+            relData = await casesApi.getCaseRelationships(found.id);
+            setRelationshipsData(relData);
+          } catch (e) {
+            console.warn('Failed to load case relationships:', e);
+          }
+
+          const personIds = entData?.categorized.persons.map((p) => p.id) || [];
+          const vehicleIds = entData?.categorized.vehicles.map((v) => v.id) || [];
+          const phoneIds = entData?.categorized.phones.map((p) => p.id) || [];
+          const locationIds = entData?.categorized.locations.map((l) => l.id) || [];
+          const organizationIds = entData?.categorized.digital_identifiers.map((d) => d.id) || [];
+
           const mapped: Case = {
             id: found.case_number || found.id,
+            backendId: found.id,
             title: found.title,
             crime: (found.crime_category as any) || 'General Crime',
-            location: 'Police Station Jurisdiction',
+            location: entData?.categorized.locations[0]?.name || 'Police Station Jurisdiction',
             city: 'Mumbai',
             status: (found.status === 'OPEN' ? 'Active' : found.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
             priority: (found.priority === 'CRITICAL' ? 'Critical' : found.priority === 'HIGH' ? 'High' : 'Medium') as any,
@@ -94,11 +134,11 @@ function CaseDetailContent() {
             lastActivity: 'Active',
             description: found.description,
             firId: found.fir_id || '',
-            personIds: [],
-            vehicleIds: [],
-            phoneIds: [],
-            locationIds: [],
-            organizationIds: [],
+            personIds,
+            vehicleIds,
+            phoneIds,
+            locationIds,
+            organizationIds,
             evidenceIds: [],
             alertIds: [],
           };
@@ -232,7 +272,7 @@ function CaseDetailContent() {
             {/* Quick Action Buttons (Section 4) */}
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
-                onClick={() => router.push(`/intelligence/samanvaya?case=${currentCase.id}`)}
+                onClick={() => router.push(`/intelligence/samanvaya?case=${currentCase.backendId || currentCase.id}`)}
                 className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
               >
@@ -557,7 +597,7 @@ function CaseDetailContent() {
 
           {/* Interactive Cytoscape Graph */}
           <CaseNetworkGraph
-            caseId={currentCase.id}
+            caseId={currentCase.backendId || currentCase.id}
             onViewOnMap={handleViewOnMap}
             initialSelectedEntityId={selectedEntityForNetwork}
           />
@@ -582,9 +622,10 @@ function CaseDetailContent() {
 
           {/* Leaflet Real Map */}
           <CaseLeafletMap
-            caseId={currentCase.id}
+            caseId={currentCase.backendId || currentCase.id}
             onViewInNetwork={handleViewInNetwork}
             focusedLocationName={focusedLocationName}
+            locations={caseMarkers}
           />
         </div>
       )}
@@ -626,18 +667,155 @@ function CaseDetailContent() {
                 Structured tabular index of all extracted suspects, associates, assets, and organizations
               </p>
             </div>
-            <span className="text-[12px] font-mono-id px-3 py-1 rounded-xl bg-[var(--surface-2)] text-[var(--ink-secondary)]">
-              {currentCase.personIds.length} Entities Indexed
+            <span className="text-[12px] font-mono-id px-3 py-1 rounded-xl bg-[var(--surface-2)] text-[var(--accent)] font-bold">
+              {entitiesData?.total_entities || currentCase.personIds.length + currentCase.phoneIds.length} Entities Indexed
             </span>
           </div>
 
-          <div className="p-12 rounded-2xl border text-center" style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
-            <User size={40} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
-            <h4 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>No Entities Indexed</h4>
-            <p className="text-[13px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
-              No suspects, witnesses, phone numbers, or corporate bodies have been resolved for this case yet.
-            </p>
+          {/* Search & Filter bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search extracted entities by name or identifier..."
+                value={entitySearch}
+                onChange={(e) => setEntitySearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 rounded-xl text-[12.5px] border outline-none transition-all"
+                style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11.5px] font-medium text-[var(--ink-tertiary)]">Type:</span>
+              <select
+                value={entityTypeFilter}
+                onChange={(e) => setEntityTypeFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl text-[12.5px] font-medium border cursor-pointer outline-none"
+                style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+              >
+                <option value="all">All Entity Types</option>
+                <option value="PERSON">Persons</option>
+                <option value="PHONE">Phone Numbers</option>
+                <option value="VEHICLE">Vehicles</option>
+                <option value="FINANCIAL">Financial / Amounts</option>
+                <option value="LEGAL_SECTION">Legal Sections</option>
+                <option value="LOCATION">Locations</option>
+                <option value="DIGITAL">Digital Identifiers</option>
+              </select>
+            </div>
           </div>
+
+          {/* Dynamic Table or Zero State */}
+          {(() => {
+            const rawList = entitiesData?.entities || [];
+            const filtered = rawList.filter((ent) => {
+              if (entityTypeFilter !== 'all') {
+                const entType = (ent.entity_type || '').toUpperCase();
+                if (entityTypeFilter === 'FINANCIAL' && !entType.includes('FINANCIAL') && !entType.includes('TRANSACTION')) return false;
+                if (entityTypeFilter === 'DIGITAL' && !entType.includes('DIGITAL') && !entType.includes('EMAIL')) return false;
+                if (!['FINANCIAL', 'DIGITAL'].includes(entityTypeFilter) && !entType.includes(entityTypeFilter)) return false;
+              }
+              if (entitySearch) {
+                const q = entitySearch.toLowerCase();
+                return (
+                  ent.name.toLowerCase().includes(q) ||
+                  ent.normalized_value.toLowerCase().includes(q) ||
+                  ent.role.toLowerCase().includes(q)
+                );
+              }
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="p-12 rounded-2xl border text-center" style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
+                  <User size={40} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
+                  <h4 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>No Matching Entities Found</h4>
+                  <p className="text-[13px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
+                    No entities match the selected filter or search query.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border)' }}>
+                <table className="w-full text-left text-[13px] border-collapse">
+                  <thead>
+                    <tr className="border-b text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]"
+                      style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
+                      <th className="py-3 px-4">Entity &amp; Value</th>
+                      <th className="py-3 px-4">Category</th>
+                      <th className="py-3 px-4">Role / Designation</th>
+                      <th className="py-3 px-4">Confidence</th>
+                      <th className="py-3 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y" style={{ borderColor: 'var(--border)' }}>
+                    {filtered.map((ent, idx) => {
+                      const t = (ent.entity_type || '').toUpperCase();
+                      const typeBadge =
+                        t === 'PERSON' ? { bg: 'rgba(99, 102, 241, 0.12)', color: '#6366F1', label: 'PERSON' } :
+                        t === 'PHONE' ? { bg: 'rgba(14, 165, 233, 0.12)', color: '#0EA5E9', label: 'PHONE' } :
+                        t === 'VEHICLE' ? { bg: 'rgba(16, 185, 129, 0.12)', color: '#10B981', label: 'VEHICLE' } :
+                        t.includes('FINANCIAL') || t.includes('TRANSACTION') ? { bg: 'rgba(20, 184, 166, 0.12)', color: '#14B8A6', label: 'FINANCIAL' } :
+                        t === 'LEGAL_SECTION' ? { bg: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6', label: 'LEGAL' } :
+                        t === 'LOCATION' ? { bg: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', label: 'LOCATION' } :
+                        { bg: 'rgba(236, 72, 153, 0.12)', color: '#EC4899', label: 'DIGITAL' };
+
+                      return (
+                        <tr key={ent.id || idx} className="hover:bg-[var(--surface-1)] transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{ent.name}</div>
+                            {ent.normalized_value && ent.normalized_value !== ent.name && (
+                              <div className="text-[11px] font-mono-id text-[var(--ink-tertiary)]">{ent.normalized_value}</div>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-[10.5px] px-2 py-0.5 rounded font-mono-id font-bold"
+                              style={{ background: typeBadge.bg, color: typeBadge.color }}>
+                              {typeBadge.label}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-[11px] px-2 py-0.5 rounded font-medium border"
+                              style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}>
+                              {ent.role || 'INVOLVED'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono-id font-bold text-[12px] text-[var(--success)]">{ent.confidence}%</span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {t === 'LOCATION' && (
+                                <button
+                                  onClick={() => handleViewOnMap(ent.name)}
+                                  className="px-2 py-1 rounded-md text-[11px] font-medium border hover:bg-[var(--surface-2)] transition-colors text-[var(--accent)]"
+                                  style={{ borderColor: 'var(--border)' }}
+                                >
+                                  View on Map
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleViewInNetwork(ent.id)}
+                                className="px-2 py-1 rounded-md text-[11px] font-medium border hover:bg-[var(--surface-2)] transition-colors"
+                                style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+                              >
+                                View in Network
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -696,25 +874,92 @@ function CaseDetailContent() {
                 className="px-3 py-2 rounded-xl text-[12.5px] font-medium border cursor-pointer outline-none"
                 style={{ background: 'var(--surface-0)', borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
               >
-                <option value="all">All Types (10 Key Connections)</option>
+                <option value="all">All Types</option>
                 <option value="OPERATES">OPERATES (Vehicles)</option>
-                <option value="ASSOCIATED_WITH">ASSOCIATED_WITH (Associates)</option>
-                <option value="DESIGNATED_DIRECTOR">DESIGNATED_DIRECTOR (Corporate)</option>
-                <option value="TRANSFERRED_TO">TRANSFERRED_TO (Financial)</option>
                 <option value="SUBSCRIBES_TO">SUBSCRIBES_TO (Telephony)</option>
-                <option value="LINKED_TO">LINKED_TO (Historical)</option>
+                <option value="TRANSFERRED_TO">TRANSFERRED_TO (Financial)</option>
+                <option value="LOCATED_AT">LOCATED_AT (Spatial)</option>
+                <option value="INVOLVED_IN">INVOLVED_IN (General)</option>
               </select>
             </div>
           </div>
 
-          {/* Relationships Table or Zero State */}
-          <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
-            <Network size={36} className="mx-auto mb-3 opacity-40 text-[var(--ink-tertiary)]" />
-            <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Discovered Relationships</h4>
-            <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
-              No cross-entity links have been corroborated for this case dossier yet. Entities and connections will populate automatically as investigative evidence is ingested.
-            </p>
-          </div>
+          {/* Relationships List or Zero State */}
+          {(() => {
+            const rawRels = relationshipsData?.relationships || [];
+            const filtered = rawRels.filter((rel) => {
+              if (relationshipFilter !== 'all' && !rel.relationship_type.includes(relationshipFilter)) return false;
+              if (relationshipSearch) {
+                const q = relationshipSearch.toLowerCase();
+                return (
+                  rel.source_name.toLowerCase().includes(q) ||
+                  rel.target_name.toLowerCase().includes(q) ||
+                  rel.relationship_type.toLowerCase().includes(q) ||
+                  rel.evidence_basis.toLowerCase().includes(q)
+                );
+              }
+              return true;
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
+                  <Network size={36} className="mx-auto mb-3 opacity-40 text-[var(--ink-tertiary)]" />
+                  <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Discovered Relationships</h4>
+                  <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
+                    No cross-entity links match the active filters.
+                  </p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="space-y-3">
+                {filtered.map((rel) => (
+                  <div key={rel.id} className="p-4 rounded-xl border bg-[var(--surface-0)] flex flex-col md:flex-row md:items-center justify-between gap-4 text-[13px] hover:border-[var(--accent)] transition-colors"
+                    style={{ borderColor: 'var(--border)' }}>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.source_name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono-id bg-[var(--surface-2)] text-[var(--ink-secondary)]">
+                          {rel.source_type}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[var(--surface-2)] text-[var(--accent)] font-mono-id">
+                        <span>→</span>
+                        <span>{rel.relationship_type}</span>
+                        <span>→</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.target_name}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded font-mono-id bg-[var(--surface-2)] text-[var(--ink-secondary)]">
+                          {rel.target_type}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0">
+                      <div className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
+                        Proof: <strong style={{ color: 'var(--ink-primary)' }}>{rel.evidence_basis}</strong>
+                      </div>
+                      <span className="font-mono-id font-bold text-[var(--success)]">
+                        {rel.confidence}%
+                      </span>
+                      <button
+                        onClick={() => handleViewInNetwork(rel.source_id)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-semibold border hover:bg-[var(--surface-2)] text-[var(--accent)] transition-colors"
+                        style={{ borderColor: 'var(--border)' }}
+                      >
+                        Inspect
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 

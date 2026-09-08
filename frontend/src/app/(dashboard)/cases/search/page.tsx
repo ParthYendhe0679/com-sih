@@ -17,6 +17,7 @@ import {
 interface SearchResultItem {
   type: string;
   id: string;
+  routeId?: string;
   name: string;
   category: string;
   relatedCases: string[];
@@ -48,6 +49,7 @@ export default function CaseSearcherPage() {
           items.push({
             type: 'Case',
             id: c.case_number || c.id,
+            routeId: c.id,
             name: c.title,
             category: c.crime_category,
             relatedCases: [c.case_number || c.id],
@@ -227,7 +229,7 @@ export default function CaseSearcherPage() {
 
   const handleSelectResult = (item: SearchResultItem) => {
     if (item.type === 'Case') {
-      router.push(`/cases/${item.id}`);
+      router.push(`/cases/${item.routeId || item.id}`);
     } else if (item.type === 'FIR') {
       router.push('/fir');
     } else {

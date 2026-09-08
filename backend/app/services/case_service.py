@@ -1,7 +1,7 @@
 """Case investigation management and workflow domain service."""
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 import uuid
 from app.core.constants import (
     AuditAction,
@@ -71,9 +71,13 @@ class CaseService:
         except Exception:
             pass
 
-    async def get_case_by_id(self, case_id: uuid.UUID, current_user: User) -> Case:
-        """Fetch Case by UUID enforcing role permissions (Citizens cannot view general police Cases)."""
-        case = await self.case_repo.get_by_id(case_id)
+    async def get_case_by_id(self, case_id: Union[uuid.UUID, str], current_user: User) -> Case:
+        """Fetch Case by UUID or case_number string enforcing role permissions (Citizens cannot view general police Cases)."""
+        if isinstance(case_id, str):
+            case = await self.case_repo.get_by_id_or_number(case_id)
+        else:
+            case = await self.case_repo.get_by_id(case_id)
+
         if not case:
             raise ResourceNotFoundException("Case", case_id)
 

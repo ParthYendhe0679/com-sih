@@ -33,7 +33,7 @@ export default function CommandPalette() {
   const dispatch = useAppDispatch();
   const isOpen = useAppSelector(s => s.ui.commandPaletteOpen);
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<{ type: string; id: string; title: string; subtitle: string }[]>([]);
+  const [results, setResults] = useState<{ type: string; id: string; routeId?: string; title: string; subtitle: string }[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [searching, setSearching] = useState(false);
 
@@ -60,12 +60,13 @@ export default function CommandPalette() {
       searchApi.search(query.trim())
         .then(res => {
           if (!active) return;
-          const mapped: { type: string; id: string; title: string; subtitle: string }[] = [];
+          const mapped: { type: string; id: string; routeId?: string; title: string; subtitle: string }[] = [];
           if (res.cases && res.cases.length > 0) {
             for (const c of res.cases) {
               mapped.push({
                 type: 'Case',
                 id: c.case_number || c.id,
+                routeId: c.id,
                 title: c.title,
                 subtitle: `${c.case_number} • ${c.crime_category || 'General'} • ${c.status}`,
               });
@@ -131,9 +132,9 @@ export default function CommandPalette() {
     router.push(path);
   }, [dispatch, router]);
 
-  const handleSelect = useCallback((item: { type: string; id: string }) => {
+  const handleSelect = useCallback((item: { type: string; id: string; routeId?: string }) => {
     const routes: Record<string, string> = {
-      Case: `/cases/${item.id}`,
+      Case: `/cases/${item.routeId || item.id}`,
       Person: `/network?entity=${item.id}`,
       Vehicle: `/network?entity=${item.id}`,
       Evidence: `/evidence`,

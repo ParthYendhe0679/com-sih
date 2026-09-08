@@ -17,12 +17,13 @@ export default function MapContextualPage() {
         const items = res.items || [];
         setCases(items);
         const saved = typeof window !== 'undefined' ? localStorage.getItem('kritagas_active_case') : null;
-        if (saved && items.some(c => c.id === saved || c.case_number === saved)) {
-          router.replace(`/cases/${saved}?tab=map`);
+        const savedCase = saved ? items.find(c => c.id === saved || c.case_number === saved) : undefined;
+        if (savedCase) {
+          router.replace(`/cases/${savedCase.id}?tab=map`);
           return;
         }
         if (items.length === 1) {
-          router.replace(`/cases/${items[0].case_number || items[0].id}?tab=map`);
+          router.replace(`/cases/${items[0].id}?tab=map`);
           return;
         }
       } catch (err) {
@@ -72,8 +73,8 @@ export default function MapContextualPage() {
               <button
                 key={c.id}
                 onClick={() => {
-                  localStorage.setItem('kritagas_active_case', c.case_number || c.id);
-                  router.push(`/cases/${c.case_number || c.id}?tab=map`);
+                  localStorage.setItem('kritagas_active_case', c.id);
+                  router.push(`/cases/${c.id}?tab=map`);
                 }}
                 className="p-4 rounded-xl border text-left flex items-center justify-between hover:border-[var(--accent)] transition-all glass-panel cursor-pointer"
                 style={{ borderColor: 'var(--border)' }}

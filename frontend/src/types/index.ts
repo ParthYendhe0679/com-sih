@@ -20,6 +20,8 @@ export type WatchlistStatus = 'Active' | 'Paused' | 'Removed';
 
 export interface Case {
   id: string;
+  /** Stable backend UUID. `id` remains the human-readable case number for display. */
+  backendId?: string;
   title: string;
   crime: CrimeType;
   location: string;
@@ -451,4 +453,3 @@ export interface MapLayerSettings {
   liveObservations: boolean;
   hotspots: boolean;
 }
-

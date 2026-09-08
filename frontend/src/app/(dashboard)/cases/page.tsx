@@ -30,6 +30,7 @@ export default function CasesPage() {
       const backendCases = res.items || [];
       const mapped: Case[] = backendCases.map((bc) => ({
         id: bc.case_number || bc.id,
+        backendId: bc.id,
         title: bc.title,
         crime: (bc.crime_category as any) || 'General Crime',
         location: bc.area ? `${bc.area}, ${bc.city || 'Mumbai'}` : (bc.city || 'Mumbai Jurisdiction'),
@@ -216,7 +217,7 @@ export default function CasesPage() {
         keyExtractor={(c) => c.id}
         loading={loading}
         pageSize={12}
-        onRowClick={(c) => router.push(`/cases/${c.id}`)}
+        onRowClick={(c) => router.push(`/cases/${c.backendId || c.id}`)}
         emptyMessage="No cases found matching your search and filter criteria."
         bulkActions={[
           {

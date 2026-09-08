@@ -565,13 +565,22 @@ export default function FIRIntakePage() {
                   )}
                 </div>
 
-                {/* Digital / Emails */}
+                {/* Digital / Emails / URLs */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
                   <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#F59E0B' }}>
                     <FileText size={16} />
-                    <span>📧 DIGITAL IDENTIFIERS ({extractedData?.entities.emails.length || 0})</span>
+                    <span>📧 DIGITAL IDENTIFIERS ({extractedData?.entities.digital_identifiers?.length || extractedData?.entities.emails.length || 0})</span>
                   </div>
-                  {extractedData?.entities.emails && extractedData.entities.emails.length > 0 ? (
+                  {extractedData?.entities.digital_identifiers && extractedData.entities.digital_identifiers.length > 0 ? (
+                    <ul className="space-y-1.5 text-[12px] font-mono-id max-h-40 overflow-y-auto" style={{ color: 'var(--ink-primary)' }}>
+                      {extractedData.entities.digital_identifiers.map((d, i) => (
+                        <li key={i} className="flex flex-col border-b border-[var(--border)] pb-1 last:border-0">
+                          <span className="truncate">• {d.identifier}</span>
+                          <span className="text-[10px] text-[var(--ink-tertiary)] uppercase">{d.type || 'DIGITAL'}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : extractedData?.entities.emails && extractedData.entities.emails.length > 0 ? (
                     <ul className="space-y-1.5 text-[12.5px] font-mono-id" style={{ color: 'var(--ink-primary)' }}>
                       {extractedData.entities.emails.map((e, i) => (
                         <li key={i}>• {e.email}</li>
@@ -579,6 +588,32 @@ export default function FIRIntakePage() {
                     </ul>
                   ) : (
                     <p className="text-[12px] text-[var(--ink-tertiary)]">No digital addresses detected in scan.</p>
+                  )}
+                </div>
+
+                {/* Persons / Accused / Complainant */}
+                <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
+                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#6366F1' }}>
+                    <User size={16} />
+                    <span>👤 IDENTIFIED PERSONS ({extractedData?.entities.persons?.length || 0})</span>
+                  </div>
+                  {extractedData?.entities.persons && extractedData.entities.persons.length > 0 ? (
+                    <ul className="space-y-1.5 text-[12.5px]" style={{ color: 'var(--ink-primary)' }}>
+                      {extractedData.entities.persons.map((p, i) => (
+                        <li key={i} className="flex items-center justify-between">
+                          <span className="font-semibold">• {p.name}</span>
+                          <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase"
+                            style={{
+                              background: p.role === 'SUSPECT' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(99, 102, 241, 0.15)',
+                              color: p.role === 'SUSPECT' ? 'var(--danger)' : '#6366F1'
+                            }}>
+                            {p.role || 'PERSON'}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-[12px] text-[var(--ink-tertiary)]">No distinct personas resolved yet.</p>
                   )}
                 </div>
 

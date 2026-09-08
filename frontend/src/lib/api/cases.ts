@@ -68,6 +68,61 @@ export interface CaseNetworkData {
   total_edges: number;
 }
 
+export interface CaseEntityItem {
+  id: string;
+  entity_type: string;
+  name: string;
+  normalized_value: string;
+  confidence: number;
+  role: string;
+  attributes?: Record<string, any>;
+  source_text?: string;
+}
+
+export interface CaseEntitiesData {
+  case_id: string;
+  case_number: string;
+  total_entities: number;
+  counts: {
+    persons: number;
+    phones: number;
+    vehicles: number;
+    financials: number;
+    legal_sections: number;
+    locations: number;
+    digital_identifiers: number;
+  };
+  categorized: {
+    persons: CaseEntityItem[];
+    phones: CaseEntityItem[];
+    vehicles: CaseEntityItem[];
+    financials: CaseEntityItem[];
+    legal_sections: CaseEntityItem[];
+    locations: CaseEntityItem[];
+    digital_identifiers: CaseEntityItem[];
+  };
+  entities: CaseEntityItem[];
+}
+
+export interface CaseRelationshipItem {
+  id: string;
+  source_id: string;
+  source_name: string;
+  source_type: string;
+  target_id: string;
+  target_name: string;
+  target_type: string;
+  relationship_type: string;
+  confidence: number;
+  evidence_basis: string;
+}
+
+export interface CaseRelationshipsData {
+  case_id: string;
+  total_relationships: number;
+  relationships: CaseRelationshipItem[];
+}
+
 export type CaseListItem = BackendCase;
 
 export const casesApi = {
@@ -148,6 +203,14 @@ export const casesApi = {
   async getSharedResources(caseId?: string): Promise<any[]> {
     const url = caseId ? `/graph/shared-resources?case_id=${caseId}` : '/graph/shared-resources';
     return await apiClient.get(url);
+  },
+
+  async getCaseEntities(caseId: string): Promise<CaseEntitiesData> {
+    return await apiClient.get<CaseEntitiesData>(`/cases/${caseId}/entities`);
+  },
+
+  async getCaseRelationships(caseId: string): Promise<CaseRelationshipsData> {
+    return await apiClient.get<CaseRelationshipsData>(`/cases/${caseId}/relationships`);
   },
 };
 

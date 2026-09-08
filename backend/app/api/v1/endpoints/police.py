@@ -4,6 +4,8 @@ import re
 from datetime import date, datetime
 from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.ai_ml.models.ai_models import Entity
 from app.api.deps import (
     get_case_service,
     get_client_ip,
@@ -11,50 +13,34 @@ from app.api.deps import (
     require_roles,
 )
 from app.core.constants import DocumentProcessingStatus, FIRPriority, FIRStatus, UserRole
+from app.db.session import get_db
 from app.integrations.storage.storage_interface import StorageService, get_storage_service
 from app.models.user import User
 from app.schemas.case import CaseResponse
 from app.schemas.common import APIResponse, PaginatedResponse
 from app.schemas.fir import FIRDetailResponse, FIRResponse, OfflineFIRCreate
 from app.services.case_service import CaseService
+from app.services.entity_extraction_service import entity_extraction_service
 from app.services.fir_service import FIRService
+from app.services.ocr_service import ocr_service
 from app.utils.response import success_response
 
 router = APIRouter()
 
 
 def _extract_entities_from_text(text: str) -> Dict[str, List[Dict[str, Any]]]:
-    """Lightweight rule-based entity extractor from raw document text."""
-    # Phone numbers
-    phone_matches = re.findall(r'(?:\+?91[\-\s]?)?[6789]\d{9}', text)
-    phones = [{"number": p.strip(), "confidence": 92} for p in set(phone_matches)]
-
-    # Vehicle numbers (e.g. MH-01-AB-1234, DL 03 C 5678)
-    veh_matches = re.findall(r'[A-Z]{2}[ -]?[0-9]{1,2}[ -]?[A-Z]{1,2}[ -]?[0-9]{4}', text)
-    vehicles = [{"registration": v.strip(), "confidence": 95} for v in set(veh_matches)]
-
-    # Monetary transactions
-    money_matches = re.findall(
-        r'(?:(?:Rs\.?|₹|INR)\s*[\d,]+(?:\.\d+)?(?:\s*(?:Crore|Cr|Lakh|Lakhs))?)',
-        text,
-        re.IGNORECASE,
-    )
-    transactions = [{"amount": m.strip(), "confidence": 88} for m in set(money_matches)]
-
-    # Legal Sections (e.g. IPC 420, 120B)
-    sec_matches = re.findall(r'(?:IPC|Section|Sec\.?)\s*[\d\w,\s]+', text, re.IGNORECASE)
-    legal_sections = [{"section": s.strip(), "confidence": 90} for s in set(sec_matches)]
-
-    # Emails
-    email_matches = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', text)
-    emails = [{"email": e.strip(), "confidence": 99} for e in set(email_matches)]
-
+    """Hybrid rule, regex, and NLP entity extractor from raw document text."""
+    res = entity_extraction_service.extract_all(text)
     return {
-        "phones": phones,
-        "vehicles": vehicles,
-        "transactions": transactions,
-        "legal_sections": legal_sections,
-        "emails": emails,
+        "phones": res.phones,
+        "vehicles": res.vehicles,
+        "transactions": res.transactions,
+        "legal_sections": res.legal_sections,
+        "emails": res.emails,
+        "persons": res.persons,
+        "locations": res.locations,
+        "digital_identifiers": res.digital_identifiers,
+        "dates": res.dates,
     }
 
 
@@ -153,6 +139,7 @@ async def upload_fir_document(
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     fir_service: FIRService = Depends(get_fir_service),
     storage_service: StorageService = Depends(get_storage_service),
+    db: AsyncSession = Depends(get_db),
 ):
     client_ip = get_client_ip(request)
 
@@ -166,6 +153,7 @@ async def upload_fir_document(
     file_hash = hashlib.sha256(content).hexdigest()
     file_name = file.filename or "fir_document.pdf"
     content_type = file.content_type or "application/pdf"
+    ext = file_name.lower().split(".")[-1] if "." in file_name else ""
 
     # 2. Upload to storage
     file_url = await storage_service.upload(
@@ -174,40 +162,56 @@ async def upload_fir_document(
         mime_type=content_type,
     )
 
-    # 3. Extract text
-    extracted_text = ""
-    ext = file_name.lower().split(".")[-1] if "." in file_name else ""
-    if ext in ["txt", "text", "csv", "log"]:
-        extracted_text = content.decode("utf-8", errors="ignore").strip()
-    elif ext == "pdf":
-        try:
-            # Try basic stream text decode or string extraction
-            raw_str = content.decode("latin-1", errors="ignore")
-            # Extract readable ascii chunks
-            text_chunks = re.findall(r'\(([^\(\)]+)\)\s*Tj', raw_str)
-            if text_chunks:
-                extracted_text = " ".join(text_chunks).strip()
-            else:
-                extracted_text = f"Physical FIR Scanned Document: {file_name} (PDF binary ingest verified. SHA-256: {file_hash[:16]}...)"
-        except Exception:
-            extracted_text = f"Scanned Document Copy: {file_name}"
+    # 3. Real OCR Document Ingestion Pipeline
+    ocr_res = await ocr_service.process_document(
+        file_bytes=content,
+        file_name=file_name,
+        content_type=content_type,
+    )
+
+    if ocr_res.success:
+        extracted_text = ocr_res.cleaned_text
+        proc_status = DocumentProcessingStatus.COMPLETED
+    elif description and len(description.strip()) >= 15:
+        extracted_text = description.strip()
+        proc_status = DocumentProcessingStatus.COMPLETED
     else:
-        extracted_text = f"Physical Evidence Scan: {file_name} ({content_type})"
+        raise HTTPException(
+            status_code=422,
+            detail=f"OCR_TEXT_INSUFFICIENT: {ocr_res.error or 'Unable to extract legible text from this document.'}",
+        )
 
-    # Fallback to provided description if text is brief
-    if description and (not extracted_text or len(extracted_text) < len(description)):
-        extracted_text = f"{description}\n\n[Ingested Scan: {file_name}]"
-    elif not extracted_text:
-        extracted_text = f"First Information Report document scan lodged via station intake. File: {file_name}"
-
-    # 4. Extract entities
-    entities = _extract_entities_from_text(extracted_text)
+    # 4. Extract entities via hybrid pipeline
+    extracted_entities = entity_extraction_service.extract_all(extracted_text)
+    entities = {
+        "phones": extracted_entities.phones,
+        "vehicles": extracted_entities.vehicles,
+        "transactions": extracted_entities.transactions,
+        "legal_sections": extracted_entities.legal_sections,
+        "emails": extracted_entities.emails,
+        "persons": extracted_entities.persons,
+        "locations": extracted_entities.locations,
+        "digital_identifiers": extracted_entities.digital_identifiers,
+        "dates": extracted_entities.dates,
+    }
 
     # Parse incident date
     parsed_date = date.today()
     if incident_date_str:
         try:
             parsed_date = datetime.strptime(incident_date_str.strip()[:10], "%Y-%m-%d").date()
+        except Exception:
+            pass
+    elif extracted_entities.dates:
+        try:
+            # Attempt to use first extracted incident date e.g. 05/09/2026
+            raw_d = extracted_entities.dates[0]["date"].replace(".", "/").replace("-", "/")
+            parts = raw_d.split("/")
+            if len(parts) == 3:
+                day, month, yr = int(parts[0]), int(parts[1]), int(parts[2])
+                if yr < 100:
+                    yr += 2000
+                parsed_date = date(yr, month, day)
         except Exception:
             pass
 
@@ -229,10 +233,18 @@ async def upload_fir_document(
     if not final_incident_location or final_incident_location == "Local Jurisdiction":
         final_incident_location = _detect_incident_location(extracted_text)
 
-    # 5. Persist offline FIR record
+    # 5. Generate concise executive NLP summary
+    executive_summary = entity_extraction_service.generate_executive_summary(
+        text=extracted_text,
+        entities=extracted_entities,
+        crime_category=final_crime_category,
+        incident_location=final_incident_location,
+    )
+
+    # 6. Persist offline FIR record
     offline_data = OfflineFIRCreate(
         title=title.strip(),
-        description=extracted_text,
+        description=executive_summary,
         crime_category=final_crime_category,
         incident_date=parsed_date,
         incident_location=final_incident_location,
@@ -248,6 +260,89 @@ async def upload_fir_document(
         client_ip=client_ip,
     )
 
+    # Persist extracted entities to PostgreSQL linked to this FIR
+    try:
+        for p in extracted_entities.phones:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="PHONE",
+                name=p["number"],
+                normalized_value=p["normalized"],
+                confidence=p["confidence"] / 100.0,
+                source_text=p.get("raw"),
+                is_canonical=True,
+            ))
+        for v in extracted_entities.vehicles:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="VEHICLE",
+                name=v["registration"],
+                normalized_value=v["registration"],
+                confidence=v["confidence"] / 100.0,
+                source_text=v.get("raw"),
+                is_canonical=True,
+            ))
+        for t in extracted_entities.transactions:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type=t.get("type", "FINANCIAL"),
+                name=t["amount"],
+                normalized_value=t["amount"],
+                confidence=t["confidence"] / 100.0,
+                is_canonical=True,
+            ))
+        for s in extracted_entities.legal_sections:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="LEGAL_SECTION",
+                name=s["section"],
+                normalized_value=s["section"],
+                confidence=s["confidence"] / 100.0,
+                is_canonical=True,
+            ))
+        for e in extracted_entities.emails:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="EMAIL",
+                name=e["email"],
+                normalized_value=e["email"],
+                confidence=e["confidence"] / 100.0,
+                is_canonical=True,
+            ))
+        for per in extracted_entities.persons:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="PERSON",
+                name=per["name"],
+                normalized_value=per["name"].lower().replace(" ", "_"),
+                confidence=per["confidence"] / 100.0,
+                attributes_json={"role": per.get("role")},
+                is_canonical=True,
+            ))
+        for loc in extracted_entities.locations:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="LOCATION",
+                name=loc["location"],
+                normalized_value=loc["location"].upper(),
+                confidence=loc["confidence"] / 100.0,
+                is_canonical=True,
+            ))
+        for dig in extracted_entities.digital_identifiers:
+            db.add(Entity(
+                fir_id=fir.id,
+                entity_type="DIGITAL_ID",
+                name=dig["identifier"],
+                normalized_value=dig["identifier"],
+                confidence=dig["confidence"] / 100.0,
+                attributes_json={"type": dig.get("type")},
+                is_canonical=True,
+            ))
+        await db.commit()
+    except Exception as persist_err:
+        import logging
+        logging.getLogger("kritagas.police").warning(f"Entity DB persistence warning: {persist_err}")
+
     fir_response = FIRDetailResponse.model_validate(fir)
 
     return success_response(
@@ -257,10 +352,11 @@ async def upload_fir_document(
             "file_hash": file_hash,
             "file_size": len(content),
             "extracted_text": extracted_text,
+            "executive_summary": executive_summary,
             "entities": entities,
-            "processing_status": DocumentProcessingStatus.COMPLETED.value,
+            "processing_status": proc_status.value,
         },
-        message=f"FIR document '{file_name}' successfully uploaded and ingested into investigation registry.",
+        message=f"FIR document '{file_name}' successfully uploaded and ingested with {len(entities['phones']) + len(entities['transactions']) + len(entities['legal_sections'])} extracted intelligence entities.",
         status_code=status.HTTP_201_CREATED,
     )
 

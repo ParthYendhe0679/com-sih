@@ -233,22 +233,22 @@ class GraphRepository:
     async def get_case_subgraph(self, case_id: str) -> Dict[str, Any]:
         """Fetch all nodes and relationships connected to a specific investigation case."""
         cypher = """
-        MATCH (c:Case {id: $case_id})
-        OPTIONAL MATCH (c)<-[r1]-(n)
+        MATCH (c:Case)
+        WHERE c.id = $case_id OR c.case_number = $case_id
+        OPTIONAL MATCH (c)-[r1]-(n)
         OPTIONAL MATCH (n)-[r2]-(m)
-        WHERE (m)-[]-(c) OR m.id = c.id
+        WHERE (m)-[]-(c) OR m.id = c.id OR (r2.case_id IS NOT NULL AND r2.case_id = c.id)
         WITH collect(DISTINCT c) + collect(DISTINCT n) + collect(DISTINCT m) AS all_nodes,
-             collect(DISTINCT r1) + collect(DISTINCT r2) AS all_rels
+             [r IN collect(DISTINCT r1) + collect(DISTINCT r2) WHERE r IS NOT NULL] AS all_rels
         UNWIND all_nodes AS node
-        WITH collect(DISTINCT node) AS distinct_nodes, all_rels
-        UNWIND all_rels AS rel
-        RETURN distinct_nodes AS nodes, collect(DISTINCT rel) AS edges
+        WITH [n IN collect(DISTINCT node) WHERE n IS NOT NULL] AS distinct_nodes, all_rels
+        RETURN distinct_nodes AS nodes, all_rels AS edges
         """
         records = await self.client.execute_query(cypher, {"case_id": str(case_id)})
         if not records or not records[0].get("nodes"):
             # Fallback query: just the case node itself
             case_node = await self.client.execute_query(
-                "MATCH (c:Case {id: $case_id}) RETURN [c] AS nodes, [] AS edges",
+                "MATCH (c:Case) WHERE c.id = $case_id OR c.case_number = $case_id RETURN [c] AS nodes, [] AS edges",
                 {"case_id": str(case_id)},
             )
             return case_node[0] if case_node else {"nodes": [], "edges": []}

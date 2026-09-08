@@ -24,6 +24,18 @@ class CaseRepository(BaseRepository[Case]):
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
+    async def get_by_id_or_number(self, identifier: str) -> Optional[Case]:
+        """Lookup Case by either UUID string or human-readable case_number string."""
+        ident = str(identifier).strip()
+        try:
+            val_uuid = uuid.UUID(ident)
+            case = await self.get_by_id(val_uuid)
+            if case:
+                return case
+        except (ValueError, TypeError):
+            pass
+        return await self.get_by_case_number(ident)
+
     async def list_for_investigator(
         self,
         investigator_id: uuid.UUID,

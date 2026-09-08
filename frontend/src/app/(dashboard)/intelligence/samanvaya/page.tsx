@@ -233,6 +233,7 @@ const keyFindings: KeyFinding[] = [];
 
 interface SamanvayaCase {
   id: string;
+  backendId?: string;
   title: string;
   crime: string;
   city: string;
@@ -252,6 +253,7 @@ function SamanvayaContent() {
   const [availableCases, setAvailableCases] = useState<SamanvayaCase[]>(
     cases.map((c) => ({
       id: c.id,
+      backendId: c.id,
       title: c.title,
       crime: c.crime,
       city: c.city,
@@ -282,6 +284,7 @@ function SamanvayaContent() {
       if (active && res && res.items && res.items.length > 0) {
         const mapped: SamanvayaCase[] = res.items.map((bc) => ({
           id: bc.case_number || bc.id,
+          backendId: bc.id,
           title: bc.title,
           crime: bc.crime_category || 'Investigation',
           city: 'Mumbai Jurisdiction',
@@ -292,10 +295,11 @@ function SamanvayaContent() {
         }));
         setAvailableCases(mapped);
         const reqCase = searchParams.get('case');
-        if (reqCase) {
-          setSelectedCaseId(reqCase);
-        } else if (mapped[0]) {
-          setSelectedCaseId(mapped[0].id);
+        const requested = reqCase
+          ? mapped.find((c) => c.backendId === reqCase || c.id === reqCase)
+          : mapped[0];
+        if (requested) {
+          setSelectedCaseId(requested.backendId || requested.id);
         }
       }
     }).catch(() => {});
@@ -306,7 +310,7 @@ function SamanvayaContent() {
 
   // Get current case metadata
   const currentCase = useMemo(() => {
-    return availableCases.find((c) => c.id === selectedCaseId) || availableCases[0];
+    return availableCases.find((c) => (c.backendId || c.id) === selectedCaseId) || availableCases[0];
   }, [availableCases, selectedCaseId]);
 
   const activeAgent = useMemo(() => {
@@ -401,7 +405,7 @@ function SamanvayaContent() {
                     <option value="">No Active Investigation Cases</option>
                   ) : (
                     availableCases.map((c, idx) => (
-                      <option key={`${c.id}-${idx}`} value={c.id}>
+                      <option key={`${c.id}-${idx}`} value={c.backendId || c.id}>
                         {c.id} — {c.crime} ({c.city})
                       </option>
                     ))
@@ -506,7 +510,7 @@ function SamanvayaContent() {
             <button
               onClick={() => {
                 if (currentCase?.id) {
-                  router.push(`/cases/${currentCase.id}`);
+                  router.push(`/cases/${currentCase.backendId || currentCase.id}`);
                 } else {
                   toast.info('Please select an active case first.');
                 }
@@ -1018,7 +1022,7 @@ function SamanvayaContent() {
           <div className="rounded-2xl border glass-panel overflow-hidden"
             style={{ borderColor: 'var(--border)', minHeight: '620px' }}>
             <CaseNetworkGraph
-              caseId={currentCase?.id || ''}
+              caseId={currentCase?.backendId || currentCase?.id || ''}
               onViewOnMap={() => setActiveTab('map')}
             />
           </div>
@@ -1044,7 +1048,7 @@ function SamanvayaContent() {
 
           <div className="rounded-2xl border glass-panel overflow-hidden"
             style={{ borderColor: 'var(--border)', minHeight: '600px' }}>
-            <CaseLeafletMap caseId={currentCase?.id || ''} />
+            <CaseLeafletMap caseId={currentCase?.backendId || currentCase?.id || ''} />
           </div>
         </div>
       )}

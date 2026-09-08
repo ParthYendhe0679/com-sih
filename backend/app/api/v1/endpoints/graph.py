@@ -54,16 +54,16 @@ router = APIRouter()
     description="Retrieve comprehensive graph representation (nodes, relationships, and metrics) for an investigation case.",
 )
 async def get_case_graph(
-    case_id: uuid.UUID,
+    case_id: str,
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
     graph_service: Neo4jGraphService = Depends(get_graph_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    # Enforce case access permissions
-    await case_service.get_case_by_id(case_id, current_user=current_user)
+    # Enforce case access permissions and resolve canonical UUID
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
-    data = await graph_service.get_case_graph(case_id, session=session)
+    data = await graph_service.get_case_graph(case.id, session=session)
     return success_response(data=data, message=f"Case graph retrieved ({data.engine}).")
 
 
@@ -74,15 +74,15 @@ async def get_case_graph(
     description="Retrieve Cytoscape-formatted network graph specifically mapped for the Next.js frontend.",
 )
 async def get_case_network(
-    case_id: uuid.UUID,
+    case_id: str,
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
     graph_service: Neo4jGraphService = Depends(get_graph_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    await case_service.get_case_by_id(case_id, current_user=current_user)
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
-    data = await graph_service.get_case_network(case_id, session=session)
+    data = await graph_service.get_case_network(case.id, session=session)
     return success_response(data=data, message=f"Case network intelligence retrieved ({data.engine}).")
 
 
@@ -93,15 +93,15 @@ async def get_case_network(
     description="Retrieve graph density, node count, edge count, and entity type distributions.",
 )
 async def get_case_graph_statistics(
-    case_id: uuid.UUID,
+    case_id: str,
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
     graph_service: Neo4jGraphService = Depends(get_graph_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    await case_service.get_case_by_id(case_id, current_user=current_user)
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
-    graph = await graph_service.get_case_graph(case_id, session=session)
+    graph = await graph_service.get_case_graph(case.id, session=session)
     return success_response(data=graph.statistics, message="Graph statistics retrieved.")
 
 
@@ -112,12 +112,14 @@ async def get_case_graph_statistics(
     description="Trigger bidirectional synchronization: reads validated entities, relationships, evidence, and FIR data from PostgreSQL and merges them into Neo4j Aura.",
 )
 async def sync_case_graph_to_neo4j(
-    case_id: uuid.UUID,
+    case_id: str,
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
+    case_service: CaseService = Depends(get_case_service),
     graph_service: Neo4jGraphService = Depends(get_graph_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    result = await graph_service.sync_case_graph(case_id, session=session)
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
+    result = await graph_service.sync_case_graph(case.id, session=session)
     return success_response(data=result, message=result.message)
 
 
@@ -132,7 +134,7 @@ async def sync_case_graph_to_neo4j(
     description="Discover indirect connections, common associates, and multi-hop paths between entities in an investigation.",
 )
 async def get_hidden_connections(
-    case_id: uuid.UUID = Query(..., description="Target investigation case ID"),
+    case_id: str = Query(..., description="Target investigation case ID or number"),
     entity_id: Optional[uuid.UUID] = Query(None, description="Optional entity of interest"),
     max_depth: int = Query(2, ge=1, le=4, description="Max traversal depth"),
     current_user: User = Depends(get_current_user),
@@ -140,10 +142,10 @@ async def get_hidden_connections(
     graph_intel: GraphIntelligenceService = Depends(get_graph_intelligence_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    await case_service.get_case_by_id(case_id, current_user=current_user)
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
     results = await graph_intel.find_hidden_connections(
-        case_id=case_id,
+        case_id=case.id,
         session=session,
         entity_id=entity_id,
         max_depth=max_depth,
@@ -158,18 +160,20 @@ async def get_hidden_connections(
     description="Detect Phones, Bank Accounts, Vehicles, and Locations shared by multiple persons of interest.",
 )
 async def get_shared_resources(
-    case_id: Optional[uuid.UUID] = Query(None, description="Optional case filter"),
+    case_id: Optional[str] = Query(None, description="Optional case filter (UUID or case number)"),
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
     graph_intel: GraphIntelligenceService = Depends(get_graph_intelligence_service),
     session: AsyncSession = Depends(get_async_session),
 ):
+    target_case_id = None
     if case_id:
-        await case_service.get_case_by_id(case_id, current_user=current_user)
+        case = await case_service.get_case_by_id(case_id, current_user=current_user)
+        target_case_id = case.id
     elif current_user.role == UserRole.CITIZEN:
         raise PermissionDeniedException("Global resource analysis is restricted to authorized officers.")
 
-    results = await graph_intel.find_shared_resources(case_id=case_id, session=session)
+    results = await graph_intel.find_shared_resources(case_id=target_case_id, session=session)
     return success_response(data=results, message=f"Found {len(results)} shared resource nexus point(s).")
 
 
@@ -222,13 +226,13 @@ async def get_cross_case_entities(
     description="Compute degree centrality, betweenness intermediaries, and community clusters for a case network.",
 )
 async def get_graph_analytics(
-    case_id: uuid.UUID,
+    case_id: str,
     current_user: User = Depends(get_current_user),
     case_service: CaseService = Depends(get_case_service),
     graph_intel: GraphIntelligenceService = Depends(get_graph_intelligence_service),
     session: AsyncSession = Depends(get_async_session),
 ):
-    await case_service.get_case_by_id(case_id, current_user=current_user)
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
-    analytics = await graph_intel.get_graph_analytics(case_id=case_id, session=session)
+    analytics = await graph_intel.get_graph_analytics(case_id=case.id, session=session)
     return success_response(data=analytics, message="Network graph analytics computed.")

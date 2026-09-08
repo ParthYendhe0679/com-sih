@@ -30,8 +30,8 @@ export default function KAVAAIPage() {
 
   // Case Context
   const [selectedCaseId, setSelectedCaseId] = useState('');
-  const [availableCases, setAvailableCases] = useState<{ id: string; title: string; crime: string; city: string }[]>(
-    cases.map((c) => ({ id: c.id, title: c.title, crime: c.crime, city: c.city }))
+  const [availableCases, setAvailableCases] = useState<{ id: string; backendId: string; title: string; crime: string; city: string }[]>(
+    cases.map((c) => ({ id: c.id, backendId: c.id, title: c.title, crime: c.crime, city: c.city }))
   );
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,12 +44,13 @@ export default function KAVAAIPage() {
         if (active && res && res.items && res.items.length > 0) {
           const mapped = res.items.map((bc) => ({
             id: bc.case_number || bc.id,
+            backendId: bc.id,
             title: bc.title,
             crime: bc.crime_category || 'Investigation',
             city: 'Mumbai Jurisdiction',
           }));
           setAvailableCases(mapped);
-          if (mapped[0]) setSelectedCaseId(mapped[0].id);
+          if (mapped[0]) setSelectedCaseId(mapped[0].backendId);
         }
       })
       .catch(() => {});
@@ -58,7 +59,7 @@ export default function KAVAAIPage() {
     };
   }, []);
 
-  const selectedCase = availableCases.find((c) => c.id === selectedCaseId) || availableCases[0] || null;
+  const selectedCase = availableCases.find((c) => c.backendId === selectedCaseId) || availableCases[0] || null;
 
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -174,7 +175,7 @@ export default function KAVAAIPage() {
                     <option value="">No Active Cases Registered</option>
                   ) : (
                     availableCases.map((c, idx) => (
-                      <option key={`${c.id}-${idx}`} value={c.id}>
+                      <option key={`${c.id}-${idx}`} value={c.backendId}>
                         {c.id} — {c.crime} ({c.city})
                       </option>
                     ))

@@ -55,13 +55,14 @@ class Settings(BaseSettings):
     GROQ_API_KEY_4: Optional[str] = None
     GROQ_PRIMARY_KEY_INDEX: int = 1
     GROQ_MODEL: str = "llama-3.3-70b-versatile"
+    GROQ_VISION_MODEL: str = "qwen/qwen3.8-27b"
     GROQ_API_KEY: Optional[str] = None  # Backward compatibility fallback
 
     # Google Gemini Multi-Key Configuration
     GEMINI_API_KEY_1: Optional[str] = None
     GEMINI_API_KEY_2: Optional[str] = None
     GEMINI_PRIMARY_KEY_INDEX: int = 1
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
     GEMINI_API_KEY: Optional[str] = None  # Backward compatibility fallback
 
     # Hugging Face Configuration
@@ -105,6 +106,7 @@ class Settings(BaseSettings):
     VALKEY_SOCKET_TIMEOUT: float = 2.0
     VALKEY_CONNECT_TIMEOUT: float = 3.0
     ENABLE_VALKEY: bool = True
+    REDIS_URL: Optional[str] = None
 
     # Feature Flags
     ENABLE_AI: bool = True

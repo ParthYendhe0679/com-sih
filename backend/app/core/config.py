@@ -85,10 +85,15 @@ class Settings(BaseSettings):
     ENTITY_MATCH_THRESHOLD: float = 0.80
 
     # Infrastructure (Optional - will not crash if missing)
-    REDIS_URL: Optional[str] = None
+    # Neo4j Graph Database Configuration (Neo4j Aura / Community / Enterprise)
     NEO4J_URI: Optional[str] = None
-    NEO4J_USERNAME: Optional[str] = None
+    NEO4J_USERNAME: Optional[str] = "neo4j"
     NEO4J_PASSWORD: Optional[str] = None
+    NEO4J_DATABASE: str = "neo4j"
+    NEO4J_MAX_CONNECTION_POOL_SIZE: int = 50
+    NEO4J_CONNECTION_TIMEOUT: float = 5.0
+    NEO4J_QUERY_TIMEOUT: float = 15.0
+    NEO4J_GRAPH_MAX_DEPTH: int = 3
 
     # Valkey Cache Configuration (Aiven Valkey / Redis-compatible)
     VALKEY_URL: Optional[str] = None

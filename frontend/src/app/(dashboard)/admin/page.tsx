@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { dashboardApi, type AdminDashboardStats } from '@/lib/api/dashboard';
 import { auditLogs } from '@/mock';
 import {
   CheckCircle2, Search, Shield, Eye, Edit2
@@ -56,6 +57,22 @@ function AdminContent() {
       ? tabParam
       : 'dashboard';
   const [searchLog, setSearchLog] = useState('');
+  const [adminStats, setAdminStats] = useState<AdminDashboardStats | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    dashboardApi
+      .getAdminDashboard()
+      .then((data) => {
+        if (active && data) setAdminStats(data);
+      })
+      .catch((err) => {
+        console.warn('Admin stats notice:', err);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const filteredLogs = auditLogs.filter((log) => {
     if (!searchLog) return true;
@@ -87,10 +104,34 @@ function AdminContent() {
           {/* System metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
             {[
-              { label: 'Total Users', value: '1,331', sub: '+12 this month', color: '#4F46E5', bg: 'rgba(79,70,229,0.08)' },
-              { label: 'Active Investigators', value: '87', sub: '4 online now', color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
-              { label: 'Active Investigations', value: '128', sub: '23 critical', color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
-              { label: 'System Uptime', value: '99.97%', sub: 'Last 30 days', color: '#0891B2', bg: 'rgba(8,145,178,0.08)' },
+              {
+                label: 'Total Users',
+                value: adminStats ? String(adminStats.total_users) : '1,331',
+                sub: adminStats ? `${adminStats.total_police_officers} officers` : '+12 this month',
+                color: '#4F46E5',
+                bg: 'rgba(79,70,229,0.08)'
+              },
+              {
+                label: 'Active Investigators',
+                value: adminStats ? String(adminStats.total_police_officers || adminStats.active_police_officers || 0) : '87',
+                sub: 'Assigned officers',
+                color: '#16A34A',
+                bg: 'rgba(22,163,74,0.08)'
+              },
+              {
+                label: 'Active Investigations',
+                value: adminStats ? String(adminStats.total_cases) : '128',
+                sub: adminStats ? `${adminStats.total_firs} FIRs filed` : '23 critical',
+                color: '#D97706',
+                bg: 'rgba(217,119,6,0.08)'
+              },
+              {
+                label: 'System Uptime',
+                value: '99.97%',
+                sub: 'Operational & Audited',
+                color: '#0891B2',
+                bg: 'rgba(8,145,178,0.08)'
+              },
             ].map((m) => (
               <div key={m.label} className="p-5 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
                 <div className="text-[30px] font-bold font-mono-id" style={{ color: m.color }}>{m.value}</div>

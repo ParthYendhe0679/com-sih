@@ -9,3 +9,4 @@ export * from './cases';
 export * from './evidence';
 export * from './dashboard';
 export * from './search';
+export * from './intelligence';

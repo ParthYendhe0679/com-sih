@@ -99,3 +99,15 @@ class GraphAnalyticsEngine:
             return nx.shortest_path(g, source=source_id, target=target_id)
         except nx.NetworkXNoPath:
             return None
+
+    # Convenience alias for interface uniformity
+    find_shortest_path = find_shortest_intelligence_path
+
+    def detect_communities(self, g: nx.Graph) -> List[Set[str]]:
+        """Detect communities via modularity or connected components."""
+        if len(g) == 0:
+            return []
+        try:
+            return [set(c) for c in nx.community.greedy_modularity_communities(g)]
+        except Exception:
+            return [set(c) for c in nx.connected_components(g)]

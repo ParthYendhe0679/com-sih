@@ -62,12 +62,15 @@ export interface CaseNetworkData {
   total_edges: number;
 }
 
+export type CaseListItem = BackendCase;
+
 export const casesApi = {
   async listCases(params?: {
     status?: string;
     priority?: string;
     page?: number;
     size?: number;
+    search?: string;
   }): Promise<PaginatedResult<BackendCase>> {
     return await apiClient.get<PaginatedResult<BackendCase>>('/cases', { params });
   },
@@ -123,4 +126,22 @@ export const casesApi = {
   async getCaseNetwork(caseId: string): Promise<CaseNetworkData> {
     return await apiClient.get<CaseNetworkData>(`/cases/${caseId}/network`);
   },
+
+  async syncCaseGraph(caseId: string): Promise<{ nodes_synced: number; edges_synced: number; status: string; message: string }> {
+    return await apiClient.post(`/graph/cases/${caseId}/graph/sync`);
+  },
+
+  async getGraphAnalytics(caseId: string): Promise<any> {
+    return await apiClient.get(`/graph/analytics/${caseId}`);
+  },
+
+  async getHiddenConnections(caseId: string): Promise<any[]> {
+    return await apiClient.get(`/graph/hidden-connections?case_id=${caseId}`);
+  },
+
+  async getSharedResources(caseId?: string): Promise<any[]> {
+    const url = caseId ? `/graph/shared-resources?case_id=${caseId}` : '/graph/shared-resources';
+    return await apiClient.get(url);
+  },
 };
+

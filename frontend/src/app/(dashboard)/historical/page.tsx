@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
+import { casesApi, intelligenceApi } from '@/lib/api';
 import { mockHistoricalService } from '@/services/mockServices';
 import type { HistoricalCase } from '@/types';
 import { Search, Shield, Sparkles } from 'lucide-react';
@@ -17,8 +18,43 @@ export default function HistoricalIntelligencePage() {
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState<HistoricalCase | null>(null);
 
-  const handleSearch = useCallback((q: string) => {
+  const handleSearch = useCallback(async (q: string) => {
     setLoading(true);
+    try {
+      // 1. Check if q matches a real case in the database
+      const caseRes = await casesApi.listCases({ search: q, size: 5 });
+      if (caseRes.items && caseRes.items.length > 0) {
+        const topCase = caseRes.items[0];
+        try {
+          const simRes = await intelligenceApi.getSimilarCases(topCase.id, 5);
+          if (simRes.similar_cases && simRes.similar_cases.length > 0) {
+            const mapped: HistoricalCase[] = simRes.similar_cases.map((sc, i) => ({
+              id: sc.case_id || `HIST-${i + 1}`,
+              title: sc.title || `Case Pattern #${i + 1}`,
+              year: 2024,
+              crime: (sc.crime_type as any) || 'Financial Fraud',
+              location: 'Maharashtra Central',
+              city: 'Mumbai',
+              status: 'Closed',
+              similarity: Math.round(sc.similarity_score * 100),
+              relatedCaseId: topCase.id,
+              sharedEntities: sc.shared_entities || [],
+              sharedLocations: [],
+              reason: sc.summary || `Pattern match with ${topCase.case_number}`,
+            }));
+            setResults(mapped);
+            setSelectedCase(mapped[0]);
+            setLoading(false);
+            return;
+          }
+        } catch {
+          // Fall through to mock / text search if ML service not initialized yet
+        }
+      }
+    } catch {
+      // Fall through to mock service
+    }
+
     mockHistoricalService.search(q).then((data) => {
       setResults(data);
       if (data.length > 0) setSelectedCase(data[0]);
@@ -27,17 +63,8 @@ export default function HistoricalIntelligencePage() {
   }, []);
 
   useEffect(() => {
-    let active = true;
-    mockHistoricalService.search('CASE-102').then((data) => {
-      if (active) {
-        setResults(data);
-        if (data.length > 0) setSelectedCase(data[0]);
-      }
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
+    handleSearch('CASE-102');
+  }, [handleSearch]);
 
   const quickQueries = [
     'CASE-102 (Flagship)',
@@ -300,11 +327,11 @@ export default function HistoricalIntelligencePage() {
                   Inspect in Right Drawer
                 </button>
                 <button
-                  onClick={() => router.push('/cases/CASE-102?tab=historical')}
+                  onClick={() => router.push(`/cases/${selectedCase?.relatedCaseId || selectedCase?.id || 'CASE-102'}?tab=historical`)}
                   className="w-full py-2 rounded-lg text-[13px] font-medium text-white shadow-sm hover:opacity-90"
                   style={{ background: 'var(--accent)' }}
                 >
-                  Correlate with Active CASE-102
+                  Correlate with Active Case ({selectedCase?.relatedCaseId || selectedCase?.id})
                 </button>
               </div>
             </div>

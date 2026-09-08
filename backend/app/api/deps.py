@@ -289,3 +289,8 @@ def require_roles(*allowed_roles: UserRole) -> Callable:
         return current_user
 
     return role_checker
+
+
+def get_graph_intelligence_service() -> "GraphIntelligenceService":
+    from app.services.graph_intelligence_service import graph_intelligence_service
+    return graph_intelligence_service

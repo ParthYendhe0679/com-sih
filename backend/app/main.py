@@ -23,6 +23,13 @@ async def lifespan(app: FastAPI):
     logger.info(f"=== Starting {settings.APP_NAME} in [{settings.ENVIRONMENT}] mode ===")
     logger.info(f"API Prefix: {settings.API_V1_PREFIX}")
     logger.info(f"CORS Allowed Origins: {settings.cors_origin_list}")
+    try:
+        import asyncio
+        from app.core.neo4j import init_neo4j_schema, neo4j_client
+        if neo4j_client.is_configured:
+            asyncio.create_task(init_neo4j_schema(neo4j_client))
+    except Exception as e:
+        logger.debug(f"Neo4j background schema init notice: {e}")
     yield
     logger.info(f"=== Shutting down {settings.APP_NAME} gracefully ===")
     try:
@@ -36,6 +43,12 @@ async def lifespan(app: FastAPI):
         logger.info("Valkey cache connection pool successfully closed.")
     except Exception as e:
         logger.warning(f"Error closing cache pool: {e}")
+    try:
+        from app.core.neo4j import neo4j_client
+        await neo4j_client.close()
+        logger.info("Neo4j driver connection pool successfully closed.")
+    except Exception as e:
+        logger.warning(f"Error closing Neo4j driver: {e}")
 
 
 

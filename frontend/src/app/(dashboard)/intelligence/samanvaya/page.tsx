@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { casesApi } from '@/lib/api/cases';
 import { cases } from '@/mock/cases';
 import { mockCaseService } from '@/services/mockServices';
 import type { Case } from '@/types';
@@ -267,6 +268,17 @@ const keyFindings = [
   },
 ];
 
+interface SamanvayaCase {
+  id: string;
+  title: string;
+  crime: string;
+  city: string;
+  status?: string;
+  description?: string;
+  location?: string;
+  assignedOfficer?: string;
+}
+
 function SamanvayaContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -274,6 +286,18 @@ function SamanvayaContent() {
   // Case Selection
   const requestedCaseId = searchParams.get('case') || 'CASE-102';
   const [selectedCaseId, setSelectedCaseId] = useState(requestedCaseId);
+  const [availableCases, setAvailableCases] = useState<SamanvayaCase[]>(
+    cases.map((c) => ({
+      id: c.id,
+      title: c.title,
+      crime: c.crime,
+      city: c.city,
+      status: c.status,
+      description: c.description,
+      location: c.location,
+      assignedOfficer: c.assignedOfficer,
+    }))
+  );
   const [activeTab, setActiveTab] = useState<'orchestration' | 'network' | 'map' | 'timeline' | 'report'>('orchestration');
 
   // Selected agent for inspection
@@ -289,10 +313,38 @@ function SamanvayaContent() {
   // Filter modal / records modal
   const [addRecordsOpen, setAddRecordsOpen] = useState(false);
 
+  useEffect(() => {
+    let active = true;
+    casesApi.listCases({ size: 50 }).then((res) => {
+      if (active && res && res.items && res.items.length > 0) {
+        const mapped: SamanvayaCase[] = res.items.map((bc) => ({
+          id: bc.case_number || bc.id,
+          title: bc.title,
+          crime: bc.crime_category || 'Investigation',
+          city: 'Mumbai Jurisdiction',
+          status: bc.status || 'Active',
+          description: bc.description || 'Active investigation case.',
+          location: 'Maharashtra Central Command',
+          assignedOfficer: 'Investigating Officer',
+        }));
+        setAvailableCases(mapped);
+        const reqCase = searchParams.get('case');
+        if (reqCase) {
+          setSelectedCaseId(reqCase);
+        } else if (mapped[0]) {
+          setSelectedCaseId(mapped[0].id);
+        }
+      }
+    }).catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [searchParams]);
+
   // Get current case metadata
   const currentCase = useMemo(() => {
-    return cases.find((c) => c.id === selectedCaseId) || cases[0];
-  }, [selectedCaseId]);
+    return availableCases.find((c) => c.id === selectedCaseId) || availableCases[0];
+  }, [availableCases, selectedCaseId]);
 
   const activeAgent = useMemo(() => {
     return agents.find((a) => a.id === selectedAgentId) || agents[2];
@@ -382,7 +434,7 @@ function SamanvayaContent() {
                     color: 'var(--ink-primary)',
                   }}
                 >
-                  {cases.map((c, idx) => (
+                  {availableCases.map((c, idx) => (
                     <option key={`${c.id}-${idx}`} value={c.id}>
                       {c.id} — {c.crime} ({c.city})
                     </option>

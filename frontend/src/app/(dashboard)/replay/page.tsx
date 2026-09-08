@@ -1,19 +1,35 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { casesApi, type CaseListItem } from '@/lib/api';
 import { timelineEvents, networkNodes, locations, evidence } from '@/mock';
 import {
   Play, Pause, SkipBack, SkipForward, RotateCcw, Clock,
-  Network, MapPin, Package
+  Network, MapPin, Package, Film, AlertCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function InvestigationReplayPage() {
-  const caseEvents = timelineEvents.filter((t) => t.caseId === 'CASE-102');
-
+  const [selectedCaseId, setSelectedCaseId] = useState('CASE-102');
+  const [availableCases, setAvailableCases] = useState<CaseListItem[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState(1); // 1x, 2x
+
+  useEffect(() => {
+    casesApi.listCases({ size: 10 }).then((res) => {
+      if (res.items && res.items.length > 0) {
+        setAvailableCases(res.items);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const caseEvents = useMemo(() => {
+    const matched = timelineEvents.filter((t) => t.caseId === selectedCaseId);
+    if (matched.length > 0) return matched;
+    // If selecting a real case without timeline events yet, return available timeline events
+    return timelineEvents;
+  }, [selectedCaseId]);
 
   const currentEvent = caseEvents[currentIndex] || caseEvents[0] || null;
 
@@ -79,7 +95,27 @@ export default function InvestigationReplayPage() {
         </div>
 
         {/* Master Playback Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {availableCases.length > 0 && (
+            <select
+              value={selectedCaseId}
+              onChange={(e) => {
+                setSelectedCaseId(e.target.value);
+                setCurrentIndex(0);
+                setIsPlaying(false);
+              }}
+              className="h-9 px-3 rounded-lg border text-[12px] bg-[var(--surface-2)] text-[var(--ink-primary)] outline-none"
+              style={{ borderColor: 'var(--border)' }}
+            >
+              <option value="CASE-102">CASE-102 (Flagship Demo)</option>
+              {availableCases.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.case_number} — {c.title.slice(0, 24)}
+                </option>
+              ))}
+            </select>
+          )}
+
           <button
             onClick={handleReset}
             className="p-2 rounded-lg border hover:bg-[var(--surface-2)] text-[var(--ink-secondary)]"

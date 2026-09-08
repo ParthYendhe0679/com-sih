@@ -80,6 +80,7 @@ class DataSynchronizationService:
         """Targeted eviction of case-scoped and dashboard caches."""
         try:
             await self.cache.delete_pattern(self.cache.keys.case_pattern(case_id))
+            await self.cache.delete_pattern(self.cache.keys.graph_pattern(case_id))
             await self.cache.delete_pattern(self.cache.keys.dashboard_pattern())
         except Exception:
             pass

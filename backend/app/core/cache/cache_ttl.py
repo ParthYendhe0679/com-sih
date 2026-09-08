@@ -22,6 +22,12 @@ class CacheTTL:
     # Network Visualization Graphs: 10 minutes (computationally heavy)
     NETWORK = 600
 
+    # Neo4j Graph Subgraphs & Intelligence: 5 minutes
+    GRAPH_CASE = 300
+    GRAPH_NETWORK = 600
+    GRAPH_ANALYTICS = 600
+    GRAPH_STATS = 300
+
     # Investigation Chronological Timelines: 5 minutes
     TIMELINE = 300
 

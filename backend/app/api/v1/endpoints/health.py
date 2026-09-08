@@ -150,4 +150,15 @@ async def cache_health_check(cache: CacheService = Depends(get_cache_service)) -
     }
 
 
+@router.get(
+    "/neo4j",
+    summary="Neo4j Graph Database Health & Metrics Probe",
+    description="Inspects Neo4j Aura connectivity, latency, database name, and node counts without exposing credentials.",
+)
+async def neo4j_health_check() -> Dict[str, Any]:
+    """Return diagnostic connectivity and graph metrics for Neo4j Aura layer."""
+    from app.core.neo4j.client import neo4j_client
+    return await neo4j_client.get_health_status()
+
+
 

@@ -71,4 +71,8 @@ class NoOpGraphService(GraphService):
 
 def get_graph_service() -> GraphService:
     """Dependency factory returning the active GraphService implementation."""
-    return NoOpGraphService()
+    try:
+        from app.services.graph_service import graph_service
+        return graph_service
+    except Exception:
+        return NoOpGraphService()

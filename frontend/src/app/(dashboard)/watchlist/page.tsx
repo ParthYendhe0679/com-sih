@@ -108,15 +108,41 @@ export default function WatchlistPage() {
       </div>
 
       {/* Watchlist Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {watchlistItems.map((item) => {
-          const isActive = item.status === 'Active';
-          return (
-            <div
-              key={item.id}
-              className="p-5 rounded-xl border flex flex-col justify-between hover:border-[var(--accent)] transition-all"
-              style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
-            >
+      {watchlistItems.length === 0 ? (
+        <div
+          className="p-12 text-center border rounded-2xl space-y-4"
+          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        >
+          <div className="w-12 h-12 rounded-xl mx-auto flex items-center justify-center bg-[var(--surface-2)] text-[var(--ink-secondary)]">
+            <Shield size={24} />
+          </div>
+          <div className="max-w-md mx-auto space-y-1">
+            <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              No Surveillance Targets Registered
+            </h3>
+            <p className="text-[13px] text-[var(--ink-secondary)]">
+              Continuous monitoring tracks high-risk individuals, suspicious vehicles, or IMEI numbers across cases. Add your first target to begin automated surveillance.
+            </p>
+          </div>
+          <button
+            onClick={() => setModalOpen(true)}
+            className="px-4 py-2 rounded-lg text-[13px] font-medium text-white shadow-sm inline-flex items-center gap-1.5"
+            style={{ background: 'var(--accent)' }}
+          >
+            <Plus size={14} />
+            <span>Add Surveillance Target</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {watchlistItems.map((item) => {
+            const isActive = item.status === 'Active';
+            return (
+              <div
+                key={item.id}
+                className="p-5 rounded-xl border flex flex-col justify-between hover:border-[var(--accent)] transition-all"
+                style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+              >
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -186,6 +212,7 @@ export default function WatchlistPage() {
           );
         })}
       </div>
+      )}
 
       {/* Add to Watchlist Modal */}
       {modalOpen && (

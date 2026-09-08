@@ -9,11 +9,9 @@ import {
   FolderOpen, AlertTriangle, FileCheck, History, Activity,
   ArrowRight, ChevronRight, BrainCircuit, Users, Package, Brain
 } from 'lucide-react';
-import {
-  mockCaseService, mockAlertService,
-  mockAnalyticsService
-} from '@/services/mockServices';
-import type { Case, Alert, HotspotData, CrimeTrendData } from '@/types';
+import { dashboardApi, type PoliceDashboardStats } from '@/lib/api/dashboard';
+import { casesApi, type BackendCase } from '@/lib/api/cases';
+import type { CrimeTrendData } from '@/types';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid
 } from 'recharts';
@@ -105,27 +103,114 @@ export default function DashboardPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const [recentCases, setRecentCases] = useState<Case[]>([]);
+  const [recentCases, setRecentCases] = useState<BackendCase[]>([]);
   const [trends, setTrends] = useState<CrimeTrendData[]>(fallbackCrimeTrends);
+  const [stats, setStats] = useState<PoliceDashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    mockCaseService.getCases().then((c) => setRecentCases(c.slice(0, 5)));
-    mockAnalyticsService.getCrimeTrends().then((t) => {
-      if (t && t.length > 0) setTrends(t);
-    }).catch(() => {
-      setTrends(fallbackCrimeTrends);
-    });
+    let isMounted = true;
+    async function loadDashboard() {
+      try {
+        const [dashRes, casesRes] = await Promise.allSettled([
+          dashboardApi.getPoliceDashboard(),
+          casesApi.listCases({ size: 5 })
+        ]);
+
+        if (isMounted) {
+          if (dashRes.status === 'fulfilled' && dashRes.value) {
+            setStats(dashRes.value);
+            if (dashRes.value.recent_cases && dashRes.value.recent_cases.length > 0) {
+              setRecentCases(dashRes.value.recent_cases);
+            }
+          }
+          if (casesRes.status === 'fulfilled' && casesRes.value?.items?.length) {
+            setRecentCases(casesRes.value.items);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard data:', err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadDashboard();
+    return () => { isMounted = false; };
   }, []);
 
   const topMetrics = [
-    { label: 'Active Cases', value: '128', sub: '+4 this week', icon: FolderOpen, href: '/cases', color: '#4F46E5', bg: 'rgba(79, 70, 229, 0.08)' },
-    { label: 'New FIRs', value: '23', sub: '8 pending review', icon: FileCheck, href: '/fir', color: '#16A34A', bg: 'rgba(22, 163, 74, 0.08)' },
-    { label: 'SAMANVAYA AI', value: '10', sub: 'Agents online', icon: BrainCircuit, href: '/intelligence/samanvaya', color: '#6366F1', bg: 'rgba(99, 102, 241, 0.08)' },
-    { label: 'High Priority Entities', value: '41', sub: '12 under watch', icon: Users, href: '/cases/CASE-102?tab=entities', color: '#D97706', bg: 'rgba(217, 119, 6, 0.08)' },
-    { label: 'Historical Matches', value: '31', sub: '89% top match', icon: History, href: '/historical', color: '#7C3AED', bg: 'rgba(124, 58, 237, 0.08)' },
-    { label: 'Evidence Reviews', value: '12', sub: 'SHA-256 sealed', icon: Package, href: '/evidence', color: '#0369A1', bg: 'rgba(3, 105, 161, 0.08)' },
-    { label: 'Cross-Case Patterns', value: '9', sub: 'MANTHAN identified', icon: Activity, href: '/intelligence/samanvaya', color: '#0891B2', bg: 'rgba(8, 145, 178, 0.08)' },
-    { label: 'Case Leads', value: '34', sub: '6 ready for review', icon: AlertTriangle, href: '/cases', color: '#DC2626', bg: 'rgba(220, 38, 38, 0.08)' },
+    {
+      label: 'Active Cases',
+      value: stats ? String(stats.assigned_cases ?? stats.assigned_cases_count ?? stats.open_cases ?? 0) : '0',
+      sub: 'Assigned investigations',
+      icon: FolderOpen,
+      href: '/cases',
+      color: '#4F46E5',
+      bg: 'rgba(79, 70, 229, 0.08)'
+    },
+    {
+      label: 'New FIRs',
+      value: stats ? String(stats.pending_fir_reviews ?? stats.pending_fir_reviews_count ?? 0) : '0',
+      sub: 'Pending review',
+      icon: FileCheck,
+      href: '/fir',
+      color: '#16A34A',
+      bg: 'rgba(22, 163, 74, 0.08)'
+    },
+    {
+      label: 'SAMANVAYA AI',
+      value: '10',
+      sub: 'Agents online',
+      icon: BrainCircuit,
+      href: '/intelligence/samanvaya',
+      color: '#6366F1',
+      bg: 'rgba(99, 102, 241, 0.08)'
+    },
+    {
+      label: 'High Priority',
+      value: stats ? String(stats.high_priority_cases ?? stats.urgent_cases_count ?? 0) : '0',
+      sub: 'Urgent attention',
+      icon: Users,
+      href: '/cases?priority=CRITICAL',
+      color: '#D97706',
+      bg: 'rgba(217, 119, 6, 0.08)'
+    },
+    {
+      label: 'Open Cases',
+      value: stats ? String(stats.open_cases ?? stats.open_cases_count ?? 0) : '0',
+      sub: 'Active queue',
+      icon: History,
+      href: '/cases?status=OPEN',
+      color: '#7C3AED',
+      bg: 'rgba(124, 58, 237, 0.08)'
+    },
+    {
+      label: 'Evidence Reviews',
+      value: '12',
+      sub: 'SHA-256 sealed',
+      icon: Package,
+      href: '/evidence',
+      color: '#0369A1',
+      bg: 'rgba(3, 105, 161, 0.08)'
+    },
+    {
+      label: 'Cross-Case Patterns',
+      value: '9',
+      sub: 'MANTHAN identified',
+      icon: Activity,
+      href: '/intelligence/samanvaya',
+      color: '#0891B2',
+      bg: 'rgba(8, 145, 178, 0.08)'
+    },
+    {
+      label: 'Case Leads',
+      value: '34',
+      sub: 'Ready for review',
+      icon: AlertTriangle,
+      href: '/cases',
+      color: '#DC2626',
+      bg: 'rgba(220, 38, 38, 0.08)'
+    },
   ];
 
   const topEntities = [
@@ -363,34 +448,48 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="space-y-2.5 flex-1">
-            {recentCases.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => router.push(`/cases/${c.id}`)}
-                className="p-3.5 rounded-xl border border-slate-200/70 bg-slate-50/70 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all cursor-pointer"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[12px] font-mono font-bold text-indigo-600">
-                    {c.id}
-                  </span>
-                  <span
-                    className="text-[11px] px-2 py-0.5 rounded font-semibold"
-                    style={{
-                      background: c.priority === 'Critical' ? '#FEE2E2' : '#FEF3C7',
-                      color: c.priority === 'Critical' ? '#DC2626' : '#B45309',
-                    }}
-                  >
-                    {c.priority}
-                  </span>
-                </div>
-                <div className="text-[13.5px] font-semibold text-slate-900 truncate mt-1">
-                  {c.title}
-                </div>
-                <div className="text-[11.5px] text-slate-500 mt-0.5">
-                  {c.city} • {c.crime}
-                </div>
+            {recentCases.length === 0 ? (
+              <div className="py-8 text-center text-slate-400">
+                <FolderOpen className="mx-auto mb-2 text-slate-300" size={32} />
+                <p className="text-[13px] font-medium text-slate-600">No active cases</p>
+                <p className="text-[11.5px] text-slate-400 mt-0.5 mb-3">Cases created from FIRs will appear here</p>
+                <Link
+                  href="/cases"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 transition-colors"
+                >
+                  Create or View Cases
+                </Link>
               </div>
-            ))}
+            ) : (
+              recentCases.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => router.push(`/cases/${c.id}`)}
+                  className="p-3.5 rounded-xl border border-slate-200/70 bg-slate-50/70 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[12px] font-mono font-bold text-indigo-600">
+                      {c.case_number || c.id.slice(0, 8)}
+                    </span>
+                    <span
+                      className="text-[11px] px-2 py-0.5 rounded font-semibold"
+                      style={{
+                        background: c.priority === 'CRITICAL' || c.priority === 'HIGH' ? '#FEE2E2' : '#FEF3C7',
+                        color: c.priority === 'CRITICAL' || c.priority === 'HIGH' ? '#DC2626' : '#B45309',
+                      }}
+                    >
+                      {c.priority}
+                    </span>
+                  </div>
+                  <div className="text-[13.5px] font-semibold text-slate-900 truncate mt-1">
+                    {c.title}
+                  </div>
+                  <div className="text-[11.5px] text-slate-500 mt-0.5">
+                    {c.crime_category || 'Investigation'} • {c.status}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

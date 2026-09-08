@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
 import { casesApi, BackendCase } from '@/lib/api/cases';
-import { mockCaseService } from '@/services/mockServices';
 import type { Case, CrimeType, CasePriority, CaseStatus } from '@/types';
 import DataTable, { ColumnDef } from '@/components/shared/DataTable';
 import FilterBar, { FilterOption } from '@/components/shared/FilterBar';
@@ -29,37 +28,32 @@ export default function CasesPage() {
     try {
       const res = await casesApi.listCases();
       const backendCases = res.items || [];
-      if (backendCases.length > 0) {
-        const mapped: Case[] = backendCases.map((bc) => ({
-          id: bc.case_number || bc.id,
-          title: bc.title,
-          crime: (bc.crime_category as any) || 'General Crime',
-          location: 'Police Station Jurisdiction',
-          city: 'Mumbai',
-          status: (bc.status === 'OPEN' ? 'Active' : bc.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
-          priority: (bc.priority === 'CRITICAL' ? 'Critical' : bc.priority === 'HIGH' ? 'High' : 'Medium') as any,
-          assignedOfficer: bc.lead_investigator_id ? 'Assigned Lead Officer' : 'Pending Allocation',
-          created: bc.created_at ? bc.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-          lastActivity: 'Just now',
-          description: bc.description,
-          firId: bc.fir_id || '',
-          personIds: [],
-          vehicleIds: [],
-          phoneIds: [],
-          locationIds: [],
-          organizationIds: [],
-          evidenceIds: [],
-          alertIds: [],
-        }));
-        setCasesList(mapped);
-      } else {
-        const fallback = await mockCaseService.getCases();
-        setCasesList(fallback);
-      }
+      const mapped: Case[] = backendCases.map((bc) => ({
+        id: bc.case_number || bc.id,
+        title: bc.title,
+        crime: (bc.crime_category as any) || 'General Crime',
+        location: 'Police Station Jurisdiction',
+        city: 'Mumbai',
+        status: (bc.status === 'OPEN' ? 'Active' : bc.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
+        priority: (bc.priority === 'CRITICAL' ? 'Critical' : bc.priority === 'HIGH' ? 'High' : 'Medium') as any,
+        assignedOfficer: bc.lead_investigator_id ? 'Assigned Lead Officer' : 'Pending Allocation',
+        created: bc.created_at ? bc.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+        lastActivity: 'Just now',
+        description: bc.description,
+        firId: bc.fir_id || '',
+        personIds: [],
+        vehicleIds: [],
+        phoneIds: [],
+        locationIds: [],
+        organizationIds: [],
+        evidenceIds: [],
+        alertIds: [],
+      }));
+      setCasesList(mapped);
     } catch (err) {
       console.warn('Backend cases fetch notice:', err);
-      const fallback = await mockCaseService.getCases();
-      setCasesList(fallback);
+      toast.error('Unable to fetch live cases from backend.');
+      setCasesList([]);
     } finally {
       setLoading(false);
     }

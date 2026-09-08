@@ -52,3 +52,8 @@ pnpm-debug.log*
 .idea/
 *.tsbuildinfo
 next-env.d.ts
+
+# Agent Skills & Workflows (Local only)
+.agents/
+.claude/
+skills-lock.json

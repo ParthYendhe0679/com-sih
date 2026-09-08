@@ -96,3 +96,53 @@ class CacheKeys:
     @classmethod
     def ai_summary(cls, content_hash: str) -> str:
         return f"{cls.PREFIX}:ai:summary:{content_hash}"
+
+    # -------------------------------------------------------------
+    # Neo4j Graph Intelligence Keys
+    # -------------------------------------------------------------
+
+    @classmethod
+    def graph_case(cls, case_id: Union[str, uuid.UUID]) -> str:
+        return f"{cls.PREFIX}:graph:case:{case_id}"
+
+    @classmethod
+    def graph_network(cls, case_id: Union[str, uuid.UUID]) -> str:
+        return f"{cls.PREFIX}:graph:network:{case_id}"
+
+    @classmethod
+    def graph_stats(cls, case_id: Union[str, uuid.UUID]) -> str:
+        return f"{cls.PREFIX}:graph:stats:{case_id}"
+
+    @classmethod
+    def graph_analytics(cls, case_id: Union[str, uuid.UUID]) -> str:
+        return f"{cls.PREFIX}:graph:analytics:{case_id}"
+
+    @classmethod
+    def graph_hidden(
+        cls,
+        case_id: Union[str, uuid.UUID],
+        entity_id: Optional[Union[str, uuid.UUID]] = None,
+        depth: int = 2,
+    ) -> str:
+        return f"{cls.PREFIX}:graph:hidden:{case_id}:{entity_id or 'all'}:{depth}"
+
+    @classmethod
+    def graph_path(
+        cls,
+        source_id: Union[str, uuid.UUID],
+        target_id: Union[str, uuid.UUID],
+        depth: int = 4,
+    ) -> str:
+        return f"{cls.PREFIX}:graph:path:{source_id}:{target_id}:{depth}"
+
+    @classmethod
+    def graph_shared(cls, case_id: Optional[Union[str, uuid.UUID]] = None) -> str:
+        return f"{cls.PREFIX}:graph:shared:{case_id or 'global'}"
+
+    @classmethod
+    def graph_cross_case(cls) -> str:
+        return f"{cls.PREFIX}:graph:cross_case"
+
+    @classmethod
+    def graph_pattern(cls, case_id: Union[str, uuid.UUID]) -> str:
+        return f"{cls.PREFIX}:graph:*{case_id}*"

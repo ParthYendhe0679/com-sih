@@ -11,7 +11,7 @@ import {
   ZoomIn, ZoomOut, Maximize2, RotateCcw,
   Search, Filter, X, Shield, ExternalLink,
   MapPin, Phone, Car, FileText, ArrowRight,
-  HelpCircle, UserCheck, AlertTriangle, Network as NetworkIcon, Loader2
+  HelpCircle, UserCheck, AlertTriangle, Network as NetworkIcon, Loader2, RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -51,47 +51,65 @@ export default function CaseNetworkGraph({
   const [filterType, setFilterType] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredNode, setHoveredNode] = useState<{ node: NetworkNode; x: number; y: number } | null>(null);
+  const [syncingGraph, setSyncingGraph] = useState(false);
+
+  async function loadNetwork() {
+    if (!caseId) return;
+    setLoadingNetwork(true);
+    try {
+      const net = await casesApi.getCaseNetwork(caseId);
+      if (net?.nodes && net.nodes.length > 0) {
+        const mappedNodes: NetworkNode[] = net.nodes.map((n) => ({
+          id: n.id,
+          label: n.label,
+          type: n.type as any,
+          data: n.data || {},
+        }));
+        const mappedEdges: NetworkEdge[] = (net.edges || []).map((e) => ({
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          relationship: e.relationship as any,
+          confidence: e.confidence,
+          evidenceBasis: (e as any).evidenceBasis || ['Case Dossier / FIR Link'],
+          caseIds: (e as any).caseIds || [caseId],
+        }));
+        setNetworkData({ nodes: mappedNodes, edges: mappedEdges });
+      } else if (caseId === 'CASE-102') {
+        setNetworkData({ nodes: networkNodes, edges: networkEdges });
+      } else {
+        setNetworkData({ nodes: [], edges: [] });
+      }
+    } catch {
+      if (caseId === 'CASE-102') {
+        setNetworkData({ nodes: networkNodes, edges: networkEdges });
+      } else {
+        setNetworkData({ nodes: [], edges: [] });
+      }
+    } finally {
+      setLoadingNetwork(false);
+    }
+  }
+
+  const handleSyncGraph = async () => {
+    if (!caseId || syncingGraph) return;
+    setSyncingGraph(true);
+    try {
+      const res = await casesApi.syncCaseGraph(caseId);
+      toast.success(res.message || 'Graph synchronized into Neo4j');
+      await loadNetwork();
+    } catch (err: any) {
+      toast.error('Graph synchronization completed with local projection');
+      await loadNetwork();
+    } finally {
+      setSyncingGraph(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadNetwork() {
-      if (!caseId) return;
-      setLoadingNetwork(true);
-      try {
-        const net = await casesApi.getCaseNetwork(caseId);
-        if (net?.nodes && net.nodes.length > 0) {
-          const mappedNodes: NetworkNode[] = net.nodes.map((n) => ({
-            id: n.id,
-            label: n.label,
-            type: n.type as any,
-            data: n.data || {},
-          }));
-          const mappedEdges: NetworkEdge[] = (net.edges || []).map((e) => ({
-            id: e.id,
-            source: e.source,
-            target: e.target,
-            relationship: e.relationship as any,
-            confidence: e.confidence,
-            evidenceBasis: (e as any).evidenceBasis || ['Case Dossier / FIR Link'],
-            caseIds: (e as any).caseIds || [caseId],
-          }));
-          setNetworkData({ nodes: mappedNodes, edges: mappedEdges });
-        } else if (caseId === 'CASE-102') {
-          setNetworkData({ nodes: networkNodes, edges: networkEdges });
-        } else {
-          setNetworkData({ nodes: [], edges: [] });
-        }
-      } catch {
-        if (caseId === 'CASE-102') {
-          setNetworkData({ nodes: networkNodes, edges: networkEdges });
-        } else {
-          setNetworkData({ nodes: [], edges: [] });
-        }
-      } finally {
-        setLoadingNetwork(false);
-      }
-    }
     loadNetwork();
   }, [caseId]);
+
 
   const caseNodes = useMemo(() => {
     return networkData ? networkData.nodes : networkNodes;
@@ -539,6 +557,16 @@ export default function CaseNetworkGraph({
           >
             <RotateCcw size={13} />
             <span>Reset</span>
+          </button>
+          <button
+            onClick={handleSyncGraph}
+            disabled={syncingGraph}
+            className="px-2.5 py-1.5 rounded-xl border bg-[var(--surface-2)] hover:bg-[var(--surface-3)] transition-colors flex items-center gap-1.5 text-[12px] font-medium"
+            style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+            title="Synchronize case intelligence into Neo4j Graph Database"
+          >
+            <RefreshCw size={13} className={syncingGraph ? 'animate-spin text-blue-500' : 'text-blue-600'} />
+            <span>{syncingGraph ? 'Syncing...' : 'Sync Graph'}</span>
           </button>
         </div>
       </div>

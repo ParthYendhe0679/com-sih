@@ -20,8 +20,48 @@ export default function PersonHistoryProfilePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const personId = (params.id as string) || 'PERSON-014';
-  const person = people.find((p) => p.id === personId) || people[0];
+  const personId = (params.id as string) || '';
+  const person = people.find((p) => p.id === personId);
+
+  if (!person) {
+    return (
+      <div className="space-y-6 max-w-2xl mx-auto py-12 animate-fade-in">
+        <div
+          className="p-8 rounded-2xl border text-center space-y-4"
+          style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
+        >
+          <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center bg-[var(--surface-2)] text-[var(--accent)]">
+            <User size={28} />
+          </div>
+          <div className="space-y-1">
+            <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              Person Dossier Not Found
+            </h2>
+            <p className="text-[13px] text-[var(--ink-secondary)]">
+              No registered intelligence record or biometric profile exists for identifier{' '}
+              <span className="font-mono-id font-bold text-[var(--accent)]">{personId || 'UNKNOWN'}</span>.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="px-4 py-2 rounded-lg text-[13px] border hover:bg-[var(--surface-2)] transition-colors"
+              style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
+            >
+              Go Back
+            </button>
+            <Link
+              href="/cases"
+              className="px-4 py-2 rounded-lg text-[13px] font-medium text-white shadow-sm"
+              style={{ background: 'var(--accent)' }}
+            >
+              Browse Active Investigations
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Correlated cross-module entities
   const linkedCases = cases.filter((c) => c.personIds.includes(person.id));

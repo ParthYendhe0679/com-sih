@@ -49,6 +49,20 @@ from app.schemas.user import (
     UserStatusUpdate,
     UserUpdate,
 )
+from app.schemas.graph import (
+    CaseGraphResponse,
+    CaseNetworkResponse,
+    CrossCaseEntityItem,
+    GraphAnalyticsResponse,
+    GraphEdge,
+    GraphNode,
+    GraphStatistics,
+    GraphSyncRequest,
+    GraphSyncResponse,
+    HiddenConnectionItem,
+    SharedResourceItem,
+    ShortestPathResponse,
+)
 
 __all__ = [
     "APIResponse",

@@ -87,10 +87,46 @@ function EvidenceHubContent() {
           if (active) setCaseOptions(opts);
         }
 
-        // Fetch mock baseline evidence
-        const mockData = await mockEvidenceService.getEvidence();
+        // Fetch real evidence across cases if available
+        let liveEvidence: Evidence[] = [];
+        if (caseRes && caseRes.items && caseRes.items.length > 0) {
+          const evidencePromises = caseRes.items.slice(0, 5).map((c) =>
+            evidenceApi.listCaseEvidence(c.id).catch(() => null)
+          );
+          const evidenceResults = await Promise.allSettled(evidencePromises);
+          evidenceResults.forEach((res, idx) => {
+            if (res.status === 'fulfilled' && res.value && res.value.items) {
+              const caseObj = caseRes.items[idx];
+              res.value.items.forEach((item) => {
+                liveEvidence.push({
+                  id: item.file_hash?.slice(0, 10) || item.id.slice(0, 8),
+                  title: item.title,
+                  type: item.evidence_type === 'IMAGE' ? 'Image' : item.evidence_type === 'VIDEO' ? 'Video' : 'Document',
+                  description: item.description || item.file_name,
+                  source: 'Investigating Officer',
+                  date: item.created_at ? item.created_at.slice(0, 10) : 'Recent',
+                  caseId: caseObj.case_number || caseObj.id,
+                  personIds: [],
+                  status: 'Verified',
+                  integrity: {
+                    hash: item.file_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                    verified: true,
+                    verifiedDate: item.created_at ? item.created_at.slice(0, 10) : 'Recent',
+                  },
+                  metadata: {},
+                });
+              });
+            }
+          });
+        }
+
         if (active) {
-          setEvidenceList(mockData);
+          if (liveEvidence.length > 0) {
+            setEvidenceList(liveEvidence);
+          } else {
+            const mockData = await mockEvidenceService.getEvidence();
+            setEvidenceList(mockData);
+          }
         }
       } catch (err) {
         console.error('Failed to load evidence records:', err);

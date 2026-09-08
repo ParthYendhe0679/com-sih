@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
+import { searchApi } from '@/lib/api/search';
 import {
   cases, people, vehicles, phones, locations, organizations,
   evidence, historicalCases, firs
@@ -28,12 +29,68 @@ export default function CaseSearcherPage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [targetDimension, setTargetDimension] = useState<string>('all');
+  const [backendResults, setBackendResults] = useState<SearchResultItem[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setBackendResults([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await searchApi.search(q);
+        const items: SearchResultItem[] = [];
+        (res.cases || []).forEach((c) => {
+          items.push({
+            type: 'Case',
+            id: c.case_number || c.id,
+            name: c.title,
+            category: c.crime_category,
+            relatedCases: [c.case_number || c.id],
+            lastActivity: c.created_at ? c.created_at.slice(0, 10) : 'Recent',
+          });
+        });
+        (res.firs || []).forEach((f) => {
+          items.push({
+            type: 'FIR',
+            id: f.fir_number || f.id,
+            name: `${f.title} (${f.crime_category})`,
+            category: 'Legal Document',
+            relatedCases: f.case_id ? [f.case_id] : [],
+            lastActivity: f.incident_date || 'Recent',
+          });
+        });
+        setBackendResults(items);
+      } catch (err) {
+        console.warn('Backend search API notice:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const executeSearch = (): SearchResultItem[] => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return [];
 
     const results: SearchResultItem[] = [];
+
+    // Add backend results first
+    backendResults.forEach((item) => {
+      if (
+        targetDimension === 'all' ||
+        (targetDimension === 'cases' && item.type === 'Case') ||
+        (targetDimension === 'fir' && item.type === 'FIR')
+      ) {
+        results.push(item);
+      }
+    });
 
     // Cases
     if (targetDimension === 'all' || targetDimension === 'cases') {

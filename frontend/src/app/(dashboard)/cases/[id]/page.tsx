@@ -105,17 +105,12 @@ function CaseDetailContent() {
           setCurrentCase(mapped);
         } else {
           const c = await mockCaseService.getCase(caseId);
-          if (c) {
-            setCurrentCase(c);
-          } else {
-            const fallback = await mockCaseService.getCase('CASE-102');
-            setCurrentCase(fallback || null);
-          }
+          setCurrentCase(c || null);
         }
       } catch (err) {
-        console.warn('Backend case load fallback:', err);
-        const fallback = await mockCaseService.getCase('CASE-102');
-        setCurrentCase(fallback || null);
+        console.warn('Backend case load failed:', err);
+        const c = await mockCaseService.getCase(caseId);
+        setCurrentCase(c || null);
       } finally {
         setLoading(false);
       }
@@ -123,11 +118,29 @@ function CaseDetailContent() {
     loadCase();
   }, [caseId]);
 
-  if (loading || !currentCase) {
+  if (loading) {
     return (
       <div className="py-24 text-center text-[var(--ink-tertiary)] animate-pulse">
         <FolderOpen size={36} className="mx-auto mb-3 text-[var(--accent)]" />
         <p className="text-[14px]">Loading investigation workspace for {caseId}...</p>
+      </div>
+    );
+  }
+
+  if (!currentCase) {
+    return (
+      <div className="py-24 text-center max-w-md mx-auto">
+        <FolderOpen size={48} className="mx-auto mb-3 text-slate-300" />
+        <h2 className="text-xl font-bold text-slate-800">Case Record Not Found</h2>
+        <p className="text-sm text-slate-500 mt-1 mb-6">
+          The requested investigation case <span className="font-mono font-semibold text-indigo-600">{caseId}</span> does not exist or has been archived.
+        </p>
+        <button
+          onClick={() => router.push('/cases')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer"
+        >
+          <ArrowLeft size={16} /> Return to All Cases
+        </button>
       </div>
     );
   }

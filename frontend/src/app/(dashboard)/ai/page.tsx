@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
 import { mockAIService } from '@/services/mockServices';
+import { casesApi } from '@/lib/api/cases';
 import { cases } from '@/mock/cases';
 import type { AIMessage } from '@/types';
 import {
@@ -29,17 +30,42 @@ export default function KAVAAIPage() {
 
   // Case Context
   const [selectedCaseId, setSelectedCaseId] = useState('CASE-102');
+  const [availableCases, setAvailableCases] = useState<{ id: string; title: string; crime: string; city: string }[]>(
+    cases.map((c) => ({ id: c.id, title: c.title, crime: c.crime, city: c.city }))
+  );
   const [inputQuery, setInputQuery] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const selectedCase = cases.find((c) => c.id === selectedCaseId) || cases[0];
+  useEffect(() => {
+    let active = true;
+    casesApi
+      .listCases({ size: 50 })
+      .then((res) => {
+        if (active && res && res.items && res.items.length > 0) {
+          const mapped = res.items.map((bc) => ({
+            id: bc.case_number || bc.id,
+            title: bc.title,
+            crime: bc.crime_category || 'Investigation',
+            city: 'Mumbai Jurisdiction',
+          }));
+          setAvailableCases(mapped);
+          if (mapped[0]) setSelectedCaseId(mapped[0].id);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const selectedCase = availableCases.find((c) => c.id === selectedCaseId) || availableCases[0];
 
   const [messages, setMessages] = useState<AIMessage[]>([
     {
       id: 'msg-0',
       role: 'assistant',
       content:
-        'Welcome to **KAVA AI** — Criminal Case Intelligence Assistant.\n\nI am grounded in active investigation data for **CASE-102** (*Organized Financial Fraud Investigation*). I have cross-correlated the underlying FIR, 31 network entities, 55 relationships, verified banking ledgers, and historical precedents.\n\nYou can query entity connections, ask for evidentiary proof, inspect timeline anomalies, or analyze modus operandi similarities. Select a suggested inquiry below or enter your tactical question.',
+        'Welcome to **KAVA AI** — Criminal Case Intelligence Assistant.\n\nI am grounded in active investigation data. I cross-correlate underlying FIRs, network entities, relationships, verified banking ledgers, and historical precedents.\n\nYou can query entity connections, ask for evidentiary proof, inspect timeline anomalies, or analyze modus operandi similarities. Select a suggested inquiry below or enter your tactical question.',
       timestamp: new Date().toISOString(),
       confidence: 96,
       sources: [{ id: 'CASE-102', type: 'Case', title: 'CASE-102 (Flagship)' }],
@@ -144,7 +170,7 @@ export default function KAVAAIPage() {
                     color: 'var(--ink-primary)',
                   }}
                 >
-                  {cases.map((c, idx) => (
+                  {availableCases.map((c, idx) => (
                     <option key={`${c.id}-${idx}`} value={c.id}>
                       {c.id} — {c.crime} ({c.city})
                     </option>

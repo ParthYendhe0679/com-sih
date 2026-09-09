@@ -84,4 +84,31 @@ This document serves as the persistent context ledger and architectural memory f
 - **Gotcha**: On Windows systems where Python is installed globally in `Program Files`, `pip install` installs executables (like `uvicorn.exe`) into the per-user script directory `C:\Users\<user>\AppData\Roaming\Python\Python313\Scripts`. If this directory is not in User `PATH`, running `uvicorn` in PowerShell fails with `CommandNotFoundException`.
 - **Fix**: Add `C:\Users\<user>\AppData\Roaming\Python\Python313\Scripts` to User PATH. In PowerShell, invoke via `python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload` or use the included `backend/uvicorn.cmd` / `backend/run_server.bat` scripts.
 
+### SQLAlchemy Recursive `selectin` Cascading over WAN (Neon DB)
+- **Gotcha**: Configuring `lazy="selectin"` across bidirectional relationships (e.g. `User -> investigated_cases -> FIR -> Case`) causes a single entity fetch to trigger 8+ cascading remote roundtrips over WAN (16–20 seconds per request). If the frontend awaits multiple endpoints sequentially (case, entities, relationships), initial page load can exceed several minutes.
+- **Fix**: 
+  1. Default reverse collection relationships in SQLAlchemy models to `lazy="select"` or use `select(Model).options(noload("*"))` on primary lookups to eliminate over-fetching.
+  2. Implement a two-tier caching pattern (local in-memory process cache + Valkey distributed cache) on read-heavy detail endpoints (`/cases/{id}`, `/cases/{id}/entities`, `/cases/{id}/relationships`).
+  3. On the frontend, immediately render optimistic case metadata so loading spinners dismiss in <1s, and hydrate entities/relationships concurrently via `Promise.allSettled`.
+
+### SQLAlchemy AsyncSession Concurrent Query Prohibition
+- **Gotcha**: Executing concurrent queries using `asyncio.gather` on the same `AsyncSession` (e.g. running `case_service.list_cases` and `case_service.count_cases` simultaneously) raises `sqlalchemy.exc.InvalidRequestError: This session is provisioning a new connection; concurrent operations are not permitted` and leaves requests in an illegal state or hanging.
+- **Fix**: Run queries sequentially on the same `AsyncSession`. For pagination, shortcut `total = len(cases)` when `page == 1 and len(cases) < size` to save unnecessary WAN roundtrips.
+
+### SWR Zero-Skeleton Table Hydration
+- **Gotcha**: Starting frontend list views with `loading: true` and an empty array forces an unnecessary skeleton flash on every page revisit, navigation, or tab switch, leaving users waiting even when case records were already fetched earlier.
+- **Fix**: Hydrate list views synchronously on mount from `sessionStorage` / memory cache with `loading: false` for instant 0ms rendering, and execute background revalidation silently (`isSilent: true`) without layout shifts or skeleton flickers.
+
+### Endpoint Model Imports & Detached Attribute Guard
+- **Gotcha**: Using ORM models like `CaseNote` or `Evidence` in route handlers without explicit top-level imports raises unhandled `NameError` exceptions, causing FastAPI to return 500 Internal Server Errors. In response, frontend clients cascade through multiple fallbacks, stalling screens indefinitely on loading spinners.
+- **Fix**: Always verify top-level model imports in route modules (`from app.models.case_note import CaseNote`, `from app.models.evidence import Evidence`). Compute related counts using database aggregations (`select(func.count()).where(...)`) rather than dereferencing detached relationship attributes like `len(case.evidence)`.
+
+### Case Map Intelligence Pipeline & Spatial Graph Validation
+- **Gotcha**: Bleeding unstructured FIR character windows across sentences causes spatial role confusion (e.g., misclassifying a vehicle spotting as the primary kidnapping scene, or hardcoding synthetic coordinate offsets). Moreover, Neo4j `graph_repository.py` strictly whitelists Cypher edge types in `ALLOWED_REL_TYPES` to block injection; unlisted spatial relationships (`LAST_SEEN_AT`, `OCCURRED_AT`, `LIVES_AT`, `SEEN_AT`, `TRANSFERRED_AT`, `MOVED_TO`) are silently rejected.
+- **Fix**: 
+  1. Use isolated sentence-clause parsing (`re.split(r"[.\n;!]", text)`) for targeted locus role assignment.
+  2. Maintain a deterministic Indian Metropolitan Geocoding Registry (`geocoding_service.py`) with strict physical boundary validation. Any loci lacking physical verification are flagged as `"Location identified but coordinates unavailable"` and routed to the entity drawer rather than plotted as synthetic map points.
+  3. Whitelist spatial relationship types in `ALLOWED_REL_TYPES`.
+  4. Cache synthesized map topologies in Valkey (`case:{case_id}:map-intelligence`, TTL 15m) and invalidate on case/entity/FIR mutations.
+  5. Render high-contrast, dark navy/charcoal connection lines (`#0F172A` / `#1E293B`, thickness 3.5–5.5) with relationship badge labels and interactive dossiers.
 

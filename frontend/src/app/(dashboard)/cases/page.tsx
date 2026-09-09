@@ -11,57 +11,73 @@ import FilterBar, { FilterOption } from '@/components/shared/FilterBar';
 import { FolderOpen, Plus, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 
+function mapBackendCaseToCase(bc: BackendCase): Case {
+  return {
+    id: bc.case_number || bc.id,
+    backendId: bc.id,
+    title: bc.title,
+    crime: (bc.crime_category as any) || 'General Crime',
+    location: bc.area ? `${bc.area}, ${bc.city || 'Mumbai'}` : (bc.city || 'Mumbai Jurisdiction'),
+    city: bc.city || 'Mumbai',
+    status: (bc.status === 'OPEN' ? 'Active' : bc.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
+    priority: (bc.priority === 'CRITICAL' ? 'Critical' : bc.priority === 'HIGH' ? 'High' : 'Medium') as any,
+    assignedOfficer: bc.lead_investigator_id ? 'Assigned Lead Officer' : 'Pending Allocation',
+    created: bc.created_at ? bc.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    lastActivity: 'Just now',
+    description: bc.description,
+    firId: bc.fir_id || '',
+    personIds: [],
+    vehicleIds: [],
+    phoneIds: [],
+    locationIds: [],
+    organizationIds: [],
+    evidenceIds: [],
+    alertIds: [],
+  };
+}
+
 export default function CasesPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
 
-  const [casesList, setCasesList] = useState<Case[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Instant SWR cache initialization: render immediately if cached cases exist (0ms latency)
+  const [casesList, setCasesList] = useState<Case[]>(() => {
+    const cached = casesApi.getCachedCases();
+    if (cached && cached.length > 0) {
+      return cached.map(mapBackendCaseToCase);
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    const cached = casesApi.getCachedCases();
+    return !(cached && cached.length > 0);
+  });
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<{ [key: string]: string }>({
     crime: 'all',
     city: 'all',
   });
 
-  const fetchCases = async () => {
-    setLoading(true);
+  const fetchCases = async (isSilent: boolean = false) => {
+    if (!isSilent) setLoading(true);
     try {
       const res = await casesApi.listCases({ size: 50 });
       const backendCases = res.items || [];
-      const mapped: Case[] = backendCases.map((bc) => ({
-        id: bc.case_number || bc.id,
-        backendId: bc.id,
-        title: bc.title,
-        crime: (bc.crime_category as any) || 'General Crime',
-        location: bc.area ? `${bc.area}, ${bc.city || 'Mumbai'}` : (bc.city || 'Mumbai Jurisdiction'),
-        city: bc.city || 'Mumbai',
-        status: (bc.status === 'OPEN' ? 'Active' : bc.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
-        priority: (bc.priority === 'CRITICAL' ? 'Critical' : bc.priority === 'HIGH' ? 'High' : 'Medium') as any,
-        assignedOfficer: bc.lead_investigator_id ? 'Assigned Lead Officer' : 'Pending Allocation',
-        created: bc.created_at ? bc.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-        lastActivity: 'Just now',
-        description: bc.description,
-        firId: bc.fir_id || '',
-        personIds: [],
-        vehicleIds: [],
-        phoneIds: [],
-        locationIds: [],
-        organizationIds: [],
-        evidenceIds: [],
-        alertIds: [],
-      }));
+      const mapped = backendCases.map(mapBackendCaseToCase);
       setCasesList(mapped);
     } catch (err) {
       console.warn('Backend cases fetch notice:', err);
-      toast.error('Unable to fetch live cases from backend.');
-      setCasesList([]);
+      if (casesList.length === 0) {
+        toast.error('Unable to fetch live cases from backend.');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCases();
+    const hasCached = casesList.length > 0;
+    fetchCases(hasCached);
   }, []);
 
   const handleFilterChange = (key: string, value: string) => {

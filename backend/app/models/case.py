@@ -93,30 +93,30 @@ class Case(Base, UUIDMixin, TimestampMixin):
     fir: Mapped[Optional["FIR"]] = relationship(
         "FIR",
         back_populates="case",
-        lazy="selectin",
+        lazy="select",
     )
     lead_investigator: Mapped[Optional["User"]] = relationship(
         "User",
         foreign_keys=[lead_investigator_id],
         back_populates="investigated_cases",
-        lazy="selectin",
+        lazy="select",
     )
     created_by: Mapped["User"] = relationship(
         "User",
         foreign_keys=[created_by_id],
         back_populates="created_cases",
-        lazy="selectin",
+        lazy="select",
     )
     evidence: Mapped[List["Evidence"]] = relationship(
         "Evidence",
         back_populates="case",
         cascade="all, delete-orphan",
-        lazy="selectin",
+        lazy="select",
     )
     notes: Mapped[List["CaseNote"]] = relationship(
         "CaseNote",
         back_populates="case",
         cascade="all, delete-orphan",
         order_by="CaseNote.created_at.desc()",
-        lazy="selectin",
+        lazy="select",
     )

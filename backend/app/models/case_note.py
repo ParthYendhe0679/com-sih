@@ -41,4 +41,4 @@ class CaseNote(Base, UUIDMixin):
 
     # Relationships
     case: Mapped["Case"] = relationship("Case", back_populates="notes")
-    author: Mapped["User"] = relationship("User", lazy="selectin")
+    author: Mapped["User"] = relationship("User", lazy="select")

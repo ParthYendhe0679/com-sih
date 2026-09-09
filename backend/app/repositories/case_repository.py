@@ -18,9 +18,15 @@ class CaseRepository(BaseRepository[Case]):
     def __init__(self, session: AsyncSession):
         super().__init__(Case, session)
 
+    async def get_by_id(self, id: uuid.UUID) -> Optional[Case]:
+        """Fetch a Case entity by UUID primary key without eager relationship cascade overhead."""
+        stmt = select(Case).options(noload("*")).where(Case.id == id)
+        result = await self.session.execute(stmt)
+        return result.scalars().first()
+
     async def get_by_case_number(self, case_number: str) -> Optional[Case]:
-        """Lookup Case by unique identifier string."""
-        stmt = select(Case).where(Case.case_number == case_number.strip())
+        """Lookup Case by unique identifier string without eager cascade overhead."""
+        stmt = select(Case).options(noload("*")).where(Case.case_number == case_number.strip())
         result = await self.session.execute(stmt)
         return result.scalars().first()
 

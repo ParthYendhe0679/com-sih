@@ -49,39 +49,39 @@ class User(Base, UUIDMixin, TimestampMixin):
         "FIR",
         foreign_keys="FIR.submitted_by_id",
         back_populates="submitted_by",
-        lazy="selectin",
+        lazy="select",
     )
     reviewed_firs: Mapped[List["FIR"]] = relationship(
         "FIR",
         foreign_keys="FIR.reviewed_by_id",
         back_populates="reviewed_by",
-        lazy="selectin",
+        lazy="select",
     )
     investigated_cases: Mapped[List["Case"]] = relationship(
         "Case",
         foreign_keys="Case.lead_investigator_id",
         back_populates="lead_investigator",
-        lazy="selectin",
+        lazy="select",
     )
     created_cases: Mapped[List["Case"]] = relationship(
         "Case",
         foreign_keys="Case.created_by_id",
         back_populates="created_by",
-        lazy="selectin",
+        lazy="select",
     )
     uploaded_evidence: Mapped[List["Evidence"]] = relationship(
         "Evidence",
         back_populates="uploaded_by",
-        lazy="selectin",
+        lazy="select",
     )
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="selectin",
+        lazy="select",
     )
     audit_logs: Mapped[List["AuditLog"]] = relationship(
         "AuditLog",
         back_populates="user",
-        lazy="selectin",
+        lazy="select",
     )

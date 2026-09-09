@@ -89,10 +89,10 @@ class FIR(Base, UUIDMixin, TimestampMixin):
         "Case",
         back_populates="fir",
         uselist=False,
-        lazy="selectin",
+        lazy="select",
     )
     evidence: Mapped[List["Evidence"]] = relationship(
         "Evidence",
         back_populates="fir",
-        lazy="selectin",
+        lazy="select",
     )

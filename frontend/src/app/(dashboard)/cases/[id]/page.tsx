@@ -56,6 +56,31 @@ const workspaceTabs: { key: TabKey; label: string; icon: React.ElementType; badg
   { key: 'insights', label: 'Explainable Insights', icon: Sparkles },
 ];
 
+function mapBackendCaseToWorkspaceCase(found: BackendCase): Case {
+  return {
+    id: found.case_number || found.id,
+    backendId: found.id,
+    title: found.title,
+    crime: (found.crime_category as any) || 'General Crime',
+    location: found.area ? `${found.area}, ${found.city || 'Mumbai'}` : (found.city || 'Police Station Jurisdiction'),
+    city: found.city || 'Mumbai',
+    status: (found.status === 'OPEN' ? 'Active' : found.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
+    priority: (found.priority === 'CRITICAL' ? 'Critical' : found.priority === 'HIGH' ? 'High' : 'Medium') as any,
+    assignedOfficer: found.lead_investigator_id ? 'Assigned Lead Officer' : 'Officer In-Charge',
+    created: found.created_at ? found.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
+    lastActivity: 'Active',
+    description: found.description,
+    firId: found.fir_id || '',
+    personIds: [],
+    vehicleIds: [],
+    phoneIds: [],
+    locationIds: [],
+    organizationIds: [],
+    evidenceIds: [],
+    alertIds: [],
+  };
+}
+
 function CaseDetailContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -65,9 +90,16 @@ function CaseDetailContent() {
   const caseId = (params.id as string) || '';
   const initialTab = (searchParams.get('tab') as TabKey) || 'overview';
 
-  const [currentCase, setCurrentCase] = useState<Case | null>(null);
+  // Instant SWR optimistic initialization: if case is cached in session/memory, render immediately (0ms delay)
+  const [currentCase, setCurrentCase] = useState<Case | null>(() => {
+    const cached = casesApi.getCachedCase(caseId);
+    return cached ? mapBackendCaseToWorkspaceCase(cached) : null;
+  });
   const [activeTab, setActiveTab] = useState<TabKey>(initialTab);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    const cached = casesApi.getCachedCase(caseId);
+    return !cached;
+  });
 
   // Live entity and relationship states
   const [entitiesData, setEntitiesData] = useState<CaseEntitiesData | null>(null);
@@ -84,73 +116,72 @@ function CaseDetailContent() {
 
   useEffect(() => {
     async function loadCase() {
-      setLoading(true);
+      // Only show full-screen spinner if we have zero cached data to display
+      if (!currentCase) {
+        setLoading(true);
+      }
       try {
         let found: BackendCase | null = null;
         try {
           found = await casesApi.getCaseById(caseId);
-        } catch {
-          const res = await casesApi.listCases({ size: 100 });
-          found = res.items.find((c) => c.case_number === caseId || c.id === caseId) || null;
+        } catch (err) {
+          console.warn('Live case fetch notice:', err);
+          found = casesApi.getCachedCase(caseId);
         }
 
         if (found) {
-          let entData: CaseEntitiesData | null = null;
-          let relData: CaseRelationshipsData | null = null;
-          try {
-            entData = await casesApi.getCaseEntities(found.id);
-            setEntitiesData(entData);
-            if (entData?.categorized.locations && entData.categorized.locations.length > 0) {
-              setCaseMarkers(buildCaseMapMarkers(entData.categorized.locations));
+          const mapped = mapBackendCaseToWorkspaceCase(found);
+          setCurrentCase((prev) => (prev ? { ...prev, ...mapped, personIds: prev.personIds, vehicleIds: prev.vehicleIds, phoneIds: prev.phoneIds, locationIds: prev.locationIds, organizationIds: prev.organizationIds } : mapped));
+          setLoading(false);
+
+          // 2. Concurrently hydrate entities and relationships in the background
+          Promise.allSettled([
+            casesApi.getCaseEntities(found.id),
+            casesApi.getCaseRelationships(found.id),
+          ]).then(([entResult, relResult]) => {
+            let entData: CaseEntitiesData | null = null;
+            if (entResult.status === 'fulfilled' && entResult.value) {
+              entData = entResult.value;
+              setEntitiesData(entData);
+              if (entData?.categorized.locations && entData.categorized.locations.length > 0) {
+                setCaseMarkers(buildCaseMapMarkers(entData.categorized.locations));
+              }
             }
-          } catch (e) {
-            console.warn('Failed to load case entities:', e);
-          }
+            if (relResult.status === 'fulfilled' && relResult.value) {
+              setRelationshipsData(relResult.value);
+            }
 
-          try {
-            relData = await casesApi.getCaseRelationships(found.id);
-            setRelationshipsData(relData);
-          } catch (e) {
-            console.warn('Failed to load case relationships:', e);
-          }
+            if (entData) {
+              const personIds = entData.categorized.persons.map((p) => p.id) || [];
+              const vehicleIds = entData.categorized.vehicles.map((v) => v.id) || [];
+              const phoneIds = entData.categorized.phones.map((p) => p.id) || [];
+              const locationIds = entData.categorized.locations.map((l) => l.id) || [];
+              const organizationIds = entData.categorized.digital_identifiers.map((d) => d.id) || [];
 
-          const personIds = entData?.categorized.persons.map((p) => p.id) || [];
-          const vehicleIds = entData?.categorized.vehicles.map((v) => v.id) || [];
-          const phoneIds = entData?.categorized.phones.map((p) => p.id) || [];
-          const locationIds = entData?.categorized.locations.map((l) => l.id) || [];
-          const organizationIds = entData?.categorized.digital_identifiers.map((d) => d.id) || [];
-
-          const mapped: Case = {
-            id: found.case_number || found.id,
-            backendId: found.id,
-            title: found.title,
-            crime: (found.crime_category as any) || 'General Crime',
-            location: entData?.categorized.locations[0]?.name || 'Police Station Jurisdiction',
-            city: 'Mumbai',
-            status: (found.status === 'OPEN' ? 'Active' : found.status === 'UNDER_INVESTIGATION' ? 'Under Investigation' : 'Active') as any,
-            priority: (found.priority === 'CRITICAL' ? 'Critical' : found.priority === 'HIGH' ? 'High' : 'Medium') as any,
-            assignedOfficer: found.lead_investigator_id ? 'Assigned Lead Officer' : 'Officer In-Charge',
-            created: found.created_at ? found.created_at.slice(0, 10) : new Date().toISOString().slice(0, 10),
-            lastActivity: 'Active',
-            description: found.description,
-            firId: found.fir_id || '',
-            personIds,
-            vehicleIds,
-            phoneIds,
-            locationIds,
-            organizationIds,
-            evidenceIds: [],
-            alertIds: [],
-          };
-          setCurrentCase(mapped);
+              setCurrentCase((prev) => {
+                if (!prev) return prev;
+                return {
+                  ...prev,
+                  location: entData?.categorized.locations[0]?.name || prev.location,
+                  personIds,
+                  vehicleIds,
+                  phoneIds,
+                  locationIds,
+                  organizationIds,
+                };
+              });
+            }
+          });
         } else {
           const c = await mockCaseService.getCase(caseId);
-          setCurrentCase(c || null);
+          if (c) {
+            setCurrentCase(c);
+          }
+          setLoading(false);
         }
       } catch (err) {
         console.warn('Backend case load failed:', err);
-        const c = await mockCaseService.getCase(caseId);
-        setCurrentCase(c || null);
+        setLoading(false);
       } finally {
         setLoading(false);
       }

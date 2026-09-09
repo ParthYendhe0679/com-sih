@@ -326,6 +326,15 @@ async def upload_fir_document(
                 name=loc["location"],
                 normalized_value=loc["location"].upper(),
                 confidence=loc["confidence"] / 100.0,
+                attributes_json={
+                    "type": loc.get("type", "LOCATION"),
+                    "label": loc.get("label", "Location"),
+                    "importance": loc.get("importance", "HIGH"),
+                    "latitude": loc.get("latitude"),
+                    "longitude": loc.get("longitude"),
+                    "address": loc.get("address"),
+                    "geocoded": loc.get("geocoded", False),
+                },
                 is_canonical=True,
             ))
         for dig in extracted_entities.digital_identifiers:

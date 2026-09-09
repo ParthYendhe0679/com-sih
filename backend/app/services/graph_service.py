@@ -824,11 +824,14 @@ class Neo4jGraphService(AbstractGraphService):
         )
 
     async def _invalidate_graph_cache(self, case_id: uuid.UUID) -> None:
-        """Evict all cached graph responses for a case."""
+        """Evict all cached graph responses and map intelligence for a case."""
         try:
             await self.cache.delete(f"{CacheKeys.PREFIX}:graph:case:{case_id}")
             await self.cache.delete(f"{CacheKeys.PREFIX}:graph:network:{case_id}")
             await self.cache.delete(f"{CacheKeys.PREFIX}:case:{case_id}:network")
+            await self.cache.delete(f"case:{case_id}:map-intelligence")
+            await self.cache.delete(f"{CacheKeys.PREFIX}:case:{case_id}:map-intelligence")
+            await self.cache.delete(f"{CacheKeys.PREFIX}:map:case:{case_id}")
             await self.cache.delete_pattern(f"{CacheKeys.PREFIX}:graph:*{case_id}*")
         except Exception as e:
             logger.warning(f"Error invalidating graph cache: {e}")

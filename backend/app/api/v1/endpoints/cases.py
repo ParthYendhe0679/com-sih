@@ -1,6 +1,8 @@
 """Case investigation endpoints for official inquiries, status transitions, and timeline audits."""
 
+import asyncio
 import math
+import time
 from typing import Any, Dict, List, Optional
 import uuid
 from fastapi import APIRouter, Depends, Query, Request, status
@@ -15,13 +17,15 @@ from app.api.deps import (
     require_roles,
 )
 from app.services.graph_service import Neo4jGraphService
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_ml.models.ai_models import Entity
 from app.models.data_architecture import CaseEntityContext, EntityRelationship
 from app.core.constants import CasePriority, CaseStatus, UserRole
 from app.core.exceptions import PermissionDeniedException
 from app.models.user import User
+from app.models.case_note import CaseNote
+from app.models.evidence import Evidence
 from app.services.cache_service import CacheService
 from app.schemas.case import (
     CaseAssignRequest,
@@ -35,8 +39,11 @@ from app.schemas.case import (
     CaseUpdate,
 )
 from app.schemas.common import APIResponse, PaginatedResponse
+from app.schemas.map_intelligence import MapIntelligenceResponse
 from app.services.case_service import CaseService
 from app.services.fir_service import FIRService
+from app.services.geocoding_service import geocoding_service
+from app.services.map_intelligence_service import map_intelligence_service
 from app.utils.response import success_response
 
 router = APIRouter()
@@ -97,6 +104,20 @@ async def get_my_cases(
 
 
 _IN_MEMORY_CASES_CACHE: dict = {}
+_IN_MEMORY_CASE_DETAIL_CACHE: dict = {}
+_IN_MEMORY_ENTITIES_CACHE: dict = {}
+_IN_MEMORY_RELATIONSHIPS_CACHE: dict = {}
+
+def _invalidate_cases_cache(case_id: Optional[str] = None):
+    """Invalidate local in-memory caches upon case mutation."""
+    global _IN_MEMORY_CASES_CACHE, _IN_MEMORY_CASE_DETAIL_CACHE, _IN_MEMORY_ENTITIES_CACHE, _IN_MEMORY_RELATIONSHIPS_CACHE
+    _IN_MEMORY_CASES_CACHE.clear()
+    if case_id:
+        c_str = str(case_id)
+        _IN_MEMORY_CASE_DETAIL_CACHE.pop(c_str, None)
+        _IN_MEMORY_ENTITIES_CACHE.pop(c_str, None)
+        _IN_MEMORY_RELATIONSHIPS_CACHE.pop(c_str, None)
+
 
 @router.get(
     "",
@@ -114,14 +135,13 @@ async def list_cases(
     cache: CacheService = Depends(get_cache_service),
 ):
     global _IN_MEMORY_CASES_CACHE
-    import time
     now = time.time()
     cache_key = f"kritagas:cases:paginated:{status_filter}:{priority_filter}:{page}:{size}"
 
     # 1. Ultra-fast in-memory cache check (<1ms)
     if cache_key in _IN_MEMORY_CASES_CACHE:
         entry_time, cached_res = _IN_MEMORY_CASES_CACHE[cache_key]
-        if now - entry_time < 60:
+        if now - entry_time < 300:
             return success_response(data=cached_res, message="Cases retrieved successfully.")
 
     # 2. Valkey distributed cache check
@@ -134,13 +154,17 @@ async def list_cases(
     except Exception:
         pass
 
+    # 3. Database fetch: fetch items and calculate count sequentially to prevent AsyncSession concurrent lock contention
     cases = await case_service.list_cases(
         status=status_filter,
         priority=priority_filter,
         page=page,
         size=size,
     )
-    total = await case_service.count_cases(status=status_filter, priority=priority_filter)
+    if page == 1 and len(cases) < size:
+        total = len(cases)
+    else:
+        total = await case_service.count_cases(status=status_filter, priority=priority_filter)
     total_pages = math.ceil(total / size) if size > 0 else 1
 
     paginated = PaginatedResponse(
@@ -153,7 +177,7 @@ async def list_cases(
 
     _IN_MEMORY_CASES_CACHE[cache_key] = (now, paginated)
     try:
-        await cache.set(cache_key, paginated.model_dump(mode="json"), ttl=120)
+        await cache.set(cache_key, paginated.model_dump(mode="json"), ttl=300)
     except Exception:
         pass
 
@@ -172,25 +196,50 @@ async def get_case(
     case_service: CaseService = Depends(get_case_service),
     cache: CacheService = Depends(get_cache_service),
     fir_service: FIRService = Depends(get_fir_service),
+    session: AsyncSession = Depends(get_async_session),
 ):
-    case = await case_service.get_case_by_id(case_id, current_user=current_user)
-    cache_key = cache.keys.case(case.id)
-    cached_data = await cache.get(cache_key)
-    if cached_data is not None and isinstance(cached_data, dict):
-        # Enforce security authorization before serving cached intelligence
-        if current_user.role == UserRole.CITIZEN:
-            fir_id_str = cached_data.get("fir_id")
-            if not fir_id_str:
-                raise PermissionDeniedException("Access restricted to authorized personnel.")
-            fir = await fir_service.get_fir_by_id(uuid.UUID(fir_id_str), current_user=current_user)
-            if not fir or fir.submitted_by_id != current_user.id:
-                raise PermissionDeniedException("Access restricted to authorized personnel.")
-        try:
-            detail = CaseDetailResponse.model_validate(cached_data)
-            return success_response(data=detail, message="Case details retrieved (cache).")
-        except Exception:
-            pass
+    now = time.time()
 
+    # 1. Fast in-memory cache check (<1ms)
+    if case_id in _IN_MEMORY_CASE_DETAIL_CACHE:
+        entry_time, cached_detail = _IN_MEMORY_CASE_DETAIL_CACHE[case_id]
+        if now - entry_time < 300:
+            if current_user.role == UserRole.CITIZEN:
+                if cached_detail.fir_id:
+                    fir = await fir_service.get_fir_by_id(uuid.UUID(str(cached_detail.fir_id)), current_user=current_user)
+                    if not fir or fir.submitted_by_id != current_user.id:
+                        raise PermissionDeniedException("Access restricted to authorized personnel.")
+                else:
+                    raise PermissionDeniedException("Access restricted to authorized personnel.")
+            return success_response(data=cached_detail, message="Case details retrieved (memory cache).")
+
+    # 2. Valkey distributed cache check before touching the database
+    cache_key = f"kritagas:case:{case_id}"
+    try:
+        cached_data = await cache.get(cache_key)
+        if cached_data is not None and isinstance(cached_data, dict):
+            if current_user.role == UserRole.CITIZEN:
+                fir_id_str = cached_data.get("fir_id")
+                if not fir_id_str:
+                    raise PermissionDeniedException("Access restricted to authorized personnel.")
+                fir = await fir_service.get_fir_by_id(uuid.UUID(fir_id_str), current_user=current_user)
+                if not fir or fir.submitted_by_id != current_user.id:
+                    raise PermissionDeniedException("Access restricted to authorized personnel.")
+            detail = CaseDetailResponse.model_validate(cached_data)
+            _IN_MEMORY_CASE_DETAIL_CACHE[case_id] = (now, detail)
+            _IN_MEMORY_CASE_DETAIL_CACHE[str(detail.id)] = (now, detail)
+            _IN_MEMORY_CASE_DETAIL_CACHE[detail.case_number] = (now, detail)
+            return success_response(data=detail, message="Case details retrieved (cache).")
+    except PermissionDeniedException:
+        raise
+    except Exception:
+        pass
+
+    # 3. Only query database if caches miss
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
+
+    notes_stmt = select(CaseNote).where(CaseNote.case_id == case.id).order_by(CaseNote.created_at.desc())
+    notes_res = await session.execute(notes_stmt)
     notes_resp = [
         CaseNoteResponse(
             id=n.id,
@@ -199,8 +248,12 @@ async def get_case(
             note=n.note,
             created_at=n.created_at,
         )
-        for n in (case.notes or [])
+        for n in notes_res.scalars().all()
     ]
+
+    evidence_stmt = select(func.count()).select_from(Evidence).where(Evidence.case_id == case.id)
+    evidence_res = await session.execute(evidence_stmt)
+    evidence_count = evidence_res.scalar() or 0
 
     detail = CaseDetailResponse(
         id=case.id,
@@ -218,9 +271,20 @@ async def get_case(
         created_at=case.created_at,
         updated_at=case.updated_at,
         notes=notes_resp,
-        evidence_count=len(case.evidence or []),
+        evidence_count=evidence_count,
     )
-    await cache.set(cache_key, detail.model_dump(mode="json"), ttl=cache.ttl.CASE)
+
+    # Populate in-memory and Valkey distributed caches
+    _IN_MEMORY_CASE_DETAIL_CACHE[case_id] = (now, detail)
+    _IN_MEMORY_CASE_DETAIL_CACHE[str(case.id)] = (now, detail)
+    _IN_MEMORY_CASE_DETAIL_CACHE[case.case_number] = (now, detail)
+    try:
+        serialized = detail.model_dump(mode="json")
+        await cache.set(f"kritagas:case:{case.id}", serialized, ttl=cache.ttl.CASE)
+        await cache.set(f"kritagas:case:{case.case_number}", serialized, ttl=cache.ttl.CASE)
+    except Exception:
+        pass
+
     return success_response(data=detail, message="Case details retrieved.")
 
 
@@ -370,6 +434,7 @@ async def create_case_from_fir(
         phones: List[Entity] = []
         financials: List[Entity] = []
         vehicles: List[Entity] = []
+        locations: List[Entity] = []
 
         for ent in fir_entities:
             ent.case_id = case.id
@@ -392,13 +457,29 @@ async def create_case_from_fir(
                 financials.append(ent)
             elif ent.entity_type == "VEHICLE":
                 vehicles.append(ent)
+            elif ent.entity_type == "LOCATION":
+                # Ensure coordinates exist
+                if not (ent.attributes_json or {}).get("latitude"):
+                    geo = geocoding_service.validate_or_fallback(ent.name, context=fir.description or "")
+                    ent.attributes_json = {
+                        **(ent.attributes_json or {}),
+                        "latitude": geo.get("latitude"),
+                        "longitude": geo.get("longitude"),
+                        "address": geo.get("address"),
+                        "city": geo.get("city"),
+                        "geocoded": geo.get("geocoded", False),
+                    }
+                locations.append(ent)
 
         # Synthesize initial semantic EntityRelationships
         if persons:
-            suspect = next((p for p in persons if (p.attributes_json or {}).get("role") == "SUSPECT"), persons[0])
+            suspect = next((p for p in persons if (p.attributes_json or {}).get("role") == "SUSPECT"), None)
+            victim = next((p for p in persons if (p.attributes_json or {}).get("role") in ("COMPLAINANT", "VICTIM")), persons[0])
+            actor = suspect or victim
+
             for ph in phones:
                 session.add(EntityRelationship(
-                    source_entity_id=suspect.id,
+                    source_entity_id=actor.id,
                     target_entity_id=ph.id,
                     relationship_type="SUBSCRIBES_TO",
                     case_id=case.id,
@@ -407,7 +488,7 @@ async def create_case_from_fir(
                 ))
             for fin in financials:
                 session.add(EntityRelationship(
-                    source_entity_id=suspect.id,
+                    source_entity_id=actor.id,
                     target_entity_id=fin.id,
                     relationship_type="TRANSFERRED_TO",
                     case_id=case.id,
@@ -416,7 +497,7 @@ async def create_case_from_fir(
                 ))
             for v in vehicles:
                 session.add(EntityRelationship(
-                    source_entity_id=suspect.id,
+                    source_entity_id=actor.id,
                     target_entity_id=v.id,
                     relationship_type="OPERATES",
                     case_id=case.id,
@@ -424,14 +505,65 @@ async def create_case_from_fir(
                     extraction_method="HYBRID_CORRELATION",
                 ))
 
+            # Synthesize spatial relationships to locations
+            for loc in locations:
+                loc_type = (loc.attributes_json or {}).get("type", "LOCATION")
+                if loc_type == "LAST_SEEN_LOCATION" and victim:
+                    session.add(EntityRelationship(
+                        source_entity_id=victim.id,
+                        target_entity_id=loc.id,
+                        relationship_type="LAST_SEEN_AT",
+                        case_id=case.id,
+                        confidence=0.94,
+                        extraction_method="SPATIAL_NER",
+                    ))
+                elif loc_type == "SUSPECT_RESIDENCE" and suspect:
+                    session.add(EntityRelationship(
+                        source_entity_id=suspect.id,
+                        target_entity_id=loc.id,
+                        relationship_type="LIVES_AT",
+                        case_id=case.id,
+                        confidence=0.95,
+                        extraction_method="SPATIAL_NER",
+                    ))
+                elif loc_type in ("CRIME_LOCATION", "KIDNAPPING_LOCATION") and victim:
+                    session.add(EntityRelationship(
+                        source_entity_id=victim.id,
+                        target_entity_id=loc.id,
+                        relationship_type="OCCURRED_AT",
+                        case_id=case.id,
+                        confidence=0.96,
+                        extraction_method="SPATIAL_NER",
+                    ))
+                elif loc_type == "VEHICLE_LOCATION" and vehicles:
+                    session.add(EntityRelationship(
+                        source_entity_id=vehicles[0].id,
+                        target_entity_id=loc.id,
+                        relationship_type="SEEN_AT",
+                        case_id=case.id,
+                        confidence=0.92,
+                        extraction_method="SPATIAL_NER",
+                    ))
+                elif loc_type in ("ATM", "BANK", "TRANSACTION_LOCATION"):
+                    src_id = suspect.id if suspect else (financials[0].id if financials else actor.id)
+                    session.add(EntityRelationship(
+                        source_entity_id=src_id,
+                        target_entity_id=loc.id,
+                        relationship_type="TRANSFERRED_AT",
+                        case_id=case.id,
+                        confidence=0.93,
+                        extraction_method="SPATIAL_NER",
+                    ))
+
         await session.commit()
     except Exception as ent_link_err:
         import logging
         logging.getLogger("kritagas.cases").warning(f"Error linking entities to case: {ent_link_err}")
 
-    # Synchronize graph to Neo4j Aura
+    # Synchronize graph to Neo4j Aura and invalidate map intelligence cache
     try:
         await graph_service.sync_case_graph(case.id, session=session)
+        await map_intelligence_service.invalidate_cache(case.id)
     except Exception:
         pass
 
@@ -458,6 +590,26 @@ async def get_case_timeline(
     return success_response(
         data=timeline,
         message="Case timeline retrieved.",
+    )
+
+
+@router.get(
+    "/{case_id}/map-intelligence",
+    response_model=APIResponse[MapIntelligenceResponse],
+    summary="Get Case Map Intelligence",
+    description="Retrieve case-specific geographical nodes, real geocoded coordinates, and semantic investigation lines.",
+)
+async def get_case_map_intelligence(
+    case_id: str,
+    current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
+    case_service: CaseService = Depends(get_case_service),
+    session: AsyncSession = Depends(get_async_session),
+):
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
+    data = await map_intelligence_service.get_case_map_intelligence(case.id, session=session)
+    return success_response(
+        data=data,
+        message=f"Retrieved {len(data.nodes)} investigation loci and {len(data.relationships)} spatial edges for Case {case.case_number}.",
     )
 
 
@@ -864,7 +1016,23 @@ async def get_case_entities(
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
     session: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
 ):
+    now = time.time()
+    if case_id in _IN_MEMORY_ENTITIES_CACHE:
+        entry_time, cached_ents = _IN_MEMORY_ENTITIES_CACHE[case_id]
+        if now - entry_time < 300:
+            return success_response(data=cached_ents, message="Case entities retrieved (memory cache).")
+
+    ent_cache_key = f"kritagas:case:entities:{case_id}"
+    try:
+        cached_ents = await cache.get(ent_cache_key)
+        if cached_ents and isinstance(cached_ents, dict):
+            _IN_MEMORY_ENTITIES_CACHE[case_id] = (now, cached_ents)
+            return success_response(data=cached_ents, message="Case entities retrieved (cache).")
+    except Exception:
+        pass
+
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
     cond = (Entity.case_id == case.id)
@@ -921,15 +1089,24 @@ async def get_case_entities(
         else:
             categorized["digital_identifiers"].append(item)
 
+    resp_data = {
+        "case_id": str(case.id),
+        "case_number": case.case_number,
+        "total_entities": len(serialized_list),
+        "counts": {k: len(v) for k, v in categorized.items()},
+        "categorized": categorized,
+        "entities": serialized_list,
+    }
+    _IN_MEMORY_ENTITIES_CACHE[case_id] = (now, resp_data)
+    _IN_MEMORY_ENTITIES_CACHE[str(case.id)] = (now, resp_data)
+    _IN_MEMORY_ENTITIES_CACHE[case.case_number] = (now, resp_data)
+    try:
+        await cache.set(ent_cache_key, resp_data, ttl=300)
+    except Exception:
+        pass
+
     return success_response(
-        data={
-            "case_id": str(case.id),
-            "case_number": case.case_number,
-            "total_entities": len(serialized_list),
-            "counts": {k: len(v) for k, v in categorized.items()},
-            "categorized": categorized,
-            "entities": serialized_list,
-        },
+        data=resp_data,
         message="Case entities retrieved successfully.",
     )
 
@@ -945,7 +1122,23 @@ async def get_case_relationships(
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
     session: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
 ):
+    now = time.time()
+    if case_id in _IN_MEMORY_RELATIONSHIPS_CACHE:
+        entry_time, cached_rels = _IN_MEMORY_RELATIONSHIPS_CACHE[case_id]
+        if now - entry_time < 300:
+            return success_response(data=cached_rels, message="Case relationships retrieved (memory cache).")
+
+    rel_cache_key = f"kritagas:case:relationships:{case_id}"
+    try:
+        cached_rels = await cache.get(rel_cache_key)
+        if cached_rels and isinstance(cached_rels, dict):
+            _IN_MEMORY_RELATIONSHIPS_CACHE[case_id] = (now, cached_rels)
+            return success_response(data=cached_rels, message="Case relationships retrieved (cache).")
+    except Exception:
+        pass
+
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
 
     rel_stmt = select(EntityRelationship).where(EntityRelationship.case_id == case.id)
@@ -1051,11 +1244,20 @@ async def get_case_relationships(
                 })
                 idx += 1
 
+    resp_data = {
+        "case_id": str(case.id),
+        "total_relationships": len(results),
+        "relationships": results,
+    }
+    _IN_MEMORY_RELATIONSHIPS_CACHE[case_id] = (now, resp_data)
+    _IN_MEMORY_RELATIONSHIPS_CACHE[str(case.id)] = (now, resp_data)
+    _IN_MEMORY_RELATIONSHIPS_CACHE[case.case_number] = (now, resp_data)
+    try:
+        await cache.set(rel_cache_key, resp_data, ttl=300)
+    except Exception:
+        pass
+
     return success_response(
-        data={
-            "case_id": str(case.id),
-            "total_relationships": len(results),
-            "relationships": results,
-        },
+        data=resp_data,
         message="Case relationships retrieved successfully.",
     )

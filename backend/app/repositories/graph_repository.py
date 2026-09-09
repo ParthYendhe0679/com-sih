@@ -47,6 +47,20 @@ ALLOWED_REL_TYPES: Set[str] = {
     "ATTACHED_EVIDENCE",
     "LINKED_TO",
     "SUPPORTED_BY",
+    "LAST_SEEN_AT",
+    "OCCURRED_AT",
+    "SEEN_AT",
+    "FOUND_AT",
+    "TRANSFERRED_AT",
+    "TRAVELLED_TO",
+    "RECOVERED_AT",
+    "MEETING_AT",
+    "DROP_OFF_AT",
+    "TRANSACTION_AT",
+    "MONEY_TRANSFERRED_AT",
+    "EVIDENCE_FOUND_AT",
+    "SPOTTED_AT",
+    "MOVED_TO",
 }
 
 
@@ -254,6 +268,23 @@ class GraphRepository:
             return case_node[0] if case_node else {"nodes": [], "edges": []}
 
         return records[0]
+
+    async def get_case_map_data(self, case_id: str) -> Dict[str, Any]:
+        """Fetch geographically geocoded entities and their connecting semantic relationships for a specific case."""
+        cypher = """
+        MATCH (c:Case)
+        WHERE c.id = $case_id OR c.case_number = $case_id
+        OPTIONAL MATCH (c)-[r1]-(n)
+        OPTIONAL MATCH (n)-[r2]-(m)
+        WHERE (m)-[]-(c) OR m.id = c.id OR (r2.case_id IS NOT NULL AND r2.case_id = c.id)
+        WITH collect(DISTINCT c) + collect(DISTINCT n) + collect(DISTINCT m) AS all_nodes,
+             [r IN collect(DISTINCT r1) + collect(DISTINCT r2) WHERE r IS NOT NULL] AS all_rels
+        UNWIND all_nodes AS node
+        WITH [n IN collect(DISTINCT node) WHERE n IS NOT NULL] AS distinct_nodes, all_rels
+        RETURN distinct_nodes AS nodes, all_rels AS edges
+        """
+        records = await self.client.execute_query(cypher, {"case_id": str(case_id)})
+        return records[0] if records and records[0].get("nodes") else {"nodes": [], "edges": []}
 
     async def find_shortest_path(
         self,

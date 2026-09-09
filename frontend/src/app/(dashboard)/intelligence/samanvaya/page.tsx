@@ -1,1219 +1,629 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+// ============================================================
+// SAMANVAYA — Multi-Agent Criminal Intelligence workspace.
+//
+// The page is an orchestrator: it owns the case selection, the
+// evidence-ingestion state and the pipeline polling loop, and hands
+// each stage to a dedicated component. Nothing here fabricates data —
+// when the backend has nothing, the UI says so.
+// ============================================================
+
+import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { casesApi } from '@/lib/api/cases';
-import { cases } from '@/mock/cases';
-import { mockCaseService } from '@/services/mockServices';
-import type { Case } from '@/types';
-import CaseNetworkGraph from '@/components/case/CaseNetworkGraph';
-import CaseLeafletMap from '@/components/case/CaseLeafletMap';
 import {
   BrainCircuit,
-  Database,
-  Users,
-  Share2,
-  History,
-  PhoneCall,
-  Coins,
-  Eye,
-  MessageSquare,
-  Sparkles,
-  FileCheck2,
-  CheckCircle2,
-  AlertTriangle,
-  Clock,
-  ArrowRight,
-  ShieldCheck,
-  ChevronDown,
-  Layers,
-  MapPin,
-  FileText,
-  Filter,
+  Loader2,
   Play,
   RotateCcw,
-  ExternalLink,
-  Plus,
-  Info,
-  Check,
-  Search,
-  Network as NetworkIcon,
-  Map as MapIcon,
-  Calendar,
-  Lock,
-  Printer,
-  Download
+  LayoutDashboard,
+  Database,
+  Cpu,
+  Target,
+  Share2,
+  Layers,
+  MapPin,
+  Clock,
+  Phone,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// ── AGENT DEFINITIONS ──────────────────────────────────────
-export interface IntelligenceAgent {
-  id: string;
-  name: string;
-  sanskritName: string;
-  meaning: string;
-  category: 'ingestion' | 'entity' | 'sources' | 'synthesis' | 'explainability';
-  icon: React.ElementType;
-  color: string;
-  bg: string;
-  shortDesc: string;
-  status: 'Ready' | 'Analyzing' | 'Data Available' | 'Awaiting Authorized Records' | 'Awaiting Data' | 'Complete';
-  inputs: string[];
-  outputs: string[];
-  analyzedSummary: string;
-}
+import { casesApi, type BackendCase } from '@/lib/api/cases';
+import {
+  samanvayaApi,
+  type CDRAnalysis,
+  type DataSourceStatus,
+  type SamanvayaFinalDossier,
+  type SamanvayaPipelineStatus,
+} from '@/lib/api/samanvaya';
 
-const initialAgents: IntelligenceAgent[] = [
-  {
-    id: 'sangraha',
-    name: 'SOOCHNA / SANGRAHA',
-    sanskritName: 'सूचना / संग्रह',
-    meaning: 'Open & Evidentiary Intelligence',
-    category: 'ingestion',
-    icon: Database,
-    color: '#3B82F6',
-    bg: 'rgba(59, 130, 246, 0.1)',
-    shortDesc: 'Organizes available intelligence and evidentiary documents into a unified case context.',
-    status: 'Data Available',
-    inputs: ['FIR Documents', 'Witness Statements', 'Officer Field Notes', 'Uploaded Seizure Memos'],
-    outputs: ['Unified Case Ingestion Context', 'Indexed Document Corpus (8 items)'],
-    analyzedSummary: '8 authorized case documents indexed and normalized into structured multi-vector space.',
-  },
-  {
-    id: 'abhijnana',
-    name: 'ABHIJNANA',
-    sanskritName: 'अभिज्ञान',
-    meaning: 'Entity Recognition & Resolution',
-    category: 'entity',
-    icon: Users,
-    color: '#6366F1',
-    bg: 'rgba(99, 102, 241, 0.1)',
-    shortDesc: 'Identifies entities and resolves references across multiple records.',
-    status: 'Ready',
-    inputs: ['Parsed FIR Text', 'Entity Mentions', 'Alias Dictionaries'],
-    outputs: ['31 Resolved Entities', 'Name Disambiguation (e.g. R. Sharma → Rahul Sharma)'],
-    analyzedSummary: 'Extracted 10 persons, 6 vehicles, 5 phones, 6 organizations, and 4 locations.',
-  },
-  {
-    id: 'sutra',
-    name: 'SUTRA',
-    sanskritName: 'सूत्र',
-    meaning: 'Thread & Network Synthesis',
-    category: 'synthesis',
-    icon: Share2,
-    color: '#8B5CF6',
-    bg: 'rgba(139, 92, 246, 0.1)',
-    shortDesc: 'Connects entities and discovers relationships across intelligence sources.',
-    status: 'Ready',
-    inputs: ['Resolved Entities', 'Direct Evidence', 'Financial Flow Records', 'Surveillance Sightings'],
-    outputs: ['Case-Specific Network Graph', '54 Verified Relationships', 'Network Centrality Scores'],
-    analyzedSummary: 'Built dynamic multi-tier graph with 31 nodes and 54 connecting edges.',
-  },
-  {
-    id: 'smriti',
-    name: 'ITIHAS / SMRITI',
-    sanskritName: 'इतिहास / स्मृति',
-    meaning: 'Historical Intelligence',
-    category: 'synthesis',
-    icon: History,
-    color: '#EC4899',
-    bg: 'rgba(236, 72, 153, 0.1)',
-    shortDesc: 'Searches historical records for related people, cases, and recurring modus operandi.',
-    status: 'Data Available',
-    inputs: ['National Criminal Database', 'Past FIRs (2018-2025)', 'Modus Operandi Archives'],
-    outputs: ['3 Cross-Case Entity Matches', '87% MO Match with CASE-2019-042'],
-    analyzedSummary: 'Discovered PERSON-014 was previously investigated in CASE-041 (Shell Corp Network).',
-  },
-  {
-    id: 'vak',
-    name: 'SAMVAD / VAK',
-    sanskritName: 'संवाद / वाक्',
-    meaning: 'Communication Intelligence',
-    category: 'sources',
-    icon: PhoneCall,
-    color: '#0EA5E9',
-    bg: 'rgba(14, 165, 233, 0.1)',
-    shortDesc: 'Analyzes authorized communication records, call frequency, and contact relationships.',
-    status: 'Awaiting Authorized Records',
-    inputs: ['Lawfully Obtained CDR Metadata', 'Warrant Registry #MUM-2026-441'],
-    outputs: ['Tower Geolocation Cluster', 'Frequent Contact Sub-groups'],
-    analyzedSummary: 'Awaiting formal court order endorsement for subscriber cell site integration.',
-  },
-  {
-    id: 'artha',
-    name: 'VITTA / ARTHA',
-    sanskritName: 'वित्त / अर्थ',
-    meaning: 'Financial Intelligence (Simulated)',
-    category: 'sources',
-    icon: Coins,
-    color: '#10B981',
-    bg: 'rgba(16, 185, 129, 0.1)',
-    shortDesc: 'Analyzes simulated financial flows and account patterns (Mock Investigation Dataset).',
-    status: 'Data Available',
-    inputs: ['Mock FIU-IND Reports', 'Simulated Bank Statements', 'Shell Ledger Files'],
-    outputs: ['₹4.70 Cr Traced Fund Flow', 'Layered Transaction Sequence', '3 Shell Intermediaries'],
-    analyzedSummary: 'Traced round-tripping transfer sequence across ORG-014 and offshore accounts.',
-  },
-  {
-    id: 'drishti',
-    name: 'DRISHTI',
-    sanskritName: 'दृष्टि',
-    meaning: 'Visual & Surveillance Intelligence',
-    category: 'sources',
-    icon: Eye,
-    color: '#F59E0B',
-    bg: 'rgba(245, 158, 11, 0.1)',
-    shortDesc: 'Processes CCTV observations, ANPR vehicle detections, and surveillance logs.',
-    status: 'Data Available',
-    inputs: ['Traffic ANPR Vehicle Logs', 'Station Observation Briefings', 'CCTV Field Reports'],
-    outputs: ['4 Co-Location Sightings', 'Vehicle Sighting (VEHICLE-044 at BKC)'],
-    analyzedSummary: 'Correlated physical observation of PERSON-014 meeting PERSON-019 in Bandra.',
-  },
-  {
-    id: 'samvad',
-    name: 'SAMVAD (SOCIAL)',
-    sanskritName: 'संवाद (सामाजिक)',
-    meaning: 'Open & Lawfully Obtained Intelligence',
-    category: 'sources',
-    icon: MessageSquare,
-    color: '#14B8A6',
-    bg: 'rgba(20, 184, 166, 0.1)',
-    shortDesc: 'Analyzes case-relevant, lawfully obtained open registries and public records.',
-    status: 'Awaiting Data',
-    inputs: ['Public Corporate Registry Filings', 'ROC Director Disclosures'],
-    outputs: ['Director Cross-Directorship Flags', 'Shared Commercial Addresses'],
-    analyzedSummary: 'No social intelligence records attached to current case scope.',
-  },
-  {
-    id: 'manthan',
-    name: 'MANTHAN',
-    sanskritName: 'मन्थन',
-    meaning: 'Deep Pattern Synthesis',
-    category: 'synthesis',
-    icon: Sparkles,
-    color: '#D946EF',
-    bg: 'rgba(217, 70, 239, 0.1)',
-    shortDesc: 'Synthesizes suspicious multi-hop patterns requiring investigator review.',
-    status: 'Ready',
-    inputs: ['Multi-Agent Correlated Graphs', 'Temporal Spans', 'Geospatial Clusters'],
-    outputs: ['4 Notable Investigative Patterns', 'Syndicate Operational Modus Operandi'],
-    analyzedSummary: 'Identified 3-stage laundering ring with tight 48-hour cash conversion cycles.',
-  },
-  {
-    id: 'vyakhya',
-    name: 'SAMANVAYA / VYAKHYA',
-    sanskritName: 'समन्वय / व्याख्या',
-    meaning: 'Case Coordination & Investigation Report',
-    category: 'explainability',
-    icon: FileCheck2,
-    color: '#4F46E5',
-    bg: 'rgba(79, 70, 229, 0.12)',
-    shortDesc: 'Coordinates all specialized agent outputs into a unified, explainable investigation report.',
-    status: 'Ready',
-    inputs: ['All Agent Findings', 'Confidence Matrices', 'Evidence Citations'],
-    outputs: ['Explainable Case Reasoning Dossier', 'Official Formatted Intelligence Report'],
-    analyzedSummary: 'Full provenance tracking with direct links to underlying FIR and evidentiary logs.',
-  },
+import CaseSelector from '@/components/samanvaya/CaseSelector';
+import PipelineRail, { buildStages } from '@/components/samanvaya/PipelineRail';
+import DataSourcePanel from '@/components/samanvaya/DataSourcePanel';
+import AgentWorkspace, { AgentConsole, mergeAgents } from '@/components/samanvaya/AgentWorkspace';
+import CommunicationAnalysis from '@/components/samanvaya/CommunicationAnalysis';
+import InvestigationNetwork from '@/components/samanvaya/InvestigationNetwork';
+import InvestigationTreeCanvas from '@/components/samanvaya/InvestigationTreeCanvas';
+import IntelligenceMap from '@/components/samanvaya/IntelligenceMap';
+import InvestigationTimeline from '@/components/samanvaya/InvestigationTimeline';
+import IntelligenceSummary from '@/components/samanvaya/IntelligenceSummary';
+import OfficialDossier from '@/components/samanvaya/OfficialDossier';
+import { Panel, Badge, ErrorState } from '@/components/samanvaya/primitives';
+import { SEVERITY_COLORS } from '@/components/samanvaya/theme';
+
+type TabKey =
+  | 'select'
+  | 'data'
+  | 'agents'
+  | 'summary'
+  | 'network'
+  | 'tree'
+  | 'map'
+  | 'timeline'
+  | 'comms'
+  | 'dossier';
+
+const TABS: Array<{ key: TabKey; label: string; icon: typeof LayoutDashboard; needsDossier?: boolean }> = [
+  { key: 'select', label: 'Case', icon: LayoutDashboard },
+  { key: 'data', label: 'Data sources', icon: Database },
+  { key: 'agents', label: 'Agents', icon: Cpu },
+  { key: 'summary', label: 'Intelligence summary', icon: Target, needsDossier: true },
+  { key: 'network', label: 'Network', icon: Share2, needsDossier: true },
+  { key: 'tree', label: 'Investigation tree', icon: Layers, needsDossier: true },
+  { key: 'map', label: 'Geographic', icon: MapPin, needsDossier: true },
+  { key: 'timeline', label: 'Timeline', icon: Clock, needsDossier: true },
+  { key: 'comms', label: 'Communications', icon: Phone },
+  { key: 'dossier', label: 'Official dossier', icon: FileText, needsDossier: true },
 ];
 
-// ── KEY INVESTIGATIVE FINDINGS ─────────────────────────────
-interface KeyFinding {
-  id: string;
-  title: string;
-  category: string;
-  description: string;
-  confidence: string;
-  confidenceColor: string;
-  evidenceSources: string[];
-  agentsInvolved: string[];
-  actionTarget: string;
-}
+const POLL_MS = 1500;
 
-const keyFindings: KeyFinding[] = [];
-
-interface SamanvayaCase {
-  id: string;
-  backendId?: string;
-  title: string;
-  crime: string;
-  city: string;
-  status?: string;
-  description?: string;
-  location?: string;
-  assignedOfficer?: string;
-}
-
-function SamanvayaContent() {
+function SamanvayaWorkspace() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedCase = searchParams.get('case') || '';
 
-  // Case Selection
-  const requestedCaseId = searchParams.get('case') || '';
-  const [selectedCaseId, setSelectedCaseId] = useState(requestedCaseId);
-  const [availableCases, setAvailableCases] = useState<SamanvayaCase[]>(
-    cases.map((c) => ({
-      id: c.id,
-      backendId: c.id,
-      title: c.title,
-      crime: c.crime,
-      city: c.city,
-      status: c.status,
-      description: c.description,
-      location: c.location,
-      assignedOfficer: c.assignedOfficer,
-    }))
-  );
-  const [activeTab, setActiveTab] = useState<'orchestration' | 'network' | 'map' | 'timeline' | 'report'>('orchestration');
+  // ── Cases ────────────────────────────────────────────────
+  const [cases, setCases] = useState<BackendCase[]>(() => casesApi.getCachedCases() || []);
+  const [loadingCases, setLoadingCases] = useState(() => !(casesApi.getCachedCases()?.length));
+  const [caseError, setCaseError] = useState<string | null>(null);
+  const [selectedCaseId, setSelectedCaseId] = useState('');
 
-  // Selected agent for inspection
-  const [selectedAgentId, setSelectedAgentId] = useState<string>('sutra');
-  const [agents, setAgents] = useState<IntelligenceAgent[]>(initialAgents);
+  // ── Pipeline ─────────────────────────────────────────────
+  const [status, setStatus] = useState<SamanvayaPipelineStatus | null>(null);
+  const [dossier, setDossier] = useState<SamanvayaFinalDossier | null>(null);
+  const [starting, setStarting] = useState(false);
+  const [pipelineError, setPipelineError] = useState<string | null>(null);
+  const pollRef = useRef<number | null>(null);
 
-  // Analysis state
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [analysisProgress, setAnalysisProgress] = useState(0);
-  const [analysisStageText, setAnalysisStageText] = useState('');
-  const [isAnalyzed, setIsAnalyzed] = useState(true);
+  // ── Evidence ─────────────────────────────────────────────
+  const [sources, setSources] = useState<DataSourceStatus[]>([]);
+  const [cdr, setCdr] = useState<CDRAnalysis | null>(null);
+  const [sourcesLoading, setSourcesLoading] = useState(false);
+  const [sourcesError, setSourcesError] = useState<string | null>(null);
 
-  // Filter modal / records modal
-  const [addRecordsOpen, setAddRecordsOpen] = useState(false);
+  const [tab, setTab] = useState<TabKey>('select');
+  const [selectedAgentId, setSelectedAgentId] = useState('agent-1');
 
+  // ── Load the case list ───────────────────────────────────
   useEffect(() => {
     let active = true;
-    casesApi.listCases({ size: 50 }).then((res) => {
-      if (active && res && res.items && res.items.length > 0) {
-        const mapped: SamanvayaCase[] = res.items.map((bc) => ({
-          id: bc.case_number || bc.id,
-          backendId: bc.id,
-          title: bc.title,
-          crime: bc.crime_category || 'Investigation',
-          city: 'Mumbai Jurisdiction',
-          status: bc.status || 'Active',
-          description: bc.description || 'Active investigation case.',
-          location: 'Maharashtra Central Command',
-          assignedOfficer: 'Investigating Officer',
-        }));
-        setAvailableCases(mapped);
-        const reqCase = searchParams.get('case');
-        const requested = reqCase
-          ? mapped.find((c) => c.backendId === reqCase || c.id === reqCase)
-          : mapped[0];
-        if (requested) {
-          setSelectedCaseId(requested.backendId || requested.id);
-        }
-      }
-    }).catch(() => {});
+    casesApi
+      .listCases({ size: 50 })
+      .then((res) => {
+        if (!active) return;
+        const items = res?.items || [];
+        setCases(items);
+        setCaseError(null);
+        setSelectedCaseId((prev) => {
+          if (prev) return prev;
+          const match = requestedCase
+            ? items.find((c) => c.id === requestedCase || c.case_number === requestedCase)
+            : null;
+          return match?.id || items[0]?.id || '';
+        });
+      })
+      .catch((err) => {
+        if (!active) return;
+        setCaseError(err?.message || 'Could not load investigation cases.');
+      })
+      .finally(() => {
+        if (active) setLoadingCases(false);
+      });
     return () => {
       active = false;
     };
-  }, [searchParams]);
+  }, [requestedCase]);
 
-  // Get current case metadata
-  const currentCase = useMemo(() => {
-    return availableCases.find((c) => (c.backendId || c.id) === selectedCaseId) || availableCases[0];
-  }, [availableCases, selectedCaseId]);
+  const selectedCase = useMemo(
+    () => cases.find((c) => c.id === selectedCaseId) || null,
+    [cases, selectedCaseId]
+  );
 
-  const activeAgent = useMemo(() => {
-    return agents.find((a) => a.id === selectedAgentId) || agents[2];
-  }, [agents, selectedAgentId]);
+  // ── Load evidence availability for the selected case ─────
+  const loadSources = useCallback(async (caseId: string) => {
+    if (!caseId) return;
+    setSourcesLoading(true);
+    setSourcesError(null);
+    try {
+      const [srcs, records] = await Promise.all([
+        samanvayaApi.getDataSources(caseId),
+        samanvayaApi.getCallRecords(caseId).catch(() => null),
+      ]);
+      setSources(srcs || []);
+      setCdr(records);
+    } catch (err: any) {
+      setSourcesError(err?.message || 'Data source availability could not be determined.');
+      setSources([]);
+    } finally {
+      setSourcesLoading(false);
+    }
+  }, []);
 
-  // Handle case change
-  const handleCaseChange = (newCaseId: string) => {
-    setSelectedCaseId(newCaseId);
-    toast.info(`SAMANVAYA context switched to ${newCaseId}`);
-  };
+  // ── Polling ──────────────────────────────────────────────
+  const stopPolling = useCallback(() => {
+    if (pollRef.current !== null) {
+      window.clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }, []);
 
-  // Run multi-agent simulation
-  const handleRunAnalysis = () => {
-    if (isAnalyzing) return;
-    setIsAnalyzing(true);
-    setAnalysisProgress(5);
-    setAnalysisStageText('Initializing SAMANVAYA Multi-Agent Orchestrator...');
+  const beginPolling = useCallback(
+    (caseId: string) => {
+      stopPolling();
+      pollRef.current = window.setInterval(async () => {
+        try {
+          const live = await samanvayaApi.getPipelineStatus(caseId);
+          setStatus(live);
 
-    const stages = [
-      { progress: 20, text: 'SANGRAHA: Normalizing FIR & evidentiary corpus...', agent: 'sangraha' },
-      { progress: 40, text: 'ABHIJNANA: Resolving entity identities and alias clusters...', agent: 'abhijnana' },
-      { progress: 60, text: 'SMRITI & ARTHA: Correlating historical cases and financial ledgers...', agent: 'smriti' },
-      { progress: 80, text: 'SUTRA & MANTHAN: Synthesizing multi-tier case network and anomaly patterns...', agent: 'sutra' },
-      { progress: 95, text: 'VYAKHYA: Compiling explainable intelligence report and citations...', agent: 'vyakhya' },
-      { progress: 100, text: 'SAMANVAYA Analysis Complete. 31 entities, 54 relationships ready for review.', agent: 'vyakhya' },
-    ];
-
-    stages.forEach((stage, idx) => {
-      setTimeout(() => {
-        setAnalysisProgress(stage.progress);
-        setAnalysisStageText(stage.text);
-        setSelectedAgentId(stage.agent);
-
-        if (stage.progress === 100) {
-          setIsAnalyzing(false);
-          setIsAnalyzed(true);
-          toast.success('SAMANVAYA Multi-Agent Analysis Completed Successfully!');
+          if (live.status === 'COMPLETED') {
+            stopPolling();
+            setStarting(false);
+            const finished = await samanvayaApi.getFinalResults(caseId);
+            setDossier(finished);
+            loadSources(caseId);
+            toast.success('SAMANVAYA analysis complete — all five agents finished.');
+            setTab('summary');
+          } else if (live.status === 'FAILED') {
+            stopPolling();
+            setStarting(false);
+            setPipelineError(live.error || 'The pipeline stopped before completing.');
+            toast.error('SAMANVAYA analysis failed.');
+          }
+        } catch (err: any) {
+          // A single dropped poll is not fatal; surface it only if it persists.
+          console.warn('SAMANVAYA status poll failed:', err);
         }
-      }, (idx + 1) * 700);
-    });
-  };
+      }, POLL_MS);
+    },
+    [stopPolling, loadSources]
+  );
+
+  useEffect(() => () => stopPolling(), [stopPolling]);
+
+  // ── Load any existing analysis (never triggers a new run) ─
+  const loadExisting = useCallback(async (caseId: string) => {
+    if (!caseId) return;
+    setPipelineError(null);
+    try {
+      const [existing, live] = await Promise.all([
+        samanvayaApi.getFinalResults(caseId).catch(() => null),
+        samanvayaApi.getPipelineStatus(caseId).catch(() => null),
+      ]);
+      setDossier(existing);
+      setStatus(live);
+      if (live?.status === 'RUNNING' || live?.status === 'INITIALIZING') {
+        beginPolling(caseId);
+      }
+    } catch (err: any) {
+      setPipelineError(err?.message || 'Could not read the analysis state for this case.');
+    }
+  }, [beginPolling]);
+
+  // Switching case invalidates every derived view. Clearing during render (the
+  // documented pattern for resetting state when a key prop changes) means the
+  // stale dossier is never painted for the newly selected case.
+  const [loadedCaseId, setLoadedCaseId] = useState('');
+  if (selectedCaseId && selectedCaseId !== loadedCaseId) {
+    setLoadedCaseId(selectedCaseId);
+    setDossier(null);
+    setStatus(null);
+    setCdr(null);
+    setSources([]);
+  }
+
+  useEffect(() => {
+    if (!selectedCaseId) return;
+    stopPolling();
+    loadSources(selectedCaseId);
+    loadExisting(selectedCaseId);
+  }, [selectedCaseId, stopPolling, loadSources, loadExisting]);
+
+  // ── Start ────────────────────────────────────────────────
+  const startPipeline = useCallback(async () => {
+    if (!selectedCaseId) {
+      toast.error('Select an investigation case first.');
+      return;
+    }
+    setStarting(true);
+    setPipelineError(null);
+    setDossier(null);
+    try {
+      await samanvayaApi.startPipeline(selectedCaseId, false);
+      toast.success('SAMANVAYA multi-agent analysis started.');
+      setTab('agents');
+      setSelectedAgentId('agent-1');
+      beginPolling(selectedCaseId);
+    } catch (err: any) {
+      setStarting(false);
+      const message = err?.message || 'The analysis could not be started.';
+      setPipelineError(message);
+      toast.error(message);
+    }
+  }, [selectedCaseId, beginPolling]);
+
+  const changeCase = useCallback(
+    (id: string) => {
+      stopPolling();
+      setStarting(false);
+      setSelectedCaseId(id);
+      setTab('select');
+      router.replace(`/intelligence/samanvaya?case=${id}`);
+    },
+    [router, stopPolling]
+  );
+
+  // ── Derived state ────────────────────────────────────────
+  const running = status?.status === 'RUNNING' || status?.status === 'INITIALIZING' || starting;
+  const failed = status?.status === 'FAILED';
+  const complete = Boolean(dossier);
+  // Live telemetry wins while a run is in flight; the stored dossier supplies
+  // the cards once it has finished.
+  const agentCards = useMemo(
+    () => (status?.agents?.length ? status.agents : dossier?.agents || []),
+    [status?.agents, dossier?.agents]
+  );
+
+  const agents = useMemo(
+    () => mergeAgents(agentCards, status?.currentAgentIndex ?? 0, Boolean(running), Boolean(failed)),
+    [agentCards, status?.currentAgentIndex, running, failed]
+  );
+
+  const liveSources = status?.dataSources?.length ? status.dataSources : sources;
+  const connectedCount = liveSources.filter((s) => s.state === 'CONNECTED' || s.state === 'UPLOADED').length;
+
+  const stages = useMemo(
+    () =>
+      buildStages({
+        hasCase: Boolean(selectedCaseId),
+        sourcesConnected: connectedCount,
+        currentAgentIndex: status?.currentAgentIndex ?? 0,
+        running: Boolean(running),
+        complete,
+        failed: Boolean(failed),
+      }),
+    [selectedCaseId, connectedCount, status?.currentAgentIndex, running, complete, failed]
+  );
+
+  const unmappedCount = useMemo(() => {
+    if (!dossier) return 0;
+    const treeLocations =
+      dossier.tree?.root?.children
+        ?.find((b) => b.id === 'tree-branch-incident')
+        ?.children?.filter((n) => n.badge === 'UNMAPPED').length ?? 0;
+    return treeLocations;
+  }, [dossier]);
+
+  const progress = status?.progress ?? (complete ? 100 : 0);
+  const stageText =
+    status?.stageText ||
+    (complete
+      ? 'Analysis complete — explore the investigation outputs below'
+      : selectedCaseId
+        ? 'Ready to start the multi-agent investigation'
+        : 'Select a case to begin');
+
+  const priorityColor = SEVERITY_COLORS[(selectedCase?.priority || '').toUpperCase()] || '#4F46E5';
 
   return (
-    <div className="space-y-8 animate-fade-in max-w-[1680px] mx-auto pb-16">
-      {/* ── TOP HEADER ────────────────────────────────────────── */}
-      <div className="p-6 md:p-8 rounded-3xl border glass-panel transition-all"
-        style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0"
-              style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+    <div className="max-w-[1680px] mx-auto pb-16 space-y-5">
+      {/* ── Command centre header ──────────────────────── */}
+      <div
+        className="rounded-2xl border p-5 md:p-6"
+        style={{
+          background: 'var(--surface-1)',
+          borderColor: 'var(--border)',
+          boxShadow: 'var(--shadow-card)',
+        }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-4 min-w-0">
+            <span
+              className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-white shrink-0"
+              style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
             >
-              <BrainCircuit size={30} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-mono uppercase px-2.5 py-0.5 rounded-full font-bold tracking-widest bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
-                  MULTI-AGENT INTELLIGENCE
+              <BrainCircuit size={26} />
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge color="#4F46E5" solid>
+                  Multi-agent intelligence
+                </Badge>
+                <span className="text-[11px] font-semibold text-[var(--ink-tertiary)]">
+                  5 specialised agents · one connected investigation
                 </span>
-                <span className="text-xs font-mono text-gray-400">•</span>
-                <span className="text-xs font-mono text-gray-400">CRIMINAL CASE SPECIFIC</span>
               </div>
-              <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+              <h1 className="text-[26px] font-bold tracking-tight text-[var(--ink-primary)] mt-1.5 leading-none">
                 SAMANVAYA
               </h1>
-              <p className="text-[14px] mt-1 font-medium" style={{ color: 'var(--ink-secondary)' }}>
-                &ldquo;Multiple intelligence agents. One connected investigation.&rdquo;
-              </p>
+              {selectedCase ? (
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span className="font-mono text-[13px] font-bold text-[var(--ink-primary)]">
+                    {selectedCase.case_number}
+                  </span>
+                  <span className="text-[13px] font-semibold" style={{ color: priorityColor }}>
+                    {selectedCase.crime_category}
+                  </span>
+                  <Badge color={priorityColor}>{selectedCase.priority}</Badge>
+                  <Badge color="#0891B2">{selectedCase.status}</Badge>
+                  <span className="text-[12px] text-[var(--ink-tertiary)]">
+                    {selectedCase.area || selectedCase.city} · {selectedCase.police_station || 'Jurisdiction HQ'}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1.5">
+                  Select an investigation case to begin.
+                </p>
+              )}
             </div>
           </div>
 
-          {/* Right: Case Selector Dropdown */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative">
-              <label className="block text-[10px] font-mono uppercase tracking-wider text-gray-400 mb-1">
-                Target Case Context
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedCaseId}
-                  onChange={(e) => handleCaseChange(e.target.value)}
-                  className="w-full sm:w-[280px] appearance-none pl-3.5 pr-9 py-2.5 rounded-xl border text-[13px] font-semibold transition-all cursor-pointer"
+          <div className="flex items-center gap-2">
+            {cases.length > 0 && (
+              <select
+                value={selectedCaseId}
+                onChange={(e) => changeCase(e.target.value)}
+                disabled={running}
+                aria-label="Active case"
+                className="px-3 py-2 rounded-xl text-[12.5px] font-semibold border outline-none cursor-pointer disabled:opacity-50 max-w-[280px]"
+                style={{
+                  background: 'var(--surface-2)',
+                  borderColor: 'var(--border-strong)',
+                  color: 'var(--ink-primary)',
+                }}
+              >
+                {cases.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.case_number} — {c.crime_category}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={startPipeline}
+              disabled={running || !selectedCaseId}
+              className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
+              style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+            >
+              {running ? (
+                <>
+                  <Loader2 size={15} className="animate-spin" />
+                  Running…
+                </>
+              ) : complete ? (
+                <>
+                  <RotateCcw size={15} />
+                  Re-run
+                </>
+              ) : (
+                <>
+                  <Play size={15} />
+                  Start investigation
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Pipeline rail ──────────────────────────────── */}
+      <PipelineRail stages={stages} progress={progress} stageText={stageText} running={Boolean(running)} />
+
+      {/* ── Errors ─────────────────────────────────────── */}
+      {caseError && (
+        <ErrorState
+          title="Cases unavailable"
+          message="The platform could not reach the case service."
+          details={caseError}
+          onRetry={() => window.location.reload()}
+        />
+      )}
+      {pipelineError && (
+        <ErrorState
+          title="Analysis error"
+          message="The SAMANVAYA pipeline reported an error for this case."
+          details={pipelineError}
+          onRetry={startPipeline}
+        />
+      )}
+
+      {/* ── Tabs ───────────────────────────────────────── */}
+      <nav
+        className="flex items-center gap-1 overflow-x-auto pb-px border-b custom-scrollbar"
+        style={{ borderColor: 'var(--border)' }}
+        aria-label="Investigation views"
+      >
+        {TABS.map((t) => {
+          const Icon = t.icon;
+          const active = tab === t.key;
+          const locked = t.needsDossier && !complete;
+          const badge = tabBadge(t.key, dossier, cdr, liveSources, agents.filter((a) => a.live).length);
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              aria-current={active ? 'page' : undefined}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 text-[12.5px] font-semibold whitespace-nowrap border-b-2 -mb-px cursor-pointer transition-colors"
+              style={{
+                borderColor: active ? 'var(--accent)' : 'transparent',
+                color: active ? 'var(--accent)' : locked ? 'var(--ink-tertiary)' : 'var(--ink-secondary)',
+                background: active ? 'var(--accent-muted)' : 'transparent',
+                opacity: locked ? 0.6 : 1,
+              }}
+            >
+              <Icon size={14} />
+              {t.label}
+              {badge !== null && (
+                <span
+                  className="px-1.5 py-px rounded text-[10px] font-bold tabular-nums"
                   style={{
-                    background: 'var(--surface-2)',
-                    borderColor: 'var(--border)',
-                    color: 'var(--ink-primary)',
+                    background: active ? 'var(--accent)' : 'var(--surface-3)',
+                    color: active ? '#FFFFFF' : 'var(--ink-secondary)',
                   }}
                 >
-                  {availableCases.length === 0 ? (
-                    <option value="">No Active Investigation Cases</option>
-                  ) : (
-                    availableCases.map((c, idx) => (
-                      <option key={`${c.id}-${idx}`} value={c.backendId || c.id}>
-                        {c.id} — {c.crime} ({c.city})
-                      </option>
-                    ))
-                  )}
-                </select>
-                <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />
-              </div>
-            </div>
+                  {badge}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </nav>
 
-            <div className="self-end sm:self-auto">
-              <button
-                onClick={handleRunAnalysis}
-                disabled={isAnalyzing || availableCases.length === 0}
-                className="w-full sm:w-auto px-5 py-2.5 mt-4 sm:mt-4 rounded-xl text-[13px] font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-md hover:opacity-90 cursor-pointer disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
-              >
-                {isAnalyzing ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>Analyzing...</span>
-                  </>
-                ) : (
-                  <>
-                    <Play size={14} />
-                    <span>Run SAMANVAYA Analysis</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Live Simulation Progress Bar */}
-        {isAnalyzing && (
-          <div className="mt-6 pt-5 border-t border-white/[0.08] animate-fade-in space-y-2">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <span className="text-indigo-400 font-semibold">{analysisStageText}</span>
-              <span className="text-gray-400 font-bold">{analysisProgress}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full overflow-hidden bg-black/20">
-              <div
-                className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
-                style={{ width: `${analysisProgress}%` }}
-              />
-            </div>
-          </div>
+      {/* ── Views ──────────────────────────────────────── */}
+      <div className="animate-fade-in">
+        {tab === 'select' && (
+          <CaseSelector
+            cases={cases}
+            loading={loadingCases}
+            selectedCaseId={selectedCaseId}
+            onSelect={changeCase}
+            onStart={startPipeline}
+            starting={Boolean(running)}
+            alreadyAnalysed={complete}
+            onOpenIngestion={() => setTab('data')}
+          />
         )}
-      </div>
 
-      {/* ── CASE CONTEXT & DATA AVAILABILITY PANELS ───────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Case Context Panel (7 cols) */}
-        <div className="lg:col-span-7 p-6 rounded-2xl border glass-panel flex flex-col justify-between"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-          {currentCase ? (
-            <div>
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono-id text-base font-bold text-indigo-500">{currentCase.id}</span>
-                  <span className="text-gray-400">•</span>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.title}</span>
-                </div>
-                <span className="badge badge-active text-[11px] font-semibold">{currentCase.status || 'Active'}</span>
-              </div>
+        {tab === 'data' && (
+          <DataSourcePanel
+            caseId={selectedCaseId}
+            sources={liveSources}
+            cdr={cdr}
+            loading={sourcesLoading}
+            error={sourcesError}
+            onRefresh={() => loadSources(selectedCaseId)}
+            onCdrChanged={(analysis) => {
+              setCdr(analysis);
+              // A change of evidence invalidates the previous dossier server-side.
+              setDossier(null);
+            }}
+            disabled={Boolean(running)}
+          />
+        )}
 
-              <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                {currentCase.description || 'Active investigation case records.'}
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 py-3 px-4 rounded-xl border mb-2 text-xs font-mono"
-                style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">CRIME TYPE</span>
-                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.crime || 'General'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">PRIMARY LOCATION</span>
-                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.location || currentCase.city || 'Headquarters'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">ASSIGNED OFFICER</span>
-                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.assignedOfficer || 'Investigating Officer'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-400 block text-[10px]">KNOWN ENTITIES</span>
-                  <span className="font-semibold text-indigo-500">Live indexed</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="p-8 text-center space-y-2">
-              <p className="text-sm font-semibold" style={{ color: 'var(--ink-primary)' }}>No Active Case Selected</p>
-              <p className="text-xs text-gray-500">Register an FIR or create an investigation case to run multi-agent analysis.</p>
-            </div>
-          )}
-
-          <div className="flex items-center justify-between pt-3 border-t border-white/[0.06] text-xs text-gray-400">
-            <div className="flex items-center gap-2 text-amber-500 font-medium">
-              <Lock size={12} />
-              <span>Findings require investigator review. AI provides assisted intelligence.</span>
-            </div>
-            <button
-              onClick={() => {
-                if (currentCase?.id) {
-                  router.push(`/cases/${currentCase.backendId || currentCase.id}`);
-                } else {
-                  toast.info('Please select an active case first.');
-                }
-              }}
-              className="text-indigo-400 font-semibold hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              Open Full Case Dossier <ExternalLink size={12} />
-            </button>
-          </div>
-        </div>
-
-        {/* Case Intelligence Sources Panel (5 cols) */}
-        <div className="lg:col-span-5 p-6 rounded-2xl border glass-panel flex flex-col justify-between"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-bold uppercase tracking-wider" style={{ color: 'var(--ink-primary)' }}>
-                Case Intelligence Sources
-              </h3>
-              <span className="text-[11px] font-mono text-emerald-500 font-semibold">
-                {currentCase ? 'Active Scope Attached' : '0 Sources Connected'}
-              </span>
-            </div>
-
-            <div className="space-y-2 text-xs font-mono">
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/[0.04] text-[var(--ink-secondary)] border border-white/10">
-                <span className="flex items-center gap-1.5"><Check size={13} /> FIR &amp; Case Documents</span>
-                <span className="font-bold">{currentCase ? '1 attached' : '0'}</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/[0.04] text-[var(--ink-secondary)] border border-white/10">
-                <span className="flex items-center gap-1.5"><Check size={13} /> Criminal Network Archive</span>
-                <span className="font-bold">0 entities</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/[0.04] text-[var(--ink-secondary)] border border-white/10">
-                <span className="flex items-center gap-1.5"><Check size={13} /> Historical Match Database</span>
-                <span className="font-bold">0 connections</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white/[0.04] text-[var(--ink-secondary)] border border-white/10">
-                <span className="flex items-center gap-1.5"><Check size={13} /> Authorized Financial Records</span>
-                <span className="font-bold">₹0 traced</span>
-              </div>
-              <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-gray-500/10 text-gray-400 border border-gray-500/20">
-                <span className="flex items-center gap-1.5"><Clock size={13} /> Lawful Communication Records</span>
-                <span>Awaiting authorization</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 pt-3 border-t border-white/[0.06] mt-4">
-            <button
-              onClick={() => {
-                setAddRecordsOpen(true);
-                toast.info('Attach authorized supplementary records to current case scope');
-              }}
-              className="flex-1 py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-colors hover:bg-[var(--surface-2)] cursor-pointer"
-              style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
-            >
-              + Add Authorized Records
-            </button>
-            <button
-              onClick={() => router.push('/fir')}
-              className="py-2 px-3 rounded-xl border text-xs font-semibold text-center transition-colors hover:bg-[var(--surface-2)] cursor-pointer"
-              style={{ borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
-            >
-              Upload Physical FIR
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── INTELLIGENCE NAVIGATION TABS ───────────────────────── */}
-      <div className="flex items-center justify-between border-b border-white/[0.08] pb-1 overflow-x-auto">
-        <div className="flex items-center gap-1">
-          {[
-            { key: 'orchestration', label: '10 Intelligence Agents & Findings', icon: BrainCircuit },
-            { key: 'network', label: 'Case Network Graph', icon: NetworkIcon, badge: '54 links' },
-            { key: 'map', label: 'Case Geospatial Map', icon: MapIcon, badge: 'Live' },
-            { key: 'timeline', label: 'Chronological Timeline', icon: Calendar },
-            { key: 'report', label: 'Explainable Intelligence Report', icon: FileCheck2 },
-          ].map((t) => {
-            const Icon = t.icon;
-            const isActive = activeTab === t.key;
-            return (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key as typeof activeTab)}
-                className={`flex items-center gap-2 px-4 py-3 rounded-t-xl text-xs font-bold transition-all border-b-2 cursor-pointer ${
-                  isActive
-                    ? 'border-indigo-500 text-indigo-400 bg-indigo-500/10'
-                    : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/[0.03]'
-                }`}
-              >
-                <Icon size={15} />
-                <span>{t.label}</span>
-                {t.badge && (
-                  <span className="text-[10px] px-1.5 py-0.2 rounded-full font-mono bg-white/10 text-gray-300">
-                    {t.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ── TAB 1: AGENT ORCHESTRATION & FINDINGS ─────────────── */}
-      {activeTab === 'orchestration' && (
-        <div className="space-y-8 animate-fade-in">
-          {/* Summary metrics strip */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-4">
-            {[
-              { label: 'Entities Resolved', value: currentCase ? '0' : '0', sub: 'ABHIJNANA agent', color: '#6366F1' },
-              { label: 'Relationships', value: currentCase ? '0' : '0', sub: 'SUTRA graph engine', color: '#8B5CF6' },
-              { label: 'Historical Ties', value: currentCase ? '0' : '0', sub: 'SMRITI cross-case', color: '#EC4899' },
-              { label: 'Notable Patterns', value: currentCase ? '0' : '0', sub: 'MANTHAN deep cluster', color: '#D946EF' },
-              { label: 'Hotspot Locations', value: currentCase ? '0' : '0', sub: 'DRISHTI surveillance', color: '#F59E0B' },
-              { label: 'Timeline Events', value: currentCase ? '0' : '0', sub: 'Chronological corpus', color: '#10B981' },
-            ].map((m) => (
-              <div
-                key={m.label}
-                className="p-4 rounded-2xl border glass-panel"
-                style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}
-              >
-                <div className="text-[10px] font-mono uppercase text-gray-400 mb-1">{m.label}</div>
-                <div className="text-2xl font-bold font-mono" style={{ color: m.color }}>{m.value}</div>
-                <div className="text-[11px] text-gray-500 mt-0.5">{m.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* 10 Intelligence Agents Grid */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>
-                  SAMANVAYA Intelligence Agents
-                </h2>
-                <p className="text-xs text-gray-500">
-                  Specialized AI agents collaborate to build a connected understanding of this case.
-                </p>
-              </div>
-              <span className="text-xs font-mono text-gray-400">Click any agent to inspect operational telemetry</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-              {agents.map((agent) => {
-                const Icon = agent.icon;
-                const isSelected = selectedAgentId === agent.id;
-                return (
-                  <div
-                    key={agent.id}
-                    onClick={() => setSelectedAgentId(agent.id)}
-                    className={`p-5 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between ${
-                      isSelected
-                        ? 'ring-2 ring-indigo-500 -translate-y-1 shadow-lg'
-                        : 'hover:-translate-y-0.5'
-                    }`}
-                    style={{
-                      background: 'var(--surface-1)',
-                      borderColor: isSelected ? agent.color : 'var(--border)',
-                    }}
-                  >
-                    <div>
-                      {/* Icon & Status */}
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <div
-                          className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform"
-                          style={{ background: agent.bg, color: agent.color }}
-                        >
-                          <Icon size={20} />
-                        </div>
-                        <span
-                          className="text-[9.5px] font-mono px-2 py-0.5 rounded-full font-bold uppercase"
-                          style={{
-                            background: agent.status.includes('Available') || agent.status === 'Ready'
-                              ? 'rgba(16, 185, 129, 0.1)'
-                              : 'rgba(107, 114, 128, 0.1)',
-                            color: agent.status.includes('Available') || agent.status === 'Ready'
-                              ? '#10B981'
-                              : '#9CA3AF',
-                          }}
-                        >
-                          ● {agent.status}
-                        </span>
-                      </div>
-
-                      {/* Name & Meaning */}
-                      <div className="mb-2">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-sm font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-                            {agent.name}
-                          </h3>
-                          <span className="text-[11px] font-mono text-gray-400 font-medium">
-                            ({agent.sanskritName})
-                          </span>
-                        </div>
-                        <span className="text-[10px] font-mono text-indigo-400 block mt-0.5">
-                          {agent.meaning}
-                        </span>
-                      </div>
-
-                      {/* Description */}
-                      <p className="text-xs text-gray-400 leading-relaxed mb-3">
-                        {agent.shortDesc}
-                      </p>
-                    </div>
-
-                    <div className="pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] font-mono text-gray-500">
-                      <span>{agent.outputs.length} outputs</span>
-                      <span className="text-indigo-400 hover:underline">Inspect →</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── AGENT FLOW VISUALIZATION PIPELINE ────────────────── */}
-          <div className="p-6 md:p-8 rounded-3xl border glass-panel space-y-6"
-            style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h3 className="text-base font-bold" style={{ color: 'var(--ink-primary)' }}>
-                  Interactive Multi-Agent Flow Pipeline
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Data lineage from case ingestion through specialized multi-agent analysis to investigator review.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-[11px] font-mono text-gray-400">
-                <span className="w-2 h-2 rounded-full bg-emerald-500" /> Authorized Source
-                <span className="w-2 h-2 rounded-full bg-indigo-500 ml-2" /> AI Synthesis
-                <span className="w-2 h-2 rounded-full bg-amber-500 ml-2" /> Human Review
-              </div>
-            </div>
-
-            {/* Pipeline flowchart */}
-            <div className="py-6 px-4 rounded-2xl border bg-black/20 overflow-x-auto"
-              style={{ borderColor: 'var(--border)' }}>
-              <div className="flex items-center justify-between min-w-[980px] gap-2 text-xs font-mono">
-                {/* 1. Case Root */}
-                <div className="p-3 rounded-xl border text-center bg-indigo-500/10 border-indigo-500/30 text-indigo-300 w-32 shrink-0">
-                  <div className="text-[10px] uppercase font-bold text-indigo-400">INPUT</div>
-                  <div className="font-bold text-white text-sm mt-0.5">{currentCase?.id || 'FIR Scope'}</div>
-                  <div className="text-[10px] text-gray-400">FIR &amp; Case Records</div>
-                </div>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 2. SANGRAHA */}
-                <button
-                  onClick={() => setSelectedAgentId('sangraha')}
-                  className={`p-3 rounded-xl border text-center transition-all cursor-pointer w-32 shrink-0 ${
-                    selectedAgentId === 'sangraha' ? 'ring-2 ring-blue-500 bg-blue-500/20' : 'bg-white/[0.04] border-white/10'
-                  }`}
-                >
-                  <div className="text-[10px] text-blue-400 font-bold">SANGRAHA</div>
-                  <div className="font-semibold text-white text-xs mt-0.5">Data Intake</div>
-                  <div className="text-[9px] text-gray-400">Corpus Unified</div>
-                </button>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 3. ABHIJNANA */}
-                <button
-                  onClick={() => setSelectedAgentId('abhijnana')}
-                  className={`p-3 rounded-xl border text-center transition-all cursor-pointer w-36 shrink-0 ${
-                    selectedAgentId === 'abhijnana' ? 'ring-2 ring-indigo-500 bg-indigo-500/20' : 'bg-white/[0.04] border-white/10'
-                  }`}
-                >
-                  <div className="text-[10px] text-indigo-400 font-bold">ABHIJNANA</div>
-                  <div className="font-semibold text-white text-xs mt-0.5">Entity Resolution</div>
-                  <div className="text-[9px] text-gray-400">31 Entities Identified</div>
-                </button>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 4. Specialized Sources (VAK, ARTHA, DRISHTI) */}
-                <div className="p-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] flex flex-col gap-1.5 w-44 shrink-0">
-                  <div className="text-[9px] font-bold text-gray-400 uppercase text-center">AUTHORIZED STREAMS</div>
-                  <div className="grid grid-cols-3 gap-1 text-[10px] text-center">
-                    <button onClick={() => setSelectedAgentId('vak')} className="p-1 rounded bg-sky-500/10 text-sky-400 border border-sky-500/20">VAK</button>
-                    <button onClick={() => setSelectedAgentId('artha')} className="p-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">ARTHA</button>
-                    <button onClick={() => setSelectedAgentId('drishti')} className="p-1 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">DRISHTI</button>
-                  </div>
-                </div>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 5. SUTRA */}
-                <button
-                  onClick={() => setSelectedAgentId('sutra')}
-                  className={`p-3 rounded-xl border text-center transition-all cursor-pointer w-32 shrink-0 ${
-                    selectedAgentId === 'sutra' ? 'ring-2 ring-purple-500 bg-purple-500/20' : 'bg-white/[0.04] border-white/10'
-                  }`}
-                >
-                  <div className="text-[10px] text-purple-400 font-bold">SUTRA</div>
-                  <div className="font-semibold text-white text-xs mt-0.5">Network Synthesis</div>
-                  <div className="text-[9px] text-gray-400">54 Link Edges</div>
-                </button>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 6. MANTHAN */}
-                <button
-                  onClick={() => setSelectedAgentId('manthan')}
-                  className={`p-3 rounded-xl border text-center transition-all cursor-pointer w-32 shrink-0 ${
-                    selectedAgentId === 'manthan' ? 'ring-2 ring-fuchsia-500 bg-fuchsia-500/20' : 'bg-white/[0.04] border-white/10'
-                  }`}
-                >
-                  <div className="text-[10px] text-fuchsia-400 font-bold">MANTHAN</div>
-                  <div className="font-semibold text-white text-xs mt-0.5">Pattern Engine</div>
-                  <div className="text-[9px] text-gray-400">4 Clusters</div>
-                </button>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 7. VYAKHYA */}
-                <button
-                  onClick={() => setSelectedAgentId('vyakhya')}
-                  className={`p-3 rounded-xl border text-center transition-all cursor-pointer w-32 shrink-0 ${
-                    selectedAgentId === 'vyakhya' ? 'ring-2 ring-indigo-500 bg-indigo-500/20' : 'bg-white/[0.04] border-white/10'
-                  }`}
-                >
-                  <div className="text-[10px] text-indigo-300 font-bold">VYAKHYA</div>
-                  <div className="font-semibold text-white text-xs mt-0.5">Explainability</div>
-                  <div className="text-[9px] text-gray-400">Why &amp; Evidence</div>
-                </button>
-
-                <ArrowRight size={16} className="text-gray-500 shrink-0" />
-
-                {/* 8. Investigator Signoff */}
-                <div className="p-3 rounded-xl border text-center bg-amber-500/10 border-amber-500/30 text-amber-400 w-36 shrink-0">
-                  <div className="text-[10px] uppercase font-bold text-amber-500">HUMAN IN THE LOOP</div>
-                  <div className="font-bold text-white text-xs mt-0.5">Investigator Review</div>
-                  <div className="text-[9px] text-amber-300">Final Decision</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Agent Inspector Banner */}
-            <div className="p-5 rounded-2xl border bg-black/40 space-y-4"
-              style={{ borderColor: activeAgent.color, background: 'var(--surface-2)' }}>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white"
-                    style={{ background: activeAgent.color }}>
-                    <activeAgent.icon size={18} />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-base" style={{ color: 'var(--ink-primary)' }}>
-                        {activeAgent.name} ({activeAgent.sanskritName})
-                      </span>
-                      <span className="text-xs text-indigo-400 font-mono">[{activeAgent.meaning}]</span>
-                    </div>
-                    <p className="text-xs text-gray-400">{activeAgent.shortDesc}</p>
-                  </div>
-                </div>
-                <div className="text-xs font-mono px-3 py-1 rounded-full border border-white/10 bg-white/[0.05]">
-                  Status: <span className="font-bold text-emerald-400">{activeAgent.status}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono pt-3 border-t border-white/[0.06]">
-                <div>
-                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">INPUT STREAMS</span>
-                  <ul className="space-y-1 text-gray-300">
-                    {activeAgent.inputs.map((inp) => (
-                      <li key={inp} className="flex items-center gap-1.5 truncate">
-                        <span className="w-1 h-1 rounded-full bg-indigo-400" />
-                        {inp}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">SYNTHESIZED OUTPUTS</span>
-                  <ul className="space-y-1 text-gray-300">
-                    {activeAgent.outputs.map((out) => (
-                      <li key={out} className="flex items-center gap-1.5 truncate">
-                        <span className="w-1 h-1 rounded-full bg-emerald-400" />
-                        {out}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <span className="text-gray-400 uppercase text-[10px] font-bold block mb-1">OPERATIONAL TELEMETRY</span>
-                  <p className="text-gray-300 leading-relaxed text-[11px]">
-                    {activeAgent.analyzedSummary}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── KEY INVESTIGATIVE FINDINGS (EXPLAINABLE) ─────────── */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>
-                  Key Investigative Findings
-                </h2>
-                <p className="text-xs text-gray-500">
-                  AI-assisted findings with direct evidence sources. All findings require human investigator verification.
-                </p>
-              </div>
-              <span className="text-xs font-mono text-indigo-400">{keyFindings.length} Verified Intelligence Leads</span>
-            </div>
-
-            {keyFindings.length > 0 ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                {keyFindings.map((finding) => (
-                  <div
-                    key={finding.id}
-                    className="p-6 rounded-2xl border glass-panel flex flex-col justify-between transition-all hover:border-indigo-500/50 space-y-4"
-                    style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="text-[11px] font-mono font-bold text-indigo-400">{finding.id}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                            Requires Investigator Review
-                          </span>
-                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded uppercase"
-                            style={{ background: 'rgba(16, 185, 129, 0.1)', color: finding.confidenceColor }}>
-                            {finding.confidence}
-                          </span>
-                        </div>
-                      </div>
-
-                      <h3 className="text-base font-bold text-white leading-snug">
-                        {finding.title}
-                      </h3>
-                      <p className="text-xs text-gray-400 leading-relaxed">
-                        {finding.description}
-                      </p>
-                    </div>
-
-                    {/* Evidence Citations */}
-                    <div className="space-y-2 pt-3 border-t border-white/[0.06]">
-                      <span className="text-[10px] font-mono text-gray-500 uppercase font-bold block">
-                        Underlying Evidence Sources:
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {finding.evidenceSources.map((ev) => (
-                          <span key={ev} className="text-[11px] font-mono px-2 py-1 rounded bg-black/30 border border-white/10 text-gray-300 flex items-center gap-1">
-                            <CheckCircle2 size={11} className="text-emerald-400" />
-                            {ev}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex items-center justify-between pt-2">
-                        <div className="flex items-center gap-1 text-[10px] font-mono text-gray-500">
-                          <span>Agents: </span>
-                          {finding.agentsInvolved.map((ag) => (
-                            <span key={ag} className="text-indigo-400 font-semibold">{ag} </span>
-                          ))}
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (finding.actionTarget === 'network') setActiveTab('network');
-                            else if (finding.actionTarget === 'map') setActiveTab('map');
-                            else setActiveTab('timeline');
-                            toast.info(`Switched to ${finding.actionTarget} view for ${finding.id}`);
-                          }}
-                          className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1 cursor-pointer"
-                        >
-                          Explore in {finding.actionTarget.toUpperCase()} →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-12 text-center rounded-2xl border glass-panel space-y-2" style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-                <BrainCircuit size={36} className="mx-auto text-indigo-400 opacity-40 mb-2" />
-                <h4 className="font-bold text-base text-white">No Agent Findings Synthesized</h4>
-                <p className="text-xs text-gray-400 max-w-md mx-auto">
-                  Execute a SAMANVAYA multi-agent synthesis pass on an active case dossier to aggregate corroborated findings.
-                </p>
-              </div>
+        {tab === 'agents' && (
+          <div className="space-y-5">
+            {status?.console && status.console.length > 0 && (
+              <AgentConsole
+                lines={status.console}
+                color="#4F46E5"
+                title="Orchestrator processing telemetry"
+                animate={Boolean(running)}
+                defaultOpen={Boolean(running)}
+                maxHeight={220}
+              />
             )}
-          </div>
-        </div>
-      )}
-
-      {/* ── TAB 2: CASE NETWORK (CYTOSCAPE GRAPH) ─────────────── */}
-      {activeTab === 'network' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>
-                Case-Specific Criminal Network
-              </h2>
-              <p className="text-xs text-gray-500">
-                SUTRA Network Agent synthesized graph for {currentCase?.id || 'active case'}. Click entities to inspect connections and evidence.
-              </p>
-            </div>
-            <div className="text-xs font-mono text-gray-400">
-              31 Entities • 54 Links • Multi-Tier Clusters
-            </div>
-          </div>
-
-          <div className="rounded-2xl border glass-panel overflow-hidden"
-            style={{ borderColor: 'var(--border)', minHeight: '620px' }}>
-            <CaseNetworkGraph
-              caseId={currentCase?.backendId || currentCase?.id || ''}
-              onViewOnMap={() => setActiveTab('map')}
+            <AgentWorkspace
+              agents={agents}
+              selectedId={selectedAgentId}
+              onSelect={setSelectedAgentId}
+              running={Boolean(running)}
             />
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ── TAB 3: CASE MAP (LEAFLET GEOSPATIAL) ──────────────── */}
-      {activeTab === 'map' && (
-        <div className="space-y-4 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>
-                Geospatial Incident &amp; Surveillance Map
-              </h2>
-              <p className="text-xs text-gray-500">
-                DRISHTI Surveillance Agent observations correlated with FIR location clusters.
-              </p>
-            </div>
-            <div className="text-xs font-mono text-gray-400">
-              Mumbai / Thane Metropolitan Jurisdiction
-            </div>
-          </div>
+        {tab === 'summary' && <IntelligenceSummary dossier={dossier} />}
 
-          <div className="rounded-2xl border glass-panel overflow-hidden"
-            style={{ borderColor: 'var(--border)', minHeight: '600px' }}>
-            <CaseLeafletMap caseId={currentCase?.backendId || currentCase?.id || ''} />
-          </div>
-        </div>
-      )}
+        {tab === 'network' && (
+          <InvestigationNetwork data={dossier?.graph || null} />
+        )}
 
-      {/* ── TAB 4: CHRONOLOGICAL TIMELINE ──────────────────────── */}
-      {activeTab === 'timeline' && (
-        <div className="p-6 md:p-8 rounded-2xl border glass-panel space-y-6 animate-fade-in"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-          <div>
-            <h2 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>
-              Case Event Timeline
-            </h2>
-            <p className="text-xs text-gray-500">
-              Correlated temporal event sequence reconstructed from FIR filings, financial transfers, and sightings.
-            </p>
-          </div>
+        {tab === 'tree' && (
+          <InvestigationTreeCanvas data={dossier?.tree || null} />
+        )}
 
-          <div className="relative pl-6 border-l-2 border-indigo-500/30 space-y-8 my-4">
-            {[
-              {
-                time: '2026-09-04 14:30',
-                title: 'Primary FIR Lodged at Andheri West PS',
-                agent: 'SANGRAHA',
-                type: 'FIR Event',
-                desc: 'Complainant reported ₹4.70 Cr unauthorized diversion from escrow account to Nexus Trading Corp.',
-              },
-              {
-                time: '2026-09-04 11:15',
-                title: 'Final Layered Transfer Cleared',
-                agent: 'ARTHA',
-                type: 'Financial Anomaly',
-                desc: '₹1.85 Cr transferred from ORG-014 to overseas intermediate shell entity.',
-              },
-              {
-                time: '2026-09-03 18:40',
-                title: 'ANPR Surveillance Hit: VEHICLE-044',
-                agent: 'DRISHTI',
-                type: 'Surveillance Hit',
-                desc: 'Vehicle registered to Rahul Thakur observed at BKC junction near corporate office.',
-              },
-              {
-                time: '2026-08-28 10:00',
-                title: 'Historical Connection Precedent (CASE-041)',
-                agent: 'SMRITI',
-                type: 'Historical Link',
-                desc: 'PERSON-014 previously documented using identical shell incorporation agents in Mumbai.',
-              },
-            ].map((item, idx) => (
-              <div key={idx} className="relative">
-                <div className="absolute -left-[31px] top-0.5 w-4 h-4 rounded-full bg-indigo-600 border-4 border-[#0C0D12]" />
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-mono text-xs font-bold text-indigo-400">{item.time}</span>
-                  <span className="text-gray-600">•</span>
-                  <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-indigo-500/10 text-indigo-300 font-semibold">
-                    {item.agent}
-                  </span>
-                  <span className="text-[10px] font-mono text-gray-400">[{item.type}]</span>
-                </div>
-                <h4 className="text-sm font-bold text-white">{item.title}</h4>
-                <p className="text-xs text-gray-400 mt-0.5 max-w-2xl">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        {tab === 'map' && (
+          <IntelligenceMap
+            points={dossier?.geographicRoute || []}
+            links={dossier?.geographicLinks || []}
+            unmappedCount={unmappedCount}
+          />
+        )}
 
-      {/* ── TAB 5: INTELLIGENCE REPORT (VYAKHYA) ───────────────── */}
-      {activeTab === 'report' && (
-        <div className="p-6 md:p-10 rounded-3xl border glass-panel space-y-8 animate-fade-in max-w-[1200px] mx-auto"
-          style={{ borderColor: 'var(--border)', background: 'var(--surface-1)' }}>
-          {/* Official Report Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b pb-6 gap-4"
-            style={{ borderColor: 'var(--border)' }}>
-            <div>
-              <div className="flex items-center gap-2 text-xs font-mono text-gray-400 mb-1">
-                <span>KRITAGAS INTELLIGENCE DOSSIER</span>
-                <span>•</span>
-                <span>DOC REF: KRT-SAM-2026-0102</span>
-              </div>
-              <h2 className="text-2xl font-bold tracking-tight text-white">
-                Comprehensive Case Intelligence Report
-              </h2>
-              <p className="text-xs text-gray-400 mt-1">
-                Generated by VYAKHYA Explainability Agent for {currentCase ? `${currentCase.id} (${currentCase.title})` : 'Active Investigation Scope'}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => window.print()}
-                className="px-3.5 py-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors hover:bg-white/10 cursor-pointer"
-                style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
-              >
-                <Printer size={14} />
-                <span>Print / PDF</span>
-              </button>
-              <button
-                onClick={() => toast.success('Intelligence Dossier exported with cryptographic SHA-256 seal.')}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-white flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm cursor-pointer"
-              >
-                <Download size={14} />
-                <span>Export Signed Copy</span>
-              </button>
-            </div>
-          </div>
+        {tab === 'timeline' && <InvestigationTimeline events={dossier?.timeline || []} />}
 
-          {/* Section 1: Executive Summary */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-400 font-mono">
-              1. Executive Case Summary
-            </h3>
-            <p className="text-xs text-gray-300 leading-relaxed">
-              {currentCase
-                ? `SAMANVAYA multi-agent analysis initialized for case ${currentCase.id} (${currentCase.title}). Ingest FIR records, transaction statements, or surveillance pings to synthesize cross-jurisdictional intelligence.`
-                : 'Select an active case dossier from the selector above to generate an executive intelligence summary.'}
-            </p>
-          </div>
+        {tab === 'comms' && (
+          <CommunicationAnalysis cdr={cdr || dossier?.communications || null} onUploadRequest={() => setTab('data')} />
+        )}
 
-          {/* Section 2: Explainable Findings (WHY) */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-indigo-400 font-mono">
-              2. Key Findings &amp; AI Explainability (WHY Connections Exist)
-            </h3>
-            <div className="p-8 text-center rounded-xl border bg-black/30 space-y-2" style={{ borderColor: 'var(--border)' }}>
-              <ShieldCheck size={32} className="mx-auto text-indigo-400 opacity-40 mb-2" />
-              <div className="font-bold text-sm text-white">
-                No Entity Centrality Ranks Generated
-              </div>
-              <p className="text-xs text-gray-400 max-w-md mx-auto">
-                Ingest case documents and run agent synthesis to compute graph centrality and generate autonomous explainability dossiers.
-              </p>
-            </div>
-          </div>
+        {tab === 'dossier' && <OfficialDossier dossier={dossier} caseRecord={selectedCase} />}
+      </div>
 
-          {/* Section 3: Legal Disclaimer & Investigator Signoff */}
-          <div className="p-6 rounded-2xl border bg-amber-500/10 border-amber-500/30 space-y-3">
-            <div className="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase font-mono">
-              <ShieldCheck size={16} />
-              <span>Mandatory Legal Disclaimer &amp; Human Review</span>
-            </div>
-            <p className="text-xs text-gray-300 leading-relaxed">
-              AI-generated findings are investigative intelligence intended to assist sworn law enforcement officers and require
-              formal evidentiary verification. The system does not make final decisions, criminal accusations, or arrests.
-            </p>
-            <div className="pt-3 border-t border-amber-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-              <div className="font-mono text-gray-400">
-                Case Officer: <span className="text-white font-bold">{currentCase?.assignedOfficer || 'Investigating Officer'}</span> • Status: <span className="text-amber-400">Pending Review</span>
-              </div>
-              <button
-                onClick={() => toast.success('Investigator endorsed findings for inclusion in case chargesheet folder.')}
-                className="px-4 py-2 rounded-xl bg-amber-500 text-black font-bold text-xs hover:bg-amber-400 transition-colors cursor-pointer"
-              >
-                Endorse Findings as Investigator
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Standing disclaimer ────────────────────────── */}
+      <Panel>
+        <p className="text-[12px] leading-relaxed text-[var(--ink-secondary)]">
+          <strong className="text-[var(--ink-primary)]">AI-assisted analysis.</strong> Every finding,
+          relationship and lead produced by SAMANVAYA requires independent verification by the investigating
+          officer. Confidence values describe confidence in a data relationship or analytical match — they are
+          not probabilities of guilt.
+        </p>
+      </Panel>
     </div>
   );
 }
 
+/** Counts shown on the tab strip, or null when a tab has nothing to count. */
+function tabBadge(
+  key: TabKey,
+  dossier: SamanvayaFinalDossier | null,
+  cdr: CDRAnalysis | null,
+  sources: DataSourceStatus[],
+  agentsDone: number
+): number | null {
+  switch (key) {
+    case 'data': {
+      const n = sources.filter((s) => s.state === 'CONNECTED' || s.state === 'UPLOADED').length;
+      return n || null;
+    }
+    case 'agents':
+      return agentsDone || null;
+    case 'summary':
+      return dossier?.findings.length || null;
+    case 'network':
+      return dossier?.graph.nodes.length || null;
+    case 'map':
+      return dossier?.geographicRoute.length || null;
+    case 'timeline':
+      return dossier?.timeline.length || null;
+    case 'comms':
+      return (cdr || dossier?.communications)?.patterns.length || null;
+    default:
+      return null;
+  }
+}
+
 export default function SamanvayaPage() {
   return (
-    <Suspense fallback={<div className="p-12 text-center font-mono text-xs text-gray-500">Loading SAMANVAYA Intelligence...</div>}>
-      <SamanvayaContent />
+    <Suspense
+      fallback={
+        <div className="py-24 flex items-center justify-center gap-3 text-[var(--ink-secondary)]">
+          <Loader2 size={18} className="animate-spin" />
+          <span className="text-[13px] font-medium">Loading SAMANVAYA workspace…</span>
+        </div>
+      }
+    >
+      <SamanvayaWorkspace />
     </Suspense>
   );
 }

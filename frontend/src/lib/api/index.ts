@@ -10,3 +10,4 @@ export * from './evidence';
 export * from './dashboard';
 export * from './search';
 export * from './intelligence';
+export * from './samanvaya';

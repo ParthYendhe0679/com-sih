@@ -15,7 +15,7 @@ This document serves as the persistent context ledger and architectural memory f
 - **Security & Auth**: JWT (RS256/HS256) access tokens, Argon2 password hashing, RBAC (`SUPER_ADMIN`, `ADMIN`, `POLICE`, `CITIZEN`).
 
 ### Frontend Stack
-- **Framework**: Next.js 14 (App Router) + React 18 + TypeScript.
+- **Framework**: Next.js 16 (App Router) + React 19 + TypeScript. `frontend/AGENTS.md` is authoritative — consult `node_modules/next/dist/docs/` before writing framework code, as APIs differ from Next 14.
 - **Styling**: Tailwind CSS v3/v4 utility design tokens with customized CSS variables (`--surface-1`, `--accent`, `--border`, `--ink-primary`).
 - **State Management**: Redux Toolkit for UI drawers, active cases, and live monitoring.
 - **Data Visualization**: Recharts (interactive metrics), React Leaflet (spatial hotspots), dynamic SVG network graph engines.
@@ -111,4 +111,36 @@ This document serves as the persistent context ledger and architectural memory f
   3. Whitelist spatial relationship types in `ALLOWED_REL_TYPES`.
   4. Cache synthesized map topologies in Valkey (`case:{case_id}:map-intelligence`, TTL 15m) and invalidate on case/entity/FIR mutations.
   5. Render high-contrast, dark navy/charcoal connection lines (`#0F172A` / `#1E293B`, thickness 3.5–5.5) with relationship badge labels and interactive dossiers.
+
+### SAMANVAYA Hardcoded Dark Classes on a Light-Default Theme
+- **Gotcha**: The app's default theme is **light** (`uiSlice.theme = 'light'`; `--surface-1: #FFFFFF`). Components written with hardcoded Tailwind dark classes (`text-white`, `text-gray-400`, `bg-black/30`, `border-white/10`) render white-on-white and read as "empty, washed-out, low-hierarchy" pages rather than as broken ones — so the failure is easy to misdiagnose as a design problem.
+- **Fix**: Style every surface through the theme tokens the rest of the app uses — `text-[var(--ink-primary)]`, `text-[var(--ink-secondary)]`, `text-[var(--ink-tertiary)]`, `background: var(--surface-1|2|3)`, `borderColor: var(--border|--border-strong)`. Derive accent tints from a hex at runtime (`tint(hex, alpha)`) instead of committing to a fixed light or dark palette.
+
+### Read Endpoints Must Not Trigger Expensive Pipelines
+- **Gotcha**: `GET /intelligence/cases/{id}/results` (and `/graph`, `/tree`, `/agents`, `/report`) previously ran the full 5-agent pipeline when nothing was cached. The frontend called `getFinalResults` on every case selection, so merely *picking a case in the dropdown* silently started a ~75s multi-LLM run — repeatedly, and invisibly.
+- **Fix**: Read endpoints return `null` plus an explanatory message when no analysis exists; only `POST /start` executes the pipeline. The UI renders an explicit empty state and the officer starts the run deliberately.
+
+### FastAPI BackgroundTasks and Detached ORM Instances
+- **Gotcha**: Passing the request-scoped `current_user` ORM object into a background task that opens its own `AsyncSessionLocal()` leaves it detached; touching `user.id` / `user.username` inside the task raises at attribute access.
+- **Fix**: Capture identity as primitives in the request handler (`officer_id: uuid.UUID`, `officer_name: str`) and pass those into the background coroutine. `run_investigation_pipeline` accepts both the primitives and the legacy `user=` argument.
+
+### Data File Paths Resolved Relative to the Wrong Package Root
+- **Gotcha**: `samanvaya_service._load_historical_cases()` resolved `os.path.dirname(__file__)/../data/synthetic/...` → `backend/app/data/synthetic`, which does not exist. The real archive lives at `backend/data/synthetic`. The loader caught the miss and returned `[]`, so Agent 4 searched a **silently empty** 0-record archive while the UI still reported it as a data source.
+- **Fix**: Resolve two levels up (`../../data/synthetic`), keep the one-level path as a fallback, cache the parsed list on the service instance (it is 1,000 records re-read per agent pass), and log a warning when the archive genuinely cannot be found rather than degrading quietly.
+
+### Empty Agent Output Is Itself a Finding
+- **Gotcha**: When the historical archive contains no case of the current crime type, Agent 4 correctly returns zero matches — but the agent card then rendered completely blank, which reads as "broken" rather than "searched and found nothing".
+- **Fix**: On an empty result, emit an explicit highlight stating that no precedent matched and how many records were searched, plus the nearest retrieved records clearly labelled as *lexical overlap, not an MO match*. The prefilter carries `_retrieval_score` / `_retrieval_rank` forward so this fallback uses real retrieval data.
+
+### Pydantic Schema Evolution vs. Cached Dossiers
+- **Gotcha**: Cached SAMANVAYA dossiers in Valkey are validated back into `SamanvayaFinalDossier`. After a schema change (loose `List[Dict]` → typed `GeoIntelPoint` / `TimelineEvent`), stale cache entries fail validation and surface as a 500.
+- **Fix**: `get_case_results` wraps `model_validate` in a try/except, deletes the unreadable key and returns `None`, so the UI falls back to its empty state and the officer simply re-runs.
+
+### Frontend/Backend Contract Drift on Nested Payloads
+- **Gotcha**: The frontend `SamanvayaFinalDossier` declared `timeline: {time,title,agent,type,desc}[]` and `geographicRoute: {label,evidenceSource}[]`, while the backend emitted `{id,timestamp,event,confidence,evidence}` and `{name,address,latitude,...}`. TypeScript could not catch it (the API client returns the declared type unchecked), so the timeline tab rendered rows of `undefined` — visible features that silently displayed nothing.
+- **Fix**: Define the payload as typed Pydantic models on the backend and mirror the field names exactly in `frontend/src/lib/api/samanvaya.ts`. Loose `List[Dict[str, Any]]` on a response schema is where this drift hides.
+
+### React 19 `set-state-in-effect` on Prop-Change Resets
+- **Gotcha**: Resetting derived state in a `useEffect` keyed on an id (`useEffect(() => { setCollapsed(...); setSelected(root); }, [root.id])`) trips `react-hooks/set-state-in-effect` and paints one stale frame before the reset commits.
+- **Fix**: Use React's documented adjust-state-during-render pattern — hold the last-seen id in state and reset inside the render body when it differs. Applied to the investigation tree (`seenRootId`) and the workspace case switch (`loadedCaseId`).
 

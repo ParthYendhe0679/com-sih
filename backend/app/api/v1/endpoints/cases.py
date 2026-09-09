@@ -5,7 +5,7 @@ import math
 import time
 from typing import Any, Dict, List, Optional
 import uuid
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from app.api.deps import (
     get_async_session,
     get_cache_service,
@@ -61,9 +61,11 @@ async def create_case(
     body: CaseCreate,
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
     client_ip = get_client_ip(request)
     case = await case_service.create_case(data=body, police_user=current_user, client_ip=client_ip)
+    await _invalidate_cases_cache(cache, str(case.id))
     return success_response(
         data=CaseResponse.model_validate(case),
         message=f"Case {case.case_number} created successfully.",
@@ -108,8 +110,8 @@ _IN_MEMORY_CASE_DETAIL_CACHE: dict = {}
 _IN_MEMORY_ENTITIES_CACHE: dict = {}
 _IN_MEMORY_RELATIONSHIPS_CACHE: dict = {}
 
-def _invalidate_cases_cache(case_id: Optional[str] = None):
-    """Invalidate local in-memory caches upon case mutation."""
+async def _invalidate_cases_cache(cache: Optional[CacheService] = None, case_id: Optional[str] = None):
+    """Invalidate local in-memory caches and Valkey distributed caches upon case mutation."""
     global _IN_MEMORY_CASES_CACHE, _IN_MEMORY_CASE_DETAIL_CACHE, _IN_MEMORY_ENTITIES_CACHE, _IN_MEMORY_RELATIONSHIPS_CACHE
     _IN_MEMORY_CASES_CACHE.clear()
     if case_id:
@@ -117,6 +119,25 @@ def _invalidate_cases_cache(case_id: Optional[str] = None):
         _IN_MEMORY_CASE_DETAIL_CACHE.pop(c_str, None)
         _IN_MEMORY_ENTITIES_CACHE.pop(c_str, None)
         _IN_MEMORY_RELATIONSHIPS_CACHE.pop(c_str, None)
+        try:
+            from app.services.kava_service import invalidate_kava_cache
+            invalidate_kava_cache(c_str)
+        except Exception:
+            pass
+    else:
+        try:
+            from app.services.kava_service import invalidate_kava_cache
+            invalidate_kava_cache()
+        except Exception:
+            pass
+    if cache:
+        try:
+            await cache.delete_pattern("kritagas:cases:*")
+            if case_id:
+                await cache.delete(f"kritagas:case:{case_id}")
+                await cache.delete(f"kava:context:{case_id}")
+        except Exception:
+            pass
 
 
 @router.get(
@@ -288,6 +309,32 @@ async def get_case(
     return success_response(data=detail, message="Case details retrieved.")
 
 
+@router.get(
+    "/{case_id}/intelligence",
+    summary="Get Case Intelligence Context",
+    description="Retrieve consolidated case intelligence (FIR, entities, evidence, SAMANVAYA dossier, timeline, stats) for KAVA AI and dashboard panels.",
+)
+async def get_case_intelligence(
+    case_id: str,
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
+):
+    try:
+        case_uuid = uuid.UUID(case_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid case ID: {case_id}",
+        )
+    from app.services.kava_service import KavaService
+    svc = KavaService(session, cache)
+    intel = await svc.get_case_intelligence_context(case_uuid)
+    if "error" in intel:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=intel["error"])
+    return success_response(data=intel, message="Case intelligence retrieved successfully.")
+
+
 @router.patch(
     "/{case_id}",
     response_model=APIResponse[CaseResponse],
@@ -326,6 +373,7 @@ async def assign_investigator(
     body: CaseAssignRequest,
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
     client_ip = get_client_ip(request)
@@ -335,9 +383,68 @@ async def assign_investigator(
         police_user=current_user,
         client_ip=client_ip,
     )
+    await _invalidate_cases_cache(cache, str(case.id))
     return success_response(
         data=CaseResponse.model_validate(updated),
         message=f"Lead investigator assigned to Case {updated.case_number}.",
+    )
+
+
+@router.patch(
+    "/{case_id}",
+    response_model=APIResponse[CaseResponse],
+    summary="Update Investigation Case",
+    description="Update mutable attributes of an existing investigation case.",
+)
+async def update_case(
+    request: Request,
+    case_id: str,
+    body: CaseUpdate,
+    current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
+    case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
+):
+    case = await case_service.get_case_by_id(case_id, current_user=current_user)
+    client_ip = get_client_ip(request)
+    updated = await case_service.update_case(
+        case_id=case.id,
+        data=body,
+        police_user=current_user,
+        client_ip=client_ip,
+    )
+    await _invalidate_cases_cache(cache, str(case.id))
+    return success_response(
+        data=CaseResponse.model_validate(updated),
+        message=f"Case {updated.case_number} updated successfully.",
+    )
+
+
+@router.get(
+    "/{case_id}/intelligence",
+    response_model=APIResponse[Dict[str, Any]],
+    summary="Get Consolidated Case Intelligence Context",
+    description="Retrieve comprehensive intelligence context including case details, FIR, entities, CDR, graph, timeline, and agent findings.",
+)
+async def get_case_intelligence(
+    case_id: str,
+    current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
+    session: AsyncSession = Depends(get_async_session),
+    cache: CacheService = Depends(get_cache_service),
+):
+    try:
+        case_uuid = uuid.UUID(case_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid case ID: '{case_id}'. Expected UUID.",
+        )
+
+    from app.services.kava_service import KavaService
+    svc = KavaService(session, cache=cache)
+    intel = await svc.get_case_intelligence_context(case_uuid)
+    return success_response(
+        data=intel,
+        message="Case intelligence context retrieved.",
     )
 
 
@@ -353,6 +460,7 @@ async def update_case_status(
     body: CaseStatusUpdateRequest,
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
     client_ip = get_client_ip(request)
@@ -362,6 +470,7 @@ async def update_case_status(
         police_user=current_user,
         client_ip=client_ip,
     )
+    await _invalidate_cases_cache(cache, str(case.id))
     return success_response(
         data=CaseResponse.model_validate(updated),
         message=f"Case status updated to {updated.status.value}.",
@@ -381,6 +490,7 @@ async def add_case_note(
     body: CaseNoteCreate,
     current_user: User = Depends(require_roles(UserRole.POLICE, UserRole.ADMIN)),
     case_service: CaseService = Depends(get_case_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
     case = await case_service.get_case_by_id(case_id, current_user=current_user)
     client_ip = get_client_ip(request)
@@ -390,6 +500,7 @@ async def add_case_note(
         police_user=current_user,
         client_ip=client_ip,
     )
+    await _invalidate_cases_cache(cache, str(case.id))
     return success_response(
         data=CaseNoteResponse.model_validate(note),
         message="Case note added.",
@@ -412,6 +523,7 @@ async def create_case_from_fir(
     case_service: CaseService = Depends(get_case_service),
     session: AsyncSession = Depends(get_async_session),
     graph_service: Neo4jGraphService = Depends(get_graph_service),
+    cache: CacheService = Depends(get_cache_service),
 ):
     client_ip = get_client_ip(request)
     fir = await fir_service.get_fir_by_id(fir_id, current_user=current_user)
@@ -566,6 +678,9 @@ async def create_case_from_fir(
         await map_intelligence_service.invalidate_cache(case.id)
     except Exception:
         pass
+
+    # Invalidate cases caches so newly instantiated case appears immediately across all modules
+    await _invalidate_cases_cache(cache, str(case.id))
 
     return success_response(
         data=CaseResponse.model_validate(case),

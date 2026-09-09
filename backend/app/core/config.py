@@ -194,6 +194,18 @@ class Settings(BaseSettings):
                 return key.strip()
         return None
 
+    def get_all_gemini_keys(self) -> List[str]:
+        """Retrieve all non-empty configured Gemini API keys in priority order."""
+        active = self.get_active_gemini_key()
+        candidates = [active, self.GEMINI_API_KEY_1, self.GEMINI_API_KEY_2, self.GEMINI_API_KEY]
+        seen = set()
+        res = []
+        for k in candidates:
+            if k and k.strip() and k.strip() not in seen:
+                seen.add(k.strip())
+                res.append(k.strip())
+        return res
+
     def get_active_hf_key(self) -> Optional[str]:
         """Retrieve the active Hugging Face API key if configured."""
         if self.HUGGINGFACE_API_KEY and self.HUGGINGFACE_API_KEY.strip():

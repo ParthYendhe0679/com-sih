@@ -71,9 +71,7 @@ class GeminiProvider(BaseAIProvider):
         if not self.is_enabled():
             raise AIProviderNotConfigured("Gemini provider is disabled in settings.", provider=self.provider_name)
 
-        model = self._get_model()
-        if model is None:
-            raise AIProviderUnavailable("Gemini model could not be initialized.", provider=self.provider_name)
+        import google.generativeai as genai
 
         # Build prompt
         full_prompt = f"{system_instruction}\n\n{prompt}" if system_instruction else prompt
@@ -85,54 +83,70 @@ class GeminiProvider(BaseAIProvider):
         if json_mode:
             generation_config["response_mime_type"] = "application/json"
 
+        keys = settings.get_all_gemini_keys() or [settings.get_active_gemini_key()]
+        # Candidate models to try in priority order: start with known working models
+        model_candidates = ["gemini-3.7-flash", "gemini-3.5-flash", "gemini-flash-latest", self.model_name]
+        # Deduplicate while preserving order
+        model_candidates = list(dict.fromkeys([m for m in model_candidates if m]))
+
+        last_err: Optional[Exception] = None
         start = time.perf_counter()
-        try:
-            # Check if generate_content_async is available, otherwise use asyncio.to_thread
-            if hasattr(model, "generate_content_async"):
-                call_coro = model.generate_content_async(
-                    full_prompt,
-                    generation_config=generation_config,
-                )
-            else:
-                call_coro = asyncio.to_thread(
-                    model.generate_content,
-                    full_prompt,
-                    generation_config=generation_config,
-                )
+        attempt_timeout = min(6.0, float(settings.AI_REQUEST_TIMEOUT))
 
-            resp = await asyncio.wait_for(call_coro, timeout=float(settings.AI_REQUEST_TIMEOUT))
-            latency = (time.perf_counter() - start) * 1000.0
+        for key in keys:
+            genai.configure(api_key=key)
+            for model_cand in model_candidates:
+                try:
+                    m = genai.GenerativeModel(model_cand)
+                    if hasattr(m, "generate_content_async"):
+                        call_coro = m.generate_content_async(
+                            full_prompt,
+                            generation_config=generation_config,
+                        )
+                    else:
+                        call_coro = asyncio.to_thread(
+                            m.generate_content,
+                            full_prompt,
+                            generation_config=generation_config,
+                        )
 
-            text = ""
-            if hasattr(resp, "text"):
-                text = resp.text
-            elif hasattr(resp, "candidates") and resp.candidates:
-                parts = resp.candidates[0].content.parts
-                text = "".join(part.text for part in parts if hasattr(part, "text"))
+                    resp = await asyncio.wait_for(call_coro, timeout=attempt_timeout)
+                    latency = (time.perf_counter() - start) * 1000.0
 
-            tokens_used = None
-            if hasattr(resp, "usage_metadata") and resp.usage_metadata:
-                tokens_used = getattr(resp.usage_metadata, "total_token_count", None)
+                    text = ""
+                    if hasattr(resp, "text"):
+                        text = resp.text
+                    elif hasattr(resp, "candidates") and resp.candidates:
+                        parts = resp.candidates[0].content.parts
+                        text = "".join(part.text for part in parts if hasattr(part, "text"))
 
-            return AIResponseEnvelope(
-                success=True,
-                provider=self.provider_name,
-                model=self.model_name,
-                text=text,
-                latency_ms=round(latency, 2),
-                tokens_used=tokens_used,
-            )
-        except asyncio.TimeoutError as err:
-            raise AIRequestTimeout(
-                f"Gemini request timed out after {settings.AI_REQUEST_TIMEOUT}s",
-                provider=self.provider_name,
-            ) from err
-        except Exception as err:
-            logger.error("Gemini API error during generation: %s", err)
-            raise AIProviderUnavailable(
-                f"Gemini API error: {err}",
-                provider=self.provider_name,
-            ) from err
+                    tokens_used = None
+                    if hasattr(resp, "usage_metadata") and resp.usage_metadata:
+                        tokens_used = getattr(resp.usage_metadata, "total_token_count", None)
+
+                    return AIResponseEnvelope(
+                        success=True,
+                        provider=self.provider_name,
+                        model=model_cand,
+                        text=text,
+                        latency_ms=round(latency, 2),
+                        tokens_used=tokens_used,
+                    )
+                except (asyncio.TimeoutError, TimeoutError) as err:
+                    logger.warning("Gemini model %s timed out after %.1fs, skipping...", model_cand, attempt_timeout)
+                    last_err = err
+                except Exception as err:
+                    err_str = str(err)
+                    logger.warning("Gemini model %s with key ...%s failed: %s", model_cand, key[-6:] if len(key) >= 6 else '', err_str[:120])
+                    last_err = err
+                    # If quota (429) or model deprecated (404), immediately try next candidate
+                    continue
+
+        logger.error("All Gemini candidate models/keys exhausted: %s", last_err)
+        raise AIProviderUnavailable(
+            f"Gemini API error across all candidate models/keys: {last_err}",
+            provider=self.provider_name,
+        ) from last_err
 
     def get_health_status(self) -> ProviderHealthStatus:
         active_key = settings.get_active_gemini_key()

@@ -1,5 +1,6 @@
 """Local Heuristic & Rule-Based Intelligence Provider."""
 
+import re
 import time
 from typing import Optional
 
@@ -57,12 +58,7 @@ class LocalFallbackProvider(BaseAIProvider):
                 '}'
             )
         else:
-            text = (
-                "[KRITAGAS Local Intelligence Engine]\n"
-                "Analysis synthesized using internal behavioral heuristics and entity linkages. "
-                "Cross-case correlation detected shared attributes across available records. "
-                "Recommended next step: Proceed with subpoena for verified telecommunication identifiers."
-            )
+            text = self._synthesize_grounded_response(prompt)
 
         latency = (time.perf_counter() - start) * 1000.0
 
@@ -86,3 +82,67 @@ class LocalFallbackProvider(BaseAIProvider):
             status="ready",
             details="Local heuristic fallback engine is permanently ready.",
         )
+
+    def _synthesize_grounded_response(self, prompt: str) -> str:
+        """Deterministically extract case facts from prompt and format a structured response."""
+        case_m = re.search(r"Case:\s*([^\n]+)", prompt)
+        crime_m = re.search(r"Crime:\s*([^\n]+)", prompt)
+        status_m = re.search(r"Status:\s*([^\n]+)", prompt)
+
+        case_info = case_m.group(1).strip() if case_m else "Active Investigation Case"
+        crime_cat = crime_m.group(1).strip() if crime_m else "General Investigation"
+        case_status = status_m.group(1).strip() if status_m else "OPEN"
+
+        # Extract entities
+        entities_block = []
+        ent_m = re.search(r"## Entities[^\n]*\n([\s\S]*?)(?=\n##|\Z)", prompt)
+        if ent_m:
+            for line in ent_m.group(1).strip().split("\n"):
+                if line.strip().startswith("- "):
+                    entities_block.append(line.strip()[2:])
+
+        # Extract evidence
+        evidence_block = []
+        ev_m = re.search(r"## Physical & Forensic Evidence[^\n]*\n([\s\S]*?)(?=\n##|\Z)", prompt)
+        if ev_m:
+            for line in ev_m.group(1).strip().split("\n"):
+                if line.strip().startswith("- "):
+                    evidence_block.append(line.strip()[2:])
+
+        # Extract FIR details
+        fir_m = re.search(r"## FIR Details\s*\n([\s\S]*?)(?=\n##|\Z)", prompt)
+        fir_excerpt = fir_m.group(1).strip() if fir_m else ""
+
+        lines = [
+            f"### Case Intelligence Analysis: {case_info}",
+            f"**Crime Classification:** {crime_cat} | **Status:** {case_status}",
+            "",
+            "### Investigation Summary",
+            f"Based on grounded records for **{case_info}**, the case is currently classified under **{crime_cat}** with status **{case_status}**.",
+        ]
+
+        if fir_excerpt:
+            lines.append("")
+            lines.append("### Primary Incident Overview (per FIR)")
+            for fl in fir_excerpt.split("\n")[:4]:
+                lines.append(fl)
+
+        if entities_block:
+            lines.append("")
+            lines.append(f"### Identified Persons & Entities ({len(entities_block)})")
+            for ent in entities_block[:8]:
+                lines.append(f"- **{ent}**")
+
+        if evidence_block:
+            lines.append("")
+            lines.append(f"### Forensic & Physical Evidence ({len(evidence_block)})")
+            for ev in evidence_block[:6]:
+                lines.append(f"- {ev}")
+
+        lines.append("")
+        lines.append("### Recommended Investigative Next Steps")
+        lines.append("- Cross-reference suspect telecommunication records and tower CDR locations.")
+        lines.append("- Verify formal identification records for all persons of interest.")
+        lines.append("- Corroborate physical exhibits with forensic laboratory analysis reports.")
+
+        return "\n".join(lines)

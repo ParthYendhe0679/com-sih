@@ -1,6 +1,6 @@
 """Task-based AI Provider Router with graceful fallback."""
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from app.ai.exceptions import AIProviderNotConfigured, AIProviderUnavailable
 from app.ai.providers.base import BaseAIProvider
 from app.ai.providers.gemini_provider import GeminiProvider
@@ -26,7 +26,7 @@ class AIProviderRouter:
         }
 
         # Priority chains per task type
-        self.task_routing: Dict[TaskType, List[str]] = {
+        self.task_routing: Dict[Any, List[str]] = {
             TaskType.TEXT_COMPLETION: ["groq", "gemini", "local_fallback"],
             TaskType.STRUCTURED_EXTRACTION: ["groq", "gemini", "local_fallback"],
             TaskType.SUMMARIZATION: ["gemini", "groq", "local_fallback"],
@@ -34,6 +34,9 @@ class AIProviderRouter:
             TaskType.EMBEDDING: ["huggingface"],
             TaskType.ANOMALY_EXPLANATION: ["groq", "gemini", "local_fallback"],
             TaskType.ENTITY_RESOLUTION: ["groq", "huggingface", "local_fallback"],
+            TaskType.EXPLANATION: ["gemini", "groq", "local_fallback"],
+            TaskType.CHAT: ["gemini", "groq", "local_fallback"],
+            TaskType.GENERAL_INFERENCE: ["gemini", "groq", "local_fallback"],
         }
 
     def get_provider(self, provider_name: str) -> Optional[BaseAIProvider]:
@@ -42,7 +45,7 @@ class AIProviderRouter:
 
     def resolve_provider_candidates(
         self,
-        task_type: TaskType = TaskType.TEXT_COMPLETION,
+        task_type: Union[TaskType, str] = TaskType.TEXT_COMPLETION,
         preferred_provider: Optional[str] = None,
     ) -> List[BaseAIProvider]:
         """Resolve an ordered list of viable provider instances based on preferences and availability."""

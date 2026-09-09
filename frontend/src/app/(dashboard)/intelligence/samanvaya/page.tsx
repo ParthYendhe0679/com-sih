@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 
 import { casesApi, type BackendCase } from '@/lib/api/cases';
+import { useCaseStore } from '@/context/CaseContext';
 import {
   samanvayaApi,
   type CDRAnalysis,
@@ -84,11 +85,33 @@ function SamanvayaWorkspace() {
   const searchParams = useSearchParams();
   const requestedCase = searchParams.get('case') || '';
 
-  // ── Cases ────────────────────────────────────────────────
-  const [cases, setCases] = useState<BackendCase[]>(() => casesApi.getCachedCases() || []);
-  const [loadingCases, setLoadingCases] = useState(() => !(casesApi.getCachedCases()?.length));
-  const [caseError, setCaseError] = useState<string | null>(null);
-  const [selectedCaseId, setSelectedCaseId] = useState('');
+  // ── Centralized Case Store ───────────────────────────────
+  const {
+    cases,
+    activeCaseId,
+    loading: loadingCases,
+    error: caseError,
+    selectCase: setGlobalCase,
+  } = useCaseStore();
+
+  const [selectedCaseId, setSelectedCaseId] = useState<string>(() => {
+    return requestedCase || activeCaseId || '';
+  });
+
+  // Synchronize selection with requestedCase query param or activeCaseId
+  useEffect(() => {
+    if (requestedCase) {
+      if (requestedCase !== selectedCaseId) {
+        setSelectedCaseId(requestedCase);
+        setGlobalCase(requestedCase);
+      }
+    } else if (activeCaseId && !selectedCaseId) {
+      setSelectedCaseId(activeCaseId);
+    } else if (!selectedCaseId && cases.length > 0) {
+      setSelectedCaseId(cases[0].id);
+      setGlobalCase(cases[0].id);
+    }
+  }, [requestedCase, activeCaseId, selectedCaseId, cases, setGlobalCase]);
 
   // ── Pipeline ─────────────────────────────────────────────
   const [status, setStatus] = useState<SamanvayaPipelineStatus | null>(null);
@@ -105,36 +128,6 @@ function SamanvayaWorkspace() {
 
   const [tab, setTab] = useState<TabKey>('select');
   const [selectedAgentId, setSelectedAgentId] = useState('agent-1');
-
-  // ── Load the case list ───────────────────────────────────
-  useEffect(() => {
-    let active = true;
-    casesApi
-      .listCases({ size: 50 })
-      .then((res) => {
-        if (!active) return;
-        const items = res?.items || [];
-        setCases(items);
-        setCaseError(null);
-        setSelectedCaseId((prev) => {
-          if (prev) return prev;
-          const match = requestedCase
-            ? items.find((c) => c.id === requestedCase || c.case_number === requestedCase)
-            : null;
-          return match?.id || items[0]?.id || '';
-        });
-      })
-      .catch((err) => {
-        if (!active) return;
-        setCaseError(err?.message || 'Could not load investigation cases.');
-      })
-      .finally(() => {
-        if (active) setLoadingCases(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [requestedCase]);
 
   const selectedCase = useMemo(
     () => cases.find((c) => c.id === selectedCaseId) || null,
@@ -268,10 +261,11 @@ function SamanvayaWorkspace() {
       stopPolling();
       setStarting(false);
       setSelectedCaseId(id);
+      setGlobalCase(id);
       setTab('select');
       router.replace(`/intelligence/samanvaya?case=${id}`);
     },
-    [router, stopPolling]
+    [router, stopPolling, setGlobalCase]
   );
 
   // ── Derived state ────────────────────────────────────────

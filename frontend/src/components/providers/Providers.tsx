@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { store } from '@/store';
 import { Toaster } from 'sonner';
 import { useAppSelector } from '@/store/hooks';
+import { CaseProvider } from '@/context/CaseContext';
 
 function ThemeEffect({ children }: { children: React.ReactNode }) {
   const theme = useAppSelector((s) => s.ui.theme);
@@ -24,20 +25,22 @@ function ThemeEffect({ children }: { children: React.ReactNode }) {
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
-      <ThemeEffect>
-        {children}
-        <Toaster
-          position="bottom-right"
-          toastOptions={{
-            style: {
-              background: 'var(--surface-1)',
-              color: 'var(--ink-primary)',
-              border: '1px solid var(--border-strong)',
-              fontSize: '13px',
-            },
-          }}
-        />
-      </ThemeEffect>
+      <CaseProvider>
+        <ThemeEffect>
+          {children}
+          <Toaster
+            position="bottom-right"
+            toastOptions={{
+              style: {
+                background: 'var(--surface-1)',
+                color: 'var(--ink-primary)',
+                border: '1px solid var(--border-strong)',
+                fontSize: '13px',
+              },
+            }}
+          />
+        </ThemeEffect>
+      </CaseProvider>
     </Provider>
   );
 }

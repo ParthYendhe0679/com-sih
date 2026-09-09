@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner';
 import { firsApi, BackendFIR, UploadFirResponse } from '@/lib/api/firs';
 import { casesApi } from '@/lib/api/cases';
+import { useCaseStore } from '@/context/CaseContext';
 
 type PipelineStep =
   | 'intake'
@@ -26,6 +27,7 @@ type PipelineStep =
 export default function FIRIntakePage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { createCaseFromFir, selectCase } = useCaseStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Mode: 'online' (Approved Online FIRs) vs 'offline' (Upload & OCR Pipeline)
@@ -128,7 +130,8 @@ export default function FIRIntakePage() {
   // Create Case from Online Complaint
   const handleSelectOnlineFIR = async (fir: BackendFIR) => {
     try {
-      const newCase = await casesApi.createCaseFromFir(fir.id);
+      const newCase = await createCaseFromFir(fir.id);
+      selectCase(newCase.id);
       toast.success(`Case ${newCase.case_number} instantiated from FIR ${fir.fir_number}!`);
       router.push(`/cases/${newCase.id}`);
     } catch (err: any) {
@@ -147,8 +150,9 @@ export default function FIRIntakePage() {
     setCurrentStep('relationships');
 
     try {
-      const newCase = await casesApi.createCaseFromFir(extractedData.fir.id);
+      const newCase = await createCaseFromFir(extractedData.fir.id);
       setCreatedCaseId(newCase.id);
+      selectCase(newCase.id);
       setCurrentStep('network');
       toast.success(`Investigation Case ${newCase.case_number} successfully established!`);
     } catch (err: any) {

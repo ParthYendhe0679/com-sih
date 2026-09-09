@@ -198,6 +198,12 @@ export function invalidateClientCaseCache(caseId?: string): void {
       }
     }
   }
+  if (typeof window !== 'undefined') {
+    try {
+      sessionStorage.removeItem('kritagas_cases_list_cache');
+      window.dispatchEvent(new CustomEvent('CASE_INVALIDATED', { detail: { caseId } }));
+    } catch (_) {}
+  }
 }
 
 export const casesApi = {
@@ -303,6 +309,15 @@ export const casesApi = {
   async createCaseFromFir(firId: string): Promise<BackendCase> {
     invalidateClientCaseCache();
     return await apiClient.post<BackendCase>(`/cases/from-fir/${firId}`);
+  },
+
+  async updateCase(caseId: string, data: Partial<BackendCase>): Promise<BackendCase> {
+    invalidateClientCaseCache(caseId);
+    return await apiClient.patch<BackendCase>(`/cases/${caseId}`, data);
+  },
+
+  async getIntelligenceContext(caseId: string): Promise<any> {
+    return await apiClient.get<any>(`/cases/${caseId}/intelligence`);
   },
 
   async updateCaseStatus(

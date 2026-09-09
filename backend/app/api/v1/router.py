@@ -14,6 +14,7 @@ from app.api.v1.endpoints import (
     graph,
     health,
     intelligence,
+    kava,
     notifications,
     police,
     samanvaya,
@@ -42,4 +43,5 @@ api_v1_router.include_router(blockchain.router, tags=["Blockchain Evidence Integ
 api_v1_router.include_router(data_sync.router, prefix="/sync", tags=["Data Synchronization"])
 api_v1_router.include_router(graph.router, prefix="/graph", tags=["Graph Intelligence"])
 api_v1_router.include_router(analytics.router, prefix="/analytics", tags=["Analytics Hub"])
+api_v1_router.include_router(kava.router, prefix="/kava", tags=["KAVA AI Intelligence Assistant"])
 

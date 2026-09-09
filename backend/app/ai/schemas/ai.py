@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -15,13 +15,16 @@ class TaskType(str, Enum):
     EMBEDDING = "embedding"
     ANOMALY_EXPLANATION = "anomaly_explanation"
     ENTITY_RESOLUTION = "entity_resolution"
+    EXPLANATION = "explanation"
+    CHAT = "chat"
+    GENERAL_INFERENCE = "general_inference"
 
 
 class AIRequest(BaseModel):
     """Standardized input parameters for AI generation tasks."""
     prompt: str = Field(..., min_length=1, description="Primary user or task prompt")
     system_instruction: Optional[str] = Field(None, description="System prompt guidance")
-    task_type: TaskType = Field(default=TaskType.TEXT_COMPLETION, description="Routing task category")
+    task_type: Union[TaskType, str] = Field(default=TaskType.TEXT_COMPLETION, description="Routing task category")
     temperature: float = Field(default=0.2, ge=0.0, le=2.0, description="Sampling temperature")
     max_tokens: int = Field(default=1024, ge=1, le=8192, description="Max generated tokens")
     preferred_provider: Optional[str] = Field(None, description="Force a specific provider if available")

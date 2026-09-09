@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAppDispatch } from '@/store/hooks';
 import { openInspector } from '@/store/slices/uiSlice';
 import { casesApi, BackendCase } from '@/lib/api/cases';
+import { useCaseStore } from '@/context/CaseContext';
 import type { Case, CrimeType, CasePriority, CaseStatus } from '@/types';
 import DataTable, { ColumnDef } from '@/components/shared/DataTable';
 import FilterBar, { FilterOption } from '@/components/shared/FilterBar';
@@ -39,46 +40,18 @@ function mapBackendCaseToCase(bc: BackendCase): Case {
 export default function CasesPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { cases: storeCases, loading: storeLoading, refreshCases } = useCaseStore();
 
-  // Instant SWR cache initialization: render immediately if cached cases exist (0ms latency)
-  const [casesList, setCasesList] = useState<Case[]>(() => {
-    const cached = casesApi.getCachedCases();
-    if (cached && cached.length > 0) {
-      return cached.map(mapBackendCaseToCase);
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState<boolean>(() => {
-    const cached = casesApi.getCachedCases();
-    return !(cached && cached.length > 0);
-  });
+  const casesList = useMemo(() => {
+    return storeCases.map(mapBackendCaseToCase);
+  }, [storeCases]);
+
+  const loading = storeLoading && casesList.length === 0;
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<{ [key: string]: string }>({
     crime: 'all',
     city: 'all',
   });
-
-  const fetchCases = async (isSilent: boolean = false) => {
-    if (!isSilent) setLoading(true);
-    try {
-      const res = await casesApi.listCases({ size: 50 });
-      const backendCases = res.items || [];
-      const mapped = backendCases.map(mapBackendCaseToCase);
-      setCasesList(mapped);
-    } catch (err) {
-      console.warn('Backend cases fetch notice:', err);
-      if (casesList.length === 0) {
-        toast.error('Unable to fetch live cases from backend.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const hasCached = casesList.length > 0;
-    fetchCases(hasCached);
-  }, []);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));

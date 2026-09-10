@@ -12,6 +12,28 @@ import { AGENTS, tint } from './theme';
 
 export type StageState = 'done' | 'active' | 'pending' | 'failed';
 
+/** A soft fill per stage so the rail reads as a sequence of distinct steps
+ *  rather than one repeated block of colour. */
+const STAGE_TINT: Record<string, { fill: string; ink: string }> = {
+  case:    { fill: 'var(--pastel-sky)',   ink: 'var(--pastel-sky-ink)' },
+  ingest:  { fill: 'var(--pastel-teal)',  ink: 'var(--pastel-teal-ink)' },
+  'agent-1': { fill: 'var(--pastel-mint)',  ink: 'var(--pastel-mint-ink)' },
+  'agent-2': { fill: 'var(--pastel-lilac)', ink: 'var(--pastel-lilac-ink)' },
+  'agent-3': { fill: 'var(--pastel-sky)',   ink: 'var(--pastel-sky-ink)' },
+  'agent-4': { fill: 'var(--pastel-peach)', ink: 'var(--pastel-peach-ink)' },
+  'agent-5': { fill: 'var(--pastel-rose)',  ink: 'var(--pastel-rose-ink)' },
+  report:  { fill: 'var(--pastel-sand)',  ink: 'var(--pastel-sand-ink)' },
+};
+
+/** Short, plain names for the rail — what each step actually does. */
+const RAIL_LABELS: Record<number, string> = {
+  1: 'Read case',
+  2: 'Match people',
+  3: 'Link chart',
+  4: 'Old cases',
+  5: 'Write report',
+};
+
 export interface RailStage {
   key: string;
   label: string;
@@ -47,7 +69,7 @@ export function buildStages(opts: {
       key: 'case',
       label: 'Case',
       caption: hasCase ? 'Selected' : 'Not selected',
-      color: '#4338CA',
+      color: 'var(--ink-primary)',
       icon: FolderOpen,
       state: hasCase ? 'done' : 'active',
     },
@@ -55,23 +77,25 @@ export function buildStages(opts: {
       key: 'ingest',
       label: 'Data',
       caption: sourcesConnected ? `${sourcesConnected} sources` : 'None connected',
-      color: '#0891B2',
+      color: 'var(--ink-primary)',
       icon: Database,
       state: sourcesConnected > 0 ? 'done' : hasCase ? 'active' : 'pending',
     },
+    // The rail is read at a glance, so each stage is named by what it does.
+    // The Sanskrit codenames stay on the agent cards, not here.
     ...AGENTS.map((a) => ({
       key: a.agentId,
-      label: `Agent ${a.agentNumber}`,
-      caption: a.shortName,
-      color: a.color,
+      label: RAIL_LABELS[a.agentNumber] ?? `Step ${a.agentNumber}`,
+      caption: `Step ${a.agentNumber}`,
+      color: 'var(--ink-primary)',
       icon: a.icon,
       state: agentState(a.agentNumber),
     })),
     {
       key: 'report',
-      label: 'Dossier',
+      label: 'Final report',
       caption: complete ? 'Ready' : 'Pending',
-      color: '#059669',
+      color: 'var(--ink-primary)',
       icon: FileCheck2,
       state: complete ? 'done' : 'pending',
     },
@@ -99,7 +123,7 @@ export default function PipelineRail({
           {running && <Loader2 size={14} className="animate-spin shrink-0 text-[var(--accent)]" />}
           <span className="text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">{stageText}</span>
         </div>
-        <span className="text-[13px] font-bold tabular-nums shrink-0" style={{ color: 'var(--accent)' }}>
+        <span className="text-[13px] font-semibold tabular-nums shrink-0" style={{ color: 'var(--accent)' }}>
           {progress}%
         </span>
       </div>
@@ -110,7 +134,7 @@ export default function PipelineRail({
           className="h-full rounded-full transition-[width] duration-700 ease-out"
           style={{
             width: `${progress}%`,
-            background: 'linear-gradient(90deg, #2563EB 0%, #7C3AED 45%, #059669 100%)',
+            background: 'var(--accent)',
           }}
         />
       </div>
@@ -122,33 +146,33 @@ export default function PipelineRail({
           const done = s.state === 'done';
           const active = s.state === 'active';
           const failed = s.state === 'failed';
-          const accent = failed ? '#DC2626' : s.color;
           const dim = s.state === 'pending';
+          const tintPair = STAGE_TINT[s.key] ?? { fill: 'var(--pastel-teal)', ink: 'var(--pastel-teal-ink)' };
 
           return (
             <li key={s.key} className="flex items-stretch shrink-0">
               <div
                 className="rounded-xl border px-3 py-2.5 min-w-[104px] transition-all"
                 style={{
-                  background: dim ? 'var(--surface-2)' : tint(accent, done || failed ? 0.1 : 0.14),
-                  borderColor: dim ? 'var(--border)' : tint(accent, 0.4),
-                  opacity: dim ? 0.62 : 1,
-                  boxShadow: active ? `0 0 0 2px ${tint(accent, 0.35)}` : undefined,
+                  background: failed ? 'var(--error-muted)' : dim ? 'var(--surface-1)' : tintPair.fill,
+                  border: 'none',
+                  opacity: dim ? 0.75 : 1,
+                  boxShadow: dim ? 'inset 0 0 0 1px var(--border-strong)' : undefined,
                 }}
               >
                 <div className="flex items-center gap-1.5">
                   <span
                     className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${active ? 'animate-pulse' : ''}`}
                     style={{
-                      background: done || active || failed ? accent : 'var(--surface-3)',
-                      color: done || active || failed ? '#FFFFFF' : 'var(--ink-tertiary)',
+                      background: failed ? 'var(--error)' : dim ? 'var(--surface-3)' : tintPair.ink,
+                      color: failed || !dim ? '#FFFFFF' : 'var(--ink-tertiary)',
                     }}
                   >
                     {done ? <Check size={13} /> : <Icon size={13} />}
                   </span>
                   <span
-                    className="text-[11px] font-bold uppercase tracking-wide truncate"
-                    style={{ color: dim ? 'var(--ink-tertiary)' : accent }}
+                    className="text-[11px] font-semibold uppercase tracking-wide truncate"
+                    style={{ color: dim ? 'var(--ink-tertiary)' : tintPair.ink }}
                   >
                     {s.label}
                   </span>
@@ -159,7 +183,7 @@ export default function PipelineRail({
               {i < stages.length - 1 && (
                 <span
                   className="self-center w-3 h-[2px] mx-0.5 rounded-full shrink-0"
-                  style={{ background: done ? s.color : 'var(--border-strong)' }}
+                  style={{ background: done ? 'var(--border-strong)' : 'var(--border-strong)' }}
                   aria-hidden
                 />
               )}

@@ -6,7 +6,7 @@ import Topbar from './Topbar';
 import CommandPalette from './CommandPalette';
 import EntityInspector from '@/components/shared/EntityInspector';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
-import { setRole, getStoredRole } from '@/store/slices/uiSlice';
+import { setRole, getStoredRole, setTheme, getStoredTheme } from '@/store/slices/uiSlice';
 import { usePathname } from 'next/navigation';
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -17,12 +17,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   const isAuthPage = pathname === '/login' || pathname === '/auth' || pathname === '/';
 
+  // Hydrate theme on mount from localStorage
+  useEffect(() => {
+    const savedTheme = getStoredTheme();
+    dispatch(setTheme(savedTheme));
+  }, [dispatch]);
+
   // Apply dark class to html element
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
+      document.documentElement.style.colorScheme = 'dark';
     } else {
       document.documentElement.classList.remove('dark');
+      document.documentElement.style.colorScheme = 'light';
     }
   }, [theme]);
 
@@ -59,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           paddingTop: 'var(--topbar-height, 64px)',
         }}
       >
-        <div className="min-h-full px-8 py-8 max-w-[1680px] mx-auto w-full">
+        <div className="min-h-full w-full px-7 py-6">
           {children}
         </div>
       </main>

@@ -12,9 +12,19 @@ interface UIState {
   currentRole: UserRole;
 }
 
+// The platform is designed light-first: it is used in daylit offices and its
+// output is printed into case files. A viewer who has explicitly chosen dark
+// still gets dark; the OS preference alone no longer flips it.
+const getStoredTheme = (): 'light' | 'dark' => {
+  if (typeof window === 'undefined') return 'light';
+  const stored = localStorage.getItem('TRINETRA_theme');
+  if (stored === 'light' || stored === 'dark') return stored;
+  return 'light';
+};
+
 const getStoredRole = (): UserRole => {
   if (typeof window === 'undefined') return 'police';
-  const stored = localStorage.getItem('kritagas_role');
+  const stored = localStorage.getItem('TRINETRA_role');
   if (stored === 'citizen' || stored === 'admin' || stored === 'police') return stored;
   return 'police';
 };
@@ -34,8 +44,29 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
     toggleSidebar(state) { state.sidebarCollapsed = !state.sidebarCollapsed; },
-    setTheme(state, action: PayloadAction<'light' | 'dark'>) { state.theme = action.payload; },
-    toggleTheme(state) { state.theme = state.theme === 'light' ? 'dark' : 'light'; },
+    setTheme(state, action: PayloadAction<'light' | 'dark'>) {
+      state.theme = action.payload;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('TRINETRA_theme', action.payload);
+        if (action.payload === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    },
+    toggleTheme(state) {
+      const next = state.theme === 'light' ? 'dark' : 'light';
+      state.theme = next;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('TRINETRA_theme', next);
+        if (next === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    },
     setCommandPaletteOpen(state, action: PayloadAction<boolean>) { state.commandPaletteOpen = action.payload; },
     openInspector(state, action: PayloadAction<{ id: string; type: string }>) {
       state.inspectorOpen = true;
@@ -46,12 +77,12 @@ const uiSlice = createSlice({
     setRole(state, action: PayloadAction<UserRole>) {
       state.currentRole = action.payload;
       if (typeof window !== 'undefined') {
-        localStorage.setItem('kritagas_role', action.payload);
+        localStorage.setItem('TRINETRA_role', action.payload);
       }
     },
   },
 });
 
 export const { toggleSidebar, setTheme, toggleTheme, setCommandPaletteOpen, openInspector, closeInspector, setActiveTab, setRole } = uiSlice.actions;
-export { getStoredRole };
+export { getStoredRole, getStoredTheme };
 export default uiSlice.reducer;

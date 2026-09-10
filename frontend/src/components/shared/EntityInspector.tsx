@@ -234,7 +234,7 @@ export default function EntityInspector() {
             style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
             {dataRecord?.description || dataRecord?.details || dataRecord?.reason || (
               <span>
-                Entity catalogued in KRITAGAS intelligence database. Investigative relevance identified across connected multi-agency records.
+                Entity catalogued in TRINETRA intelligence database. Investigative relevance identified across connected multi-agency records.
               </span>
             )}
           </div>
@@ -353,7 +353,7 @@ export default function EntityInspector() {
 
         {/* Cautionary notice */}
         <div className="p-2.5 rounded text-[11px] border flex gap-2"
-          style={{ background: 'var(--warning-muted)', borderColor: 'rgba(245,158,11,0.2)', color: '#B45309' }}>
+          style={{ background: 'var(--warning-muted)', borderColor: 'rgba(245,158,11,0.2)', color: '#D97706' }}>
           <ShieldAlert size={15} className="shrink-0 mt-0.5" />
           <span>
             Synthetic intelligence record. Represents investigative connectivity and potential evidentiary correlation, not confirmed judicial finding.

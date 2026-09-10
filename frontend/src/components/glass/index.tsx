@@ -104,7 +104,7 @@ export function GlassMetric({
         {Icon && <Icon size={14} style={{ color: color || 'var(--ink-secondary)' }} />}
       </div>
       <div
-        className="text-[22px] font-bold tracking-tight font-mono-id mt-1"
+        className="text-[22px] font-semibold tracking-tight font-mono-id mt-1"
         style={{ color: color || 'var(--ink-primary)' }}
       >
         {value}

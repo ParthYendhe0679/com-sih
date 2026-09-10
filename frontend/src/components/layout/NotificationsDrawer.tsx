@@ -109,7 +109,7 @@ export default function NotificationsDrawer({
             <h3 className="card-title">Notifications</h3>
             {unreadCount > 0 && (
               <span
-                className="text-[11.5px] px-2 py-0.5 rounded-full font-bold"
+                className="text-[11.5px] px-2 py-0.5 rounded-full font-semibold"
                 style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
               >
                 {unreadCount} new

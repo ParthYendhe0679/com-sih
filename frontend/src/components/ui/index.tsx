@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// KRITAGAS — Shared UI Primitives
+// TRINETRA — Shared UI Primitives
 // One implementation of the patterns that were previously
 // copy-pasted across pages: page headers, cards, metrics,
 // badges, tabs, and the loading / error / empty triad.
@@ -49,7 +49,7 @@ export function Card({
 }: React.HTMLAttributes<HTMLDivElement> & { compact?: boolean }) {
   return (
     <div
-      className={cn(compact ? 'kritagas-card-compact' : 'kritagas-card', className)}
+      className={cn(compact ? 'TRINETRA-card-compact' : 'TRINETRA-card', className)}
       {...rest}
     >
       {children}
@@ -130,7 +130,7 @@ export function MetricCard({
         <div className="skeleton h-8 w-16 mb-2" />
       ) : (
         <div
-          className="text-[28px] font-bold leading-none mb-1.5 tabular-nums"
+          className="text-[28px] font-semibold leading-none mb-1.5 tabular-nums"
           style={{ color }}
         >
           {value}

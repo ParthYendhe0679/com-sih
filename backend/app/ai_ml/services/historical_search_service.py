@@ -3,6 +3,7 @@
 import uuid
 from typing import Any, Dict, List, Optional
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai_ml.models.ai_models import CaseSimilarity
 from app.ai_ml.schemas.similarity import CaseSimilarityResponse, SimilarCaseItem
@@ -25,15 +26,59 @@ class HistoricalCaseSearchService:
         top_k: int = 5,
     ) -> CaseSimilarityResponse:
         """Query historical database and score similarity against current case."""
-        stmt = select(Case).where(Case.id == case_id)
+        # The similarity engine reads case.entities. That is a lazy relationship,
+        # and touching it inside the synchronous scorer raised MissingGreenlet —
+        # which surfaced as a 500 and an empty Past Cases screen. Load the
+        # entities and the linked FIR up front so the scorer never triggers IO.
+        stmt = (
+            select(Case)
+            .where(Case.id == case_id)
+            .options(selectinload(Case.entities), selectinload(Case.fir))
+        )
         result = await self.session.execute(stmt)
         source_case = result.scalar_one_or_none()
         if not source_case:
             raise NotFoundException(f"Source case {case_id} not found.")
 
-        cand_stmt = select(Case).where(Case.id != case_id).limit(50)
-        cand_res = await self.session.execute(cand_stmt)
-        candidates = list(cand_res.scalars().all())
+        # Candidate selection used to be `LIMIT 50` with no ordering, so it
+        # compared this case against fifty arbitrary archive rows — usually a
+        # different crime in a different city. Nothing scored, and the Past
+        # Cases screen came back empty. Look at cases of the same crime type
+        # first, then the same city, then fall back to the rest.
+        same_type = (
+            select(Case)
+            .where(Case.id != case_id, Case.crime_category == source_case.crime_category)
+            .options(selectinload(Case.entities), selectinload(Case.fir))
+            .limit(60)
+        )
+        candidates = list((await self.session.execute(same_type)).scalars().all())
+
+        if len(candidates) < 40 and getattr(source_case, "city", None):
+            same_city = (
+                select(Case)
+                .where(Case.id != case_id, Case.city == source_case.city)
+                .options(selectinload(Case.entities), selectinload(Case.fir))
+                .limit(40)
+            )
+            seen = {c.id for c in candidates}
+            for c in (await self.session.execute(same_city)).scalars().all():
+                if c.id not in seen:
+                    candidates.append(c)
+                    seen.add(c.id)
+
+        if len(candidates) < 20:
+            filler = (
+                select(Case)
+                .where(Case.id != case_id)
+                .options(selectinload(Case.entities), selectinload(Case.fir))
+                .order_by(Case.created_at.desc())
+                .limit(40)
+            )
+            seen = {c.id for c in candidates}
+            for c in (await self.session.execute(filler)).scalars().all():
+                if c.id not in seen:
+                    candidates.append(c)
+                    seen.add(c.id)
 
         similarities: List[CaseSimilarity] = self.engine.find_top_similar(
             source=source_case,

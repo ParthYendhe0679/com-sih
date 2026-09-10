@@ -1,24 +1,31 @@
 import { apiClient } from './client';
 
+// These mirror the backend's similarity schema exactly. They previously named
+// fields that the API never returned (similar_cases / crime_type / summary), so
+// every response looked empty and the Past Cases screen fell back to nothing.
 export interface SimilarCaseItem {
   case_id: string;
-  fir_number?: string;
+  case_number: string;
   title: string;
-  crime_type: string;
+  crime_category: string;
+  status: string;
+  incident_date?: string | null;
   similarity_score: number;
-  semantic_score?: number;
-  mo_score?: number;
-  temporal_score?: number;
-  spatial_score?: number;
-  shared_entities?: string[];
-  shared_patterns?: string[];
-  summary?: string;
+  semantic_score: number;
+  modus_operandi_score: number;
+  entity_overlap_score: number;
+  location_score: number;
+  temporal_score: number;
+  explanation: string;
+  matched_features: string[];
 }
 
 export interface CaseSimilarityResponse {
-  query_case_id: string;
-  total_similar: number;
-  similar_cases: SimilarCaseItem[];
+  source_case_id: string;
+  source_case_number: string;
+  total_candidates_analyzed: number;
+  matches: SimilarCaseItem[];
+  generated_at: string;
 }
 
 export interface IntelligenceInsight {

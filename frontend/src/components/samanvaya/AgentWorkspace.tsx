@@ -154,12 +154,12 @@ function AgentRailCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: accent }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: accent }}>
               Agent {agent.agentNumber}
             </span>
-            <span className="text-[10px] font-mono text-[var(--ink-tertiary)]">{agent.sanskritName}</span>
+
           </div>
-          <div className="text-[13px] font-bold text-[var(--ink-primary)] leading-snug mt-0.5">
+          <div className="text-[13px] font-semibold text-[var(--ink-primary)] leading-snug mt-0.5">
             {agent.displayName}
           </div>
           <div className="text-[11px] text-[var(--ink-secondary)] mt-0.5 leading-snug">{agent.role}</div>
@@ -167,10 +167,10 @@ function AgentRailCard({
           {agent.live ? (
             <div className="flex items-center gap-3 mt-2 text-[10.5px] font-mono text-[var(--ink-tertiary)]">
               <span>
-                scanned <strong className="text-[var(--ink-primary)]">{fmt(agent.live.recordsSearched)}</strong>
+                records checked <strong className="text-[var(--ink-primary)]">{fmt(agent.live.recordsSearched)}</strong>
               </span>
               <span>
-                relevant <strong style={{ color: accent }}>{fmt(agent.live.relevantFound)}</strong>
+                useful <strong style={{ color: accent }}>{fmt(agent.live.relevantFound)}</strong>
               </span>
               <span>{(agent.live.executionTimeMs / 1000).toFixed(2)}s</span>
             </div>
@@ -178,7 +178,7 @@ function AgentRailCard({
             <div className="flex items-center gap-1.5 mt-2 text-[10.5px] text-[var(--ink-tertiary)]">
               {processing ? (
                 <>
-                  <Loader2 size={10} className="animate-spin" /> analysing…
+                  <Loader2 size={10} className="animate-spin" /> working…
                 </>
               ) : failed ? (
                 <>
@@ -186,7 +186,7 @@ function AgentRailCard({
                 </>
               ) : (
                 <>
-                  <CircleDashed size={10} /> waiting for previous agent
+                  <CircleDashed size={10} /> waiting for the previous step
                 </>
               )}
             </div>
@@ -226,9 +226,9 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
               agent.status === 'PROCESSING'
                 ? agent.purpose
                 : agent.status === 'FAILED'
-                  ? 'The pipeline stopped at this stage. Review the orchestrator console and re-run the analysis.'
+                  ? 'The analysis stopped here. Check the activity log below, then run it again.'
                   : agent.agentNumber === 1
-                    ? 'Start the SAMANVAYA investigation to begin case context extraction.'
+                    ? 'Start the analysis to begin case context extraction.'
                     : `${agent.purpose} It begins once Agent ${agent.agentNumber - 1} hands over its findings.`
             }
           />
@@ -250,7 +250,7 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
               <Badge color={agent.color} solid>
                 {live.status}
               </Badge>
-              <Badge color="#64748B">{live.executionTimeMs.toFixed(0)} ms</Badge>
+              <Badge color="#9CA3AF">{live.executionTimeMs.toFixed(0)} ms</Badge>
             </div>
           }
         />
@@ -270,12 +270,12 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
                   m.tone === 'critical'
                     ? '#DC2626'
                     : m.tone === 'warning'
-                      ? '#EA580C'
+                      ? '#D97706'
                       : m.tone === 'positive'
-                        ? '#059669'
+                        ? '#16A34A'
                         : m.tone === 'info'
                           ? '#2563EB'
-                          : '#64748B'
+                          : '#9CA3AF'
                 }
               />
             ))}
@@ -285,7 +285,7 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
         {/* What it found */}
         {live.highlights.length > 0 && (
           <div className="mt-5">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
               What this agent found
             </div>
             <ul className="space-y-1.5">
@@ -294,10 +294,6 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
                   key={i}
                   className="flex items-start gap-2 text-[12.5px] leading-relaxed text-[var(--ink-secondary)]"
                 >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full mt-[7px] shrink-0"
-                    style={{ background: agent.color }}
-                  />
                   <span>{h}</span>
                 </li>
               ))}
@@ -330,8 +326,8 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
           >
             <CornerDownRight size={14} className="shrink-0 mt-0.5" style={{ color: agent.color }} />
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: agent.color }}>
-                Passed forward
+              <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: agent.color }}>
+                Sent to the next step
               </div>
               <div className="text-[12.5px] text-[var(--ink-secondary)] mt-0.5 leading-relaxed">{live.handoff}</div>
             </div>
@@ -350,14 +346,14 @@ function AgentDetail({ agent }: { agent: MergedAgent }) {
       {/* Limitations */}
       {live.limitations.length > 0 && (
         <Panel>
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[#EA580C]">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#D97706]">
             <ShieldQuestion size={13} />
-            Known limitations
+            What we could not confirm
           </div>
           <ul className="mt-2.5 space-y-1.5">
             {live.limitations.map((l, i) => (
               <li key={i} className="text-[12.5px] text-[var(--ink-secondary)] leading-relaxed flex items-start gap-2">
-                <AlertTriangle size={12} className="shrink-0 mt-1 text-[#EA580C]" />
+                <AlertTriangle size={12} className="shrink-0 mt-1 text-[#D97706]" />
                 {l}
               </li>
             ))}
@@ -422,7 +418,7 @@ export function AgentConsole({
       >
         <span className="flex items-center gap-2 min-w-0">
           <Terminal size={14} style={{ color }} />
-          <span className="text-[12.5px] font-bold text-[var(--ink-primary)] truncate">{title}</span>
+          <span className="text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">{title}</span>
           <span className="text-[10.5px] font-mono text-[var(--ink-tertiary)]">{lines.length} lines</span>
         </span>
         <ChevronDown
@@ -439,11 +435,11 @@ export function AgentConsole({
           style={{ maxHeight, background: 'var(--surface-2)' }}
         >
           {shown.map((l, i) => {
-            const c = TELEMETRY_COLORS[l.level] || '#64748B';
+            const c = TELEMETRY_COLORS[l.level] || '#9CA3AF';
             return (
               <div key={i} className="flex items-start gap-2 py-[3px]">
                 <span className="text-[var(--ink-tertiary)] shrink-0 tabular-nums">{l.ts}</span>
-                <span className="shrink-0 font-bold w-[38px]" style={{ color: c }}>
+                <span className="shrink-0 font-semibold w-[38px]" style={{ color: c }}>
                   {l.level === 'OK' ? '✓' : l.level === 'WORK' ? '›' : l.level === 'WARN' ? '!' : l.level === 'ERROR' ? '✕' : '·'}
                 </span>
                 <span className="min-w-0">

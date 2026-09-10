@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// KRITAGAS — Authenticated Session Hook
+// TRINETRA — Authenticated Session Hook
 // Single source of truth for the signed-in identity used by the
 // sidebar, topbar and role-aware pages. Replaces hardcoded names.
 // ============================================================
@@ -34,7 +34,7 @@ export const roleLabels: Record<UserRole, string> = {
 };
 
 export const roleColors: Record<UserRole, string> = {
-  police: '#4F46E5',
+  police: '#12376E',
   citizen: '#16A34A',
   admin: '#D97706',
 };

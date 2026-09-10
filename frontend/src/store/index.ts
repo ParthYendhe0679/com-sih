@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Redux Store Configuration
+// TRINETRA — Redux Store Configuration
 // ============================================================
 import { configureStore } from '@reduxjs/toolkit';
 import casesReducer from './slices/casesSlice';

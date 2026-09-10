@@ -85,8 +85,8 @@ class SamanvayaOrchestrator:
             "orchestrator": "SAMANVAYA_MULTI_AGENT_V1",
             "agent_reports": agent_reports,
             "synthesized_summary": (
-                "Multi-agent synthesis confirms alignment across telecommunications (CDR), "
-                "banking records, and visual surveillance (ANPR) identifying coordinated activity."
+                "Phone records, bank records and camera sightings all point the same way. "
+                "The people involved appear to have acted together."
             ),
         }
 

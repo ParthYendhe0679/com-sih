@@ -50,10 +50,23 @@ def setup_logging(debug: bool = False) -> None:
     root_logger.handlers.clear()
     root_logger.addHandler(console_handler)
 
-    # Silence overly verbose external libraries
+    # Silence overly verbose external libraries.
+    # The neo4j driver logs every Bolt message and routing check at DEBUG, which
+    # buries our own lines completely once DEBUG=true. Pin these to WARNING
+    # regardless of the debug flag so the console stays readable.
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
     logging.getLogger("asyncio").setLevel(logging.WARNING)
+    for noisy in (
+        "neo4j",
+        "neo4j.io",
+        "neo4j.pool",
+        "neo4j.notifications",
+        "httpx",
+        "httpcore",
+        "urllib3",
+    ):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

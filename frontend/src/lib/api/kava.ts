@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — KAVA AI Chat API Client
+// TRINETRA — KAVA AI Chat API Client
 // ============================================================
 
 import { apiClient } from './client';

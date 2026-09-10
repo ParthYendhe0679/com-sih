@@ -62,7 +62,7 @@ function getSuggestions(crimeCategory: string): string[] {
       'Show suspicious calls in the 48 hours before the incident.',
       'What happened in the 24 hours before the incident?',
       'Identify the strongest network connections in this case.',
-      'What did the SAMANVAYA agents discover?',
+      'What did the analysis find?',
       'Summarize the key findings of this investigation.',
     ];
   }
@@ -90,7 +90,7 @@ function getSuggestions(crimeCategory: string): string[] {
     'Summarize this investigation case.',
     'Who are the main suspects or persons of interest?',
     'Show suspicious communications in this case.',
-    'What did all five SAMANVAYA agents discover?',
+    'What did all five analysis steps find?',
     'Identify the strongest network connections.',
     'What evidence is available in this case?',
   ];
@@ -103,7 +103,7 @@ const LOAD_STEPS = [
   'Searching evidence records',
   'Analyzing entities and identities',
   'Examining network relationships',
-  'Reviewing SAMANVAYA agent outputs',
+  'Reviewing the analysis results',
   'Generating grounded analysis',
 ];
 
@@ -112,7 +112,7 @@ function LoadingBubble({ step }: { step: number }) {
     <div className="flex items-start gap-3.5">
       <div
         className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow"
-        style={{ background: 'linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)' }}
+        style={{ background: 'var(--accent)' }}
       >
         <Bot size={18} />
       </div>
@@ -122,7 +122,7 @@ function LoadingBubble({ step }: { step: number }) {
       >
         <div className="flex items-center gap-2 font-semibold text-indigo-400">
           <Loader2 size={14} className="animate-spin" />
-          <span>KAVA is retrieving case intelligence…</span>
+          <span>NETRA is reading the case…</span>
         </div>
         <div className="space-y-1 pt-1">
           {LOAD_STEPS.map((s, i) => (
@@ -149,16 +149,16 @@ function LoadingBubble({ step }: { step: number }) {
 
 function GroundingBadge({ level }: { level: string }) {
   const cfg: Record<string, { color: string; label: string; icon: React.ReactNode }> = {
-    FULL: { color: '#10B981', label: 'Fully Grounded', icon: <ShieldCheck size={11} /> },
-    PARTIAL: { color: '#F59E0B', label: 'Partially Grounded', icon: <Info size={11} /> },
-    LIMITED: { color: '#6B7280', label: 'Limited Context', icon: <AlertTriangle size={11} /> },
-    ERROR: { color: '#EF4444', label: 'Generation Error', icon: <XCircle size={11} /> },
-    NONE: { color: '#6B7280', label: 'No Case Context', icon: <Circle size={11} /> },
+    FULL: { color: '#16A34A', label: 'Fully Grounded', icon: <ShieldCheck size={11} /> },
+    PARTIAL: { color: '#D97706', label: 'Partially Grounded', icon: <Info size={11} /> },
+    LIMITED: { color: '#9CA3AF', label: 'Limited Context', icon: <AlertTriangle size={11} /> },
+    ERROR: { color: '#DC2626', label: 'Generation Error', icon: <XCircle size={11} /> },
+    NONE: { color: '#9CA3AF', label: 'No Case Context', icon: <Circle size={11} /> },
   };
   const c = cfg[level] || cfg.LIMITED;
   return (
     <span
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-bold"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10.5px] font-semibold"
       style={{ background: `${c.color}18`, color: c.color, border: `1px solid ${c.color}33` }}
     >
       {c.icon}{c.label}
@@ -190,12 +190,12 @@ function ContextPanel({ case: c, stats }: { case: BackendCase | null; stats: Kav
       >
         <Bot size={32} className="opacity-20" />
         <p className="text-[13px]" style={{ color: 'var(--ink-tertiary)' }}>
-          Select a case to ground KAVA AI in real investigation data.
+          Select a case so NETRA answers only from that case's real records.
         </p>
       </div>
     );
   }
-  const statusColor = c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION' ? '#10B981' : '#6B7280';
+  const statusColor = c.status === 'OPEN' || c.status === 'UNDER_INVESTIGATION' ? '#16A34A' : '#9CA3AF';
   const rows = [
     { icon: <FileText size={13} />, label: 'Case', value: c.case_number },
     { icon: <Zap size={13} />, label: 'Crime', value: c.crime_category },
@@ -204,7 +204,7 @@ function ContextPanel({ case: c, stats }: { case: BackendCase | null; stats: Kav
     { icon: <User size={13} />, label: 'Entities', value: stats?.entityCount != null ? `${stats.entityCount} Identified` : (c ? '0 Identified' : '—') },
     { icon: <Network size={13} />, label: 'Relationships', value: stats?.relationshipCount != null ? `${stats.relationshipCount} Detected` : (c ? '0 Detected' : '—') },
     { icon: <Clock size={13} />, label: 'Timeline', value: stats?.timelineEvents != null ? `${stats.timelineEvents} Events` : (c ? '0 Events' : '—') },
-    { icon: <Bot size={13} />, label: 'Agents', value: stats?.agentCount != null ? `${stats.agentCount}/5 Complete` : '0/5 Complete' },
+    { icon: <Bot size={13} />, label: 'Analysis steps', value: stats?.agentCount != null ? `${stats.agentCount}/5 Complete` : '0/5 Complete' },
   ];
   return (
     <div
@@ -220,7 +220,7 @@ function ContextPanel({ case: c, stats }: { case: BackendCase | null; stats: Kav
           className="w-2 h-2 rounded-full shrink-0"
           style={{ background: statusColor }}
         />
-        <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
+        <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
           Active Case Context
         </span>
       </div>
@@ -250,8 +250,8 @@ function ContextPanel({ case: c, stats }: { case: BackendCase | null; stats: Kav
         )}
         <span className="text-[11px]" style={{ color: 'var(--ink-secondary)' }}>
           {stats?.samanvayaComplete
-            ? 'SAMANVAYA analysis complete'
-            : 'Run SAMANVAYA for deeper intelligence'}
+            ? 'Analysis complete'
+            : 'Run TRINETRA Analysis for deeper intelligence'}
         </span>
       </div>
     </div>
@@ -266,14 +266,13 @@ function MessageBody({ content }: { content: string }) {
   return (
     <div className="space-y-1 text-[13.5px] leading-relaxed">
       {lines.map((line, i) => {
-        if (line.startsWith('### ')) return <h3 key={i} className="font-bold text-[14px] mt-3 mb-1" style={{ color: 'var(--ink-primary)' }}>{line.slice(4)}</h3>;
-        if (line.startsWith('## ')) return <h2 key={i} className="font-extrabold text-[15px] mt-4 mb-1 pb-1 border-b" style={{ color: 'var(--ink-primary)', borderColor: 'var(--border)' }}>{line.slice(3)}</h2>;
-        if (line.startsWith('# ')) return <h1 key={i} className="font-extrabold text-[16px] mt-4 mb-2" style={{ color: 'var(--ink-primary)' }}>{line.slice(2)}</h1>;
+        if (line.startsWith('### ')) return <h3 key={i} className="font-semibold text-[14px] mt-3 mb-1" style={{ color: 'var(--ink-primary)' }}>{line.slice(4)}</h3>;
+        if (line.startsWith('## ')) return <h2 key={i} className="font-semibold text-[15px] mt-4 mb-1 pb-1 border-b" style={{ color: 'var(--ink-primary)', borderColor: 'var(--border)' }}>{line.slice(3)}</h2>;
+        if (line.startsWith('# ')) return <h1 key={i} className="font-semibold text-[16px] mt-4 mb-2" style={{ color: 'var(--ink-primary)' }}>{line.slice(2)}</h1>;
         if (line.startsWith('- ') || line.startsWith('• ')) {
           const text = line.slice(2);
           return (
             <div key={i} className="flex gap-2">
-              <span className="mt-1.5 shrink-0 w-1.5 h-1.5 rounded-full bg-indigo-400 opacity-80" />
               <span style={{ color: 'var(--ink-primary)' }} dangerouslySetInnerHTML={{ __html: renderInline(text) }} />
             </div>
           );
@@ -282,7 +281,6 @@ function MessageBody({ content }: { content: string }) {
           const text = line.trimStart().slice(2);
           return (
             <div key={i} className="flex gap-2 ml-4">
-              <span className="mt-1.5 shrink-0 w-1 h-1 rounded-full bg-indigo-300 opacity-60" />
               <span style={{ color: 'var(--ink-secondary)' }} dangerouslySetInnerHTML={{ __html: renderInline(text) }} />
             </div>
           );
@@ -322,7 +320,7 @@ export default function KAVAAIPage() {
       id: 'welcome',
       role: 'assistant',
       content:
-        '## Welcome to KAVA AI\n\nI am your **Case-Grounded Investigative Intelligence Assistant**.\n\nSelect an active investigation case above, then ask me anything about that case — suspects, call records, network connections, agent findings, or evidence.\n\nI answer strictly based on verified case data. I never fabricate facts.\n\n⚠ All outputs require investigator verification before use in formal proceedings.',
+        '## Welcome to NETRA AI\n\nI am your **Case-Grounded Investigative Intelligence Assistant**.\n\nSelect an active investigation case above, then ask me anything about that case — suspects, call records, network connections, agent findings, or evidence.\n\nI answer strictly based on verified case data. I never fabricate facts.\n\n⚠ All outputs require investigator verification before use in formal proceedings.',
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -338,7 +336,7 @@ export default function KAVAAIPage() {
   const [sessions, setSessions] = useState<ChatSession[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('kritagas_kava_chat_sessions_v1');
+        const stored = localStorage.getItem('TRINETRA_kava_chat_sessions_v1');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) return parsed;
@@ -374,7 +372,7 @@ export default function KAVAAIPage() {
       const updated = [sessionObj, ...filtered];
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('kritagas_kava_chat_sessions_v1', JSON.stringify(updated.slice(0, 40)));
+          localStorage.setItem('TRINETRA_kava_chat_sessions_v1', JSON.stringify(updated.slice(0, 40)));
         } catch (_) {}
       }
       return updated;
@@ -413,7 +411,7 @@ export default function KAVAAIPage() {
       const updated = prev.filter((s) => s.id !== sessionId);
       if (typeof window !== 'undefined') {
         try {
-          localStorage.setItem('kritagas_kava_chat_sessions_v1', JSON.stringify(updated));
+          localStorage.setItem('TRINETRA_kava_chat_sessions_v1', JSON.stringify(updated));
         } catch (_) {}
       }
       return updated;
@@ -550,7 +548,7 @@ export default function KAVAAIPage() {
         setCurrentSessionId(sid);
         return updated;
       });
-      toast.error('KAVA AI analysis failed. Please retry.');
+      toast.error('NETRA AI could not answer. Please retry.');
     } finally {
       setLoading(false);
       setLoadStep(0);
@@ -576,12 +574,12 @@ export default function KAVAAIPage() {
           <div className="flex items-center gap-3.5">
             <div
               className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0"
-              style={{ background: 'linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)' }}
+              style={{ background: 'var(--accent)' }}
             >
               <Bot size={24} />
             </div>
-            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-              KAVA AI
+            <h1 className="text-2xl font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+              NETRA AI
             </h1>
           </div>
 
@@ -669,10 +667,10 @@ export default function KAVAAIPage() {
             >
               <div className="flex items-center gap-2">
                 <History size={16} className="text-indigo-500" />
-                <span className="text-[12.5px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                <span className="text-[12.5px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                   Chat History
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-bold bg-indigo-500/10 text-indigo-500">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-mono font-semibold bg-indigo-500/10 text-indigo-500">
                   {displaySessions.length}
                 </span>
               </div>
@@ -690,8 +688,8 @@ export default function KAVAAIPage() {
             <div className="p-3 border-b" style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={handleNewChat}
-                className="w-full py-2 px-3 rounded-xl text-[12px] font-bold text-white flex items-center justify-center gap-2 shadow-sm transition-all hover:opacity-90 cursor-pointer"
-                style={{ background: 'linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)' }}
+                className="w-full py-2 px-3 rounded-xl text-[12px] font-semibold text-white flex items-center justify-center gap-2 shadow-sm transition-all hover:opacity-90 cursor-pointer"
+                style={{ background: 'var(--accent)' }}
               >
                 <Plus size={14} />
                 <span>New Chat</span>
@@ -715,7 +713,7 @@ export default function KAVAAIPage() {
                   onClick={() => setHistoryFilter('case')}
                   className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                     historyFilter === 'case'
-                      ? 'bg-indigo-500/15 text-indigo-600 font-bold'
+                      ? 'bg-indigo-500/15 text-indigo-600 font-semibold'
                       : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-2)]'
                   }`}
                 >
@@ -725,7 +723,7 @@ export default function KAVAAIPage() {
                   onClick={() => setHistoryFilter('all')}
                   className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${
                     historyFilter === 'all'
-                      ? 'bg-indigo-500/15 text-indigo-600 font-bold'
+                      ? 'bg-indigo-500/15 text-indigo-600 font-semibold'
                       : 'text-[var(--ink-secondary)] hover:bg-[var(--surface-2)]'
                   }`}
                 >
@@ -840,7 +838,7 @@ export default function KAVAAIPage() {
 
               {selectedCase && (
                 <div className="flex items-center gap-2 text-[11px] text-[var(--ink-tertiary)] truncate">
-                  <span className="font-mono font-bold text-indigo-500">{selectedCase.case_number}</span>
+                  <span className="font-mono font-semibold text-indigo-500">{selectedCase.case_number}</span>
                   <span className="hidden md:inline truncate max-w-[200px]">{selectedCase.title}</span>
                 </div>
               )}
@@ -854,7 +852,7 @@ export default function KAVAAIPage() {
                   <div key={msg.id} className={`flex items-start gap-3.5 ${isAI ? '' : 'flex-row-reverse'}`}>
                     <div
                       className="w-9 h-9 rounded-xl flex items-center justify-center text-white shrink-0 shadow"
-                      style={{ background: isAI ? 'linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)' : 'var(--accent)' }}
+                      style={{ background: isAI ? 'var(--accent)' : 'var(--accent)' }}
                     >
                       {isAI ? <Bot size={17} /> : <User size={17} />}
                     </div>
@@ -873,7 +871,7 @@ export default function KAVAAIPage() {
                           {msg.groundingLevel && <GroundingBadge level={msg.groundingLevel} />}
                           {msg.sources && msg.sources.length > 0 && (
                             <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                              <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
+                              <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
                                 Sources:
                               </span>
                               {msg.sources.map((s) => <SourceBadge key={s} label={s} />)}
@@ -883,7 +881,7 @@ export default function KAVAAIPage() {
                             <button
                               onClick={handleRetry}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-white transition-all hover:opacity-90 cursor-pointer"
-                              style={{ background: 'linear-gradient(135deg,#6366F1,#4F46E5)' }}
+                              style={{ background: 'var(--accent)' }}
                             >
                               <RefreshCw size={12} /> Retry
                             </button>
@@ -909,7 +907,7 @@ export default function KAVAAIPage() {
               style={{ borderColor: 'var(--border)', background: 'var(--surface-0)' }}
             >
               {selectedCase && (
-                <span className="px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-bold shrink-0 hidden sm:block"
+                <span className="px-2.5 py-1.5 rounded-lg text-[11px] font-mono font-semibold shrink-0 hidden sm:block"
                   style={{ background: 'var(--surface-2)', color: 'var(--ink-tertiary)', border: '1px solid var(--border)' }}>
                   {selectedCase.case_number}
                 </span>
@@ -923,7 +921,7 @@ export default function KAVAAIPage() {
                 }}
                 placeholder={
                   selectedCase
-                    ? `Ask KAVA about ${selectedCase.case_number}…`
+                    ? `Ask NETRA about ${selectedCase.case_number}…`
                     : 'Select a case to begin investigation analysis…'
                 }
                 disabled={!selectedCaseId || loading}
@@ -933,8 +931,8 @@ export default function KAVAAIPage() {
               <button
                 onClick={() => handleSend()}
                 disabled={!input.trim() || loading || !selectedCaseId}
-                className="h-11 px-5 rounded-xl font-bold text-white shadow-md flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
-                style={{ background: 'linear-gradient(135deg,#6366F1 0%,#4F46E5 100%)' }}
+                className="h-11 px-5 rounded-xl font-semibold text-white shadow-md flex items-center gap-2 transition-all hover:opacity-90 disabled:opacity-40 cursor-pointer"
+                style={{ background: 'var(--accent)' }}
               >
                 {loading ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 <span className="hidden sm:inline">{loading ? 'Analyzing…' : 'Send'}</span>
@@ -957,8 +955,8 @@ export default function KAVAAIPage() {
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => router.push('/cases/new')}
-                  className="w-full py-2 rounded-xl text-[12.5px] font-bold text-white cursor-pointer hover:opacity-90"
-                  style={{ background: 'linear-gradient(135deg,#6366F1,#4F46E5)' }}
+                  className="w-full py-2 rounded-xl text-[12.5px] font-semibold text-white cursor-pointer hover:opacity-90"
+                  style={{ background: 'var(--accent)' }}
                 >
                   Create Case
                 </button>

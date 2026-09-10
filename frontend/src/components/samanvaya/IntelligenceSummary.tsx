@@ -18,7 +18,7 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
         <EmptyState
           icon={Target}
           title="No intelligence synthesised yet"
-          message="Run the SAMANVAYA investigation to produce classified findings, ranked leads and the official dossier for this case."
+          message="Run the analysis to produce classified findings, ranked leads and the official dossier for this case."
         />
       </Panel>
     );
@@ -33,13 +33,13 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
   return (
     <div className="space-y-5">
       {/* Headline */}
-      <Panel accent="#4F46E5">
+      <Panel accent="#12376E">
         <SectionHeading
           icon={Target}
           title="Case intelligence summary"
           subtitle={`${dossier.caseNumber} · ${dossier.crimeCategory}`}
-          accent="#4F46E5"
-          right={<Badge color="#059669" solid>Analysis complete</Badge>}
+          accent="#12376E"
+          right={<Badge color="#16A34A" solid>Analysis complete</Badge>}
         />
 
         {dossier.investigationSummary && (
@@ -49,11 +49,11 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
         )}
 
         <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <MetricTile label="Key findings" value={dossier.findings.length} color="#4F46E5" animate />
-          <MetricTile label="Verified" value={verified} color="#059669" animate />
-          <MetricTile label="Network nodes" value={dossier.graph.nodes.length} color="#7C3AED" animate />
+          <MetricTile label="Key findings" value={dossier.findings.length} color="#12376E" animate />
+          <MetricTile label="Verified" value={verified} color="#16A34A" animate />
+          <MetricTile label="Network nodes" value={dossier.graph.nodes.length} color="#5B4BC4" animate />
           <MetricTile label="Relationships" value={dossier.graph.edges.length} color="#2563EB" animate />
-          <MetricTile label="Locations" value={dossier.geographicRoute.length} color="#EA580C" animate />
+          <MetricTile label="Locations" value={dossier.geographicRoute.length} color="#D97706" animate />
           <MetricTile
             label="Anomalies"
             value={dossier.communications?.patterns.length ?? 0}
@@ -70,20 +70,20 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
           icon={Compass}
           title="Top investigative leads"
           subtitle="Ranked by urgency — each requires officer verification before action"
-          accent="#0EA5E9"
+          accent="#2563EB"
         />
         <ol className="mt-4 space-y-3">
           {leadsRanked.map((l, i) => {
-            const c = SEVERITY_COLORS[l.urgency] || '#0891B2';
+            const c = SEVERITY_COLORS[l.urgency] || '#0F766E';
             return (
               <li
                 key={i}
-                className="rounded-xl border px-4 py-3.5"
-                style={{ background: tint(c, 0.05), borderColor: tint(c, 0.28) }}
+                className="rounded-xl px-4 py-3.5"
+                style={{ background: 'var(--surface-2)' }}
               >
                 <div className="flex items-start gap-3">
                   <span
-                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[13px] font-bold text-white"
+                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-[13px] font-semibold text-white"
                     style={{ background: c }}
                   >
                     {i + 1}
@@ -94,14 +94,14 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
                         {l.urgency}
                       </Badge>
                     </div>
-                    <h4 className="text-[13.5px] font-bold text-[var(--ink-primary)] mt-1.5 leading-snug">
+                    <h4 className="text-[13.5px] font-semibold text-[var(--ink-primary)] mt-1.5 leading-snug">
                       {l.lead}
                     </h4>
                     <div
                       className="mt-2 rounded-lg px-3 py-2"
-                      style={{ background: 'var(--surface-2)' }}
+                      style={{ background: 'var(--surface-1)' }}
                     >
-                      <div className="text-[10px] font-bold uppercase tracking-wider" style={{ color: c }}>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
                         Recommended action
                       </div>
                       <p className="text-[12.5px] text-[var(--ink-secondary)] mt-0.5 leading-relaxed">
@@ -125,7 +125,7 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
           icon={CheckCircle2}
           title="Classified findings"
           subtitle="Every finding is graded and traced to the agent that produced it"
-          accent="#059669"
+          accent="#16A34A"
           right={
             <div className="flex flex-wrap gap-1.5">
               {Object.entries(CLASSIFICATION_COLORS).map(([k, c]) => {
@@ -143,43 +143,37 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
 
         <div className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
           {dossier.findings.map((f, i) => {
-            const c = CLASSIFICATION_COLORS[f.classification] || '#64748B';
+            const c = CLASSIFICATION_COLORS[f.classification] || '#9CA3AF';
             return (
+              // The finding itself is the point. The grade sits in one pill,
+              // the confidence figure appears once, and the sources sit quietly
+              // underneath — no coloured rail, no repeated percentage, no
+              // per-card verification notice (the panel already carries it).
               <div
                 key={i}
-                className="rounded-xl border px-4 py-3.5 flex flex-col"
-                style={{ background: 'var(--surface-2)', borderColor: tint(c, 0.3), borderLeft: `4px solid ${c}` }}
+                className="rounded-xl px-4 py-4 flex flex-col"
+                style={{ background: 'var(--surface-2)' }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <Badge color={c} solid>
-                    {f.classification}
-                  </Badge>
-                  <span className="text-[11px] font-bold tabular-nums" style={{ color: c }}>
-                    {Math.round(f.confidence * 100)}%
-                  </span>
-                </div>
-                <p className="text-[13px] font-semibold text-[var(--ink-primary)] mt-2.5 leading-relaxed flex-1">
+                <p className="text-[13.5px] font-semibold text-[var(--ink-primary)] leading-relaxed flex-1">
                   {f.finding}
                 </p>
-                <div className="mt-3">
-                  <ConfidenceBar value={f.confidence} color={c} label="Analytical confidence" />
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {f.evidence.map((e, j) => (
-                    <span
-                      key={j}
-                      className="px-2 py-0.5 rounded-md text-[10.5px] font-mono border"
-                      style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--ink-secondary)' }}
-                    >
-                      {e}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center justify-between gap-2 mt-2.5 text-[10.5px] text-[var(--ink-tertiary)]">
-                  <span>{f.agentSource}</span>
-                  <span className="font-semibold" style={{ color: '#EA580C' }}>
-                    Requires verification
+
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <Badge color={c}>{f.classification}</Badge>
+                  <span
+                    className="text-[11.5px] tabular-nums"
+                    style={{ color: 'var(--ink-tertiary)' }}
+                  >
+                    {Math.round(f.confidence * 100)}% confidence
                   </span>
+                </div>
+
+                <div
+                  className="text-[11px] mt-2.5 leading-relaxed"
+                  style={{ color: 'var(--ink-tertiary)' }}
+                >
+                  {f.agentSource}
+                  {f.evidence.length > 0 && <> · {f.evidence.join(' · ')}</>}
                 </div>
               </div>
             );
@@ -194,7 +188,7 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
             icon={FileWarning}
             title="Evidence gaps"
             subtitle="What the analysis could not see"
-            accent="#EA580C"
+            accent="#D97706"
           />
           {dossier.evidenceGaps.length ? (
             <ul className="mt-3 space-y-2">
@@ -202,7 +196,7 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
                 <li
                   key={i}
                   className="rounded-lg px-3 py-2.5 text-[12.5px] leading-relaxed text-[var(--ink-secondary)]"
-                  style={{ background: tint('#EA580C', 0.06), border: `1px solid ${tint('#EA580C', 0.24)}` }}
+                  style={{ background: tint('#D97706', 0.06), border: `1px solid ${tint('#D97706', 0.24)}` }}
                 >
                   {g}
                 </li>
@@ -223,7 +217,7 @@ export default function IntelligenceSummary({ dossier }: { dossier: SamanvayaFin
           {dossier.riskIndicators.length ? (
             <ul className="mt-3 space-y-2">
               {dossier.riskIndicators.map((r, i) => {
-                const c = SEVERITY_COLORS[r.severity] || '#CA8A04';
+                const c = SEVERITY_COLORS[r.severity] || '#D97706';
                 return (
                   <li
                     key={i}

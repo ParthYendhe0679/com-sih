@@ -132,24 +132,24 @@ function CitizenContent() {
   };
 
   const overviewStats = [
-    { label: 'Total Filed', value: stats?.total_complaints ?? complaints.length, color: '#4F46E5', bg: 'rgba(79,70,229,0.08)' },
+    { label: 'Total Filed', value: stats?.total_complaints ?? complaints.length, color: '#12376E', bg: 'rgba(79,70,229,0.08)' },
     { label: 'Under Review', value: stats?.under_review_complaints ?? complaints.filter(c => c.status === 'UNDER_REVIEW' || c.status === 'SUBMITTED').length, color: '#D97706', bg: 'rgba(217,119,6,0.08)' },
     { label: 'Accepted as FIR', value: stats?.accepted_complaints ?? complaints.filter(c => c.status === 'ACCEPTED').length, color: '#16A34A', bg: 'rgba(22,163,74,0.08)' },
-    { label: 'Closed / Rejected', value: stats?.rejected_complaints ?? complaints.filter(c => c.status === 'REJECTED').length, color: '#6B7280', bg: 'rgba(107,114,128,0.08)' },
+    { label: 'Closed / Rejected', value: stats?.rejected_complaints ?? complaints.filter(c => c.status === 'REJECTED').length, color: '#9CA3AF', bg: 'rgba(107,114,128,0.08)' },
   ];
 
   return (
     <div className="space-y-6 animate-fade-in max-w-[1200px] mx-auto">
       {/* Header — simple and friendly */}
       <div className="p-6 rounded-2xl border"
-        style={{ background: 'linear-gradient(135deg, rgba(79,70,229,0.06) 0%, rgba(22,163,74,0.04) 100%)', borderColor: 'var(--accent-subtle)' }}>
+        style={{ background: 'var(--pastel-mint)', borderColor: 'var(--accent-subtle)' }}>
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: '#16A34A14', color: '#16A34A' }}>
             <UserCheck size={28} />
           </div>
           <div>
-            <h1 className="text-[26px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[26px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               Citizen Complaint &amp; Incident Portal
             </h1>
             <p className="text-[14px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -167,7 +167,7 @@ function CitizenContent() {
             {overviewStats.map((stat) => (
               <div key={stat.label} className="p-6 rounded-2xl border text-center"
                 style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-                <div className="text-[36px] font-bold font-mono-id" style={{ color: stat.color }}>{stat.value}</div>
+                <div className="text-[36px] font-semibold font-mono-id" style={{ color: stat.color }}>{stat.value}</div>
                 <div className="text-[13px] font-medium mt-1" style={{ color: 'var(--ink-secondary)' }}>{stat.label}</div>
               </div>
             ))}
@@ -182,7 +182,7 @@ function CitizenContent() {
                 style={{ background: '#16A34A14', color: '#16A34A' }}>
                 <Plus size={20} />
               </div>
-              <h3 className="text-[17px] font-bold mb-1" style={{ color: 'var(--ink-primary)' }}>File a New Complaint</h3>
+              <h3 className="text-[17px] font-semibold mb-1" style={{ color: 'var(--ink-primary)' }}>File a New Complaint</h3>
               <p className="text-[13px]" style={{ color: 'var(--ink-secondary)' }}>
                 Report an incident to the police. Provide details, upload documents, and get a tracking ID.
               </p>
@@ -194,7 +194,7 @@ function CitizenContent() {
                 style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}>
                 <FolderOpen size={20} />
               </div>
-              <h3 className="text-[17px] font-bold mb-1" style={{ color: 'var(--ink-primary)' }}>Track My Complaints</h3>
+              <h3 className="text-[17px] font-semibold mb-1" style={{ color: 'var(--ink-primary)' }}>Track My Complaints</h3>
               <p className="text-[13px]" style={{ color: 'var(--ink-secondary)' }}>
                 View status updates, timeline, and responses for all your submitted complaints.
               </p>
@@ -205,8 +205,8 @@ function CitizenContent() {
           {selectedComplaint ? (
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between mb-5">
-                <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>Recent Complaint Status</h3>
-                <span className="font-mono-id text-[12px] font-bold" style={{ color: 'var(--accent)' }}>{selectedComplaint.fir_number}</span>
+                <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Recent Complaint Status</h3>
+                <span className="font-mono-id text-[12px] font-semibold" style={{ color: 'var(--accent)' }}>{selectedComplaint.fir_number}</span>
               </div>
               <h4 className="text-[14px] font-semibold mb-4" style={{ color: 'var(--ink-primary)' }}>
                 {selectedComplaint.crime_category} — {selectedComplaint.incident_location}
@@ -220,9 +220,9 @@ function CitizenContent() {
                   return (
                     <React.Fragment key={step}>
                       <div className="flex flex-col items-center">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold"
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold"
                           style={{
-                            background: isCompleted ? '#16A34A' : isActive ? '#4F46E5' : 'var(--surface-3)',
+                            background: isCompleted ? '#16A34A' : isActive ? '#12376E' : 'var(--surface-3)',
                             color: (isCompleted || isActive) ? '#fff' : 'var(--ink-tertiary)',
                           }}>
                           {isCompleted ? <CheckCircle2 size={16} /> : i + 1}
@@ -260,7 +260,7 @@ function CitizenContent() {
       {activeTab === 'file' && (
         <div className="animate-fade-in">
           <div className="p-6 rounded-2xl border max-w-2xl mx-auto" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-            <h2 className="text-[20px] font-bold mb-1" style={{ color: 'var(--ink-primary)' }}>File a Complaint</h2>
+            <h2 className="text-[20px] font-semibold mb-1" style={{ color: 'var(--ink-primary)' }}>File a Complaint</h2>
             <p className="text-[13px] mb-6" style={{ color: 'var(--ink-secondary)' }}>
               All information provided will be directly logged into the official police station intake registry.
             </p>
@@ -327,7 +327,7 @@ function CitizenContent() {
       {activeTab === 'complaints' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-[20px] font-bold" style={{ color: 'var(--ink-primary)' }}>My Filed Complaints ({complaints.length})</h2>
+            <h2 className="text-[20px] font-semibold" style={{ color: 'var(--ink-primary)' }}>My Filed Complaints ({complaints.length})</h2>
             <div className="flex items-center gap-2">
               <button onClick={fetchComplaints} disabled={loadingComplaints}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12.5px] font-medium hover:bg-[var(--surface-2)] cursor-pointer"
@@ -372,7 +372,7 @@ function CitizenContent() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono-id font-bold text-[12.5px]" style={{ color: '#16A34A' }}>{c.fir_number}</span>
+                        <span className="font-mono-id font-semibold text-[12.5px]" style={{ color: '#16A34A' }}>{c.fir_number}</span>
                         <span className="text-[11px] px-2 py-0.5 rounded-full font-medium"
                           style={{ background: 'var(--surface-2)', color: 'var(--ink-secondary)' }}>
                           {c.crime_category}
@@ -404,7 +404,7 @@ function CitizenContent() {
       {/* ── Notifications ──────────────────────────────────── */}
       {activeTab === 'notifications' && (
         <div className="space-y-4 animate-fade-in">
-          <h2 className="text-[20px] font-bold" style={{ color: 'var(--ink-primary)' }}>Official Notifications</h2>
+          <h2 className="text-[20px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Official Notifications</h2>
           <div className="p-8 rounded-2xl border text-center text-[var(--ink-tertiary)]" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
             <Bell size={28} className="mx-auto mb-2 opacity-50" />
             <p className="text-[13px] font-semibold" style={{ color: 'var(--ink-secondary)' }}>

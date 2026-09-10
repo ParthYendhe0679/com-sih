@@ -135,6 +135,19 @@ class CaseRepository(BaseRepository[Case]):
                 counts[s.value] = 0
         return counts
 
+    async def get_priority_distribution(self) -> Dict[str, int]:
+        """Aggregate counts across all Case priorities in a single round trip."""
+        stmt = select(Case.priority, func.count()).group_by(Case.priority)
+        result = await self.session.execute(stmt)
+        counts = {
+            row[0].value if hasattr(row[0], "value") else str(row[0]): row[1]
+            for row in result.all()
+        }
+        for p_ in CasePriority:
+            if p_.value not in counts:
+                counts[p_.value] = 0
+        return counts
+
     async def add_note(self, case_id: uuid.UUID, author_id: uuid.UUID, note_text: str) -> CaseNote:
         """Append an investigative note to a Case."""
         note = CaseNote(case_id=case_id, author_id=author_id, note=note_text)

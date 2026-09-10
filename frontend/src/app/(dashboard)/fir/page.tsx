@@ -168,7 +168,7 @@ export default function FIRIntakePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[24px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[24px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               FIR Intake &amp; Case Processing Console
             </h1>
           </div>
@@ -204,7 +204,7 @@ export default function FIRIntakePage() {
           style={{ borderColor: 'var(--border)' }}>
           <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border)' }}>
             <div>
-              <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 Citizen FIRs Ready for Investigation
               </h3>
               <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -245,10 +245,10 @@ export default function FIRIntakePage() {
                   style={{ borderColor: 'var(--border)' }}>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">{fir.fir_number}</span>
+                      <span className="font-mono-id font-semibold text-[13px] text-[var(--accent)]">{fir.fir_number}</span>
                       <span className="badge badge-active text-[11px]">{fir.status}</span>
                     </div>
-                    <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>
+                    <h4 className="font-semibold text-[15px]" style={{ color: 'var(--ink-primary)' }}>
                       {fir.title}
                     </h4>
                     <div className="text-[12px] space-y-1" style={{ color: 'var(--ink-secondary)' }}>
@@ -266,7 +266,7 @@ export default function FIRIntakePage() {
 
                   <button
                     onClick={() => handleSelectOnlineFIR(fir)}
-                    className="w-full py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-all mt-3 cursor-pointer"
+                    className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-all mt-3 cursor-pointer"
                     style={{ background: 'var(--accent)' }}
                   >
                     <span>Create Case for Investigation</span>
@@ -334,7 +334,7 @@ export default function FIRIntakePage() {
             <div className="p-8 rounded-2xl border glass-panel space-y-6 animate-fade-in"
               style={{ borderColor: 'var(--border)' }}>
               <div className="border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-                <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Upload Physical FIR Document
                 </h3>
                 <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -362,7 +362,7 @@ export default function FIRIntakePage() {
                   <FileUp size={28} />
                 </div>
                 <div>
-                  <h4 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h4 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     {selectedFile ? selectedFile.name : 'Click to Select or Drag and Drop FIR Document'}
                   </h4>
                   <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1">
@@ -382,7 +382,7 @@ export default function FIRIntakePage() {
               {/* FIR Metadata Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5">
-                  <label className="text-[12px] font-bold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)' }}>
+                  <label className="text-[12px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-secondary)' }}>
                     FIR Title / Reference
                   </label>
                   <input
@@ -400,7 +400,7 @@ export default function FIRIntakePage() {
                 <button
                   onClick={runCompletePipeline}
                   disabled={isProcessing || !selectedFile}
-                  className="px-6 py-3 rounded-xl text-[14px] font-bold text-white shadow-md flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-3 rounded-xl text-[14px] font-semibold text-white shadow-md flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <Sparkles size={16} />
@@ -416,14 +416,14 @@ export default function FIRIntakePage() {
               style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: 'var(--border)' }}>
                 <div>
-                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     Optical Character Recognition &amp; Text Extraction
                   </h3>
                   <p className="text-[13px] text-[var(--ink-secondary)]">
                     Scanning statements, clauses, phone numbers, and timestamps from {selectedFile?.name || 'document'}
                   </p>
                 </div>
-                <span className="font-mono-id text-[16px] font-bold text-[var(--accent)]">
+                <span className="font-mono-id text-[16px] font-semibold text-[var(--accent)]">
                   {ocrProgress}%
                 </span>
               </div>
@@ -446,7 +446,7 @@ export default function FIRIntakePage() {
               {/* Extracted Text Snippet */}
               <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-2" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: 'var(--accent)' }}>
+                  <span className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: 'var(--accent)' }}>
                     Extracted Legal Text Buffer:
                   </span>
                   {extractedData?.file_hash && (
@@ -464,7 +464,7 @@ export default function FIRIntakePage() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setCurrentStep('entities')}
-                  className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <span>Proceed to Entity Extraction</span>
@@ -481,7 +481,7 @@ export default function FIRIntakePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"
                 style={{ borderColor: 'var(--border)' }}>
                 <div>
-                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     Extracted Named Entities
                   </h3>
                   <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -495,7 +495,7 @@ export default function FIRIntakePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Phone Numbers */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#0EA5E9' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#2563EB' }}>
                     <Phone size={16} />
                     <span>📱 PHONE NUMBERS ({extractedData?.entities.phones.length || 0})</span>
                   </div>
@@ -515,7 +515,7 @@ export default function FIRIntakePage() {
 
                 {/* Vehicles */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#10B981' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#16A34A' }}>
                     <Car size={16} />
                     <span>🚗 VEHICLES ({extractedData?.entities.vehicles.length || 0})</span>
                   </div>
@@ -535,7 +535,7 @@ export default function FIRIntakePage() {
 
                 {/* Financial Transactions */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#14B8A6' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#0F766E' }}>
                     <DollarSign size={16} />
                     <span>🏦 FINANCIAL ENTITIES ({extractedData?.entities.transactions.length || 0})</span>
                   </div>
@@ -554,7 +554,7 @@ export default function FIRIntakePage() {
 
                 {/* Legal Sections */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#8B5CF6' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#5B4BC4' }}>
                     <Shield size={16} />
                     <span>⚖️ LEGAL SECTIONS ({extractedData?.entities.legal_sections.length || 0})</span>
                   </div>
@@ -571,7 +571,7 @@ export default function FIRIntakePage() {
 
                 {/* Digital / Emails / URLs */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#F59E0B' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#D97706' }}>
                     <FileText size={16} />
                     <span>📧 DIGITAL IDENTIFIERS ({extractedData?.entities.digital_identifiers?.length || extractedData?.entities.emails.length || 0})</span>
                   </div>
@@ -597,7 +597,7 @@ export default function FIRIntakePage() {
 
                 {/* Persons / Accused / Complainant */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#6366F1' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#12376E' }}>
                     <User size={16} />
                     <span>👤 IDENTIFIED PERSONS ({extractedData?.entities.persons?.length || 0})</span>
                   </div>
@@ -606,10 +606,10 @@ export default function FIRIntakePage() {
                       {extractedData.entities.persons.map((p, i) => (
                         <li key={i} className="flex items-center justify-between">
                           <span className="font-semibold">• {p.name}</span>
-                          <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase"
+                          <span className="text-[10px] px-2 py-0.5 rounded font-semibold uppercase"
                             style={{
                               background: p.role === 'SUSPECT' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(99, 102, 241, 0.15)',
-                              color: p.role === 'SUSPECT' ? 'var(--danger)' : '#6366F1'
+                              color: p.role === 'SUSPECT' ? 'var(--danger)' : '#12376E'
                             }}>
                             {p.role || 'PERSON'}
                           </span>
@@ -623,7 +623,7 @@ export default function FIRIntakePage() {
 
                 {/* Ingested Document Metadata */}
                 <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-3" style={{ borderColor: 'var(--border)' }}>
-                  <div className="flex items-center gap-2 font-bold text-[14px]" style={{ color: '#EC4899' }}>
+                  <div className="flex items-center gap-2 font-semibold text-[14px]" style={{ color: '#DC2626' }}>
                     <CheckCircle2 size={16} />
                     <span>📄 EVIDENCE METADATA</span>
                   </div>
@@ -638,7 +638,7 @@ export default function FIRIntakePage() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setCurrentStep('correlation')}
-                  className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <span>Correlate Scattered Datasets</span>
@@ -655,7 +655,7 @@ export default function FIRIntakePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"
                 style={{ borderColor: 'var(--border)' }}>
                 <div>
-                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     Scattered Data Correlation Engine
                   </h3>
                   <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -671,7 +671,7 @@ export default function FIRIntakePage() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <User size={18} style={{ color: 'var(--accent)' }} />
-                    <span className="font-bold text-[16px]" style={{ color: 'var(--ink-primary)' }}>
+                    <span className="font-semibold text-[16px]" style={{ color: 'var(--ink-primary)' }}>
                       Correlated Entity Target: {extractedData?.fir.title || 'Investigative Target'}
                     </span>
                   </div>
@@ -691,7 +691,7 @@ export default function FIRIntakePage() {
                     return (
                       <div key={i} className="p-3 rounded-xl border bg-[var(--surface-1)] space-y-1"
                         style={{ borderColor: 'var(--border)' }}>
-                        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+                        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
                           <Icon size={13} style={{ color: rec.color }} />
                           <span>{rec.source}</span>
                         </div>
@@ -707,7 +707,7 @@ export default function FIRIntakePage() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setCurrentStep('resolution')}
-                  className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <span>Proceed to Entity Resolution</span>
@@ -724,14 +724,14 @@ export default function FIRIntakePage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"
                 style={{ borderColor: 'var(--border)' }}>
                 <div>
-                  <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     Entity Resolution &amp; Deduplication Gate
                   </h3>
                   <p className="text-[13px] text-[var(--ink-secondary)]">
                     Determine whether extracted references belong to the same investigative persona.
                   </p>
                 </div>
-                <span className="text-[12px] font-bold text-[var(--accent)] font-mono-id">
+                <span className="text-[12px] font-semibold text-[var(--accent)] font-mono-id">
                   Resolution Engine Active
                 </span>
               </div>
@@ -739,10 +739,10 @@ export default function FIRIntakePage() {
               <div className="p-5 rounded-2xl border bg-[var(--surface-0)] space-y-4" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b pb-3" style={{ borderColor: 'var(--border)' }}>
                   <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)]">
                       Potential Entity Resolution Candidates
                     </span>
-                    <h4 className="text-[17px] font-bold mt-1" style={{ color: 'var(--ink-primary)' }}>
+                    <h4 className="text-[17px] font-semibold mt-1" style={{ color: 'var(--ink-primary)' }}>
                       Target Entity Persona ↔ Cross-Case Identifiers
                     </h4>
                   </div>
@@ -773,7 +773,7 @@ export default function FIRIntakePage() {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => { setResolutionStatus((p) => ({ ...p, kv: 'confirmed' })); toast.success('Resolved into unified investigation entity'); }}
-                      className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white shadow-sm hover:opacity-90 transition-all cursor-pointer"
+                      className="px-4 py-2 rounded-xl text-[12.5px] font-semibold text-white shadow-sm hover:opacity-90 transition-all cursor-pointer"
                       style={{ background: 'var(--success)' }}
                     >
                       ✓ Confirm Resolution
@@ -792,7 +792,7 @@ export default function FIRIntakePage() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   onClick={() => setCurrentStep('relationships')}
-                  className="px-5 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
+                  className="px-5 py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center gap-1.5 hover:opacity-90 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <span>Extract Discovered Relationships</span>
@@ -807,7 +807,7 @@ export default function FIRIntakePage() {
             <div className="p-8 rounded-2xl border glass-panel space-y-6 animate-fade-in"
               style={{ borderColor: 'var(--border)' }}>
               <div className="border-b pb-4" style={{ borderColor: 'var(--border)' }}>
-                <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Discovered Case Relationships
                 </h3>
                 <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -842,17 +842,17 @@ export default function FIRIntakePage() {
                   <div key={i} className="p-4 rounded-xl border bg-[var(--surface-0)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[13px]"
                     style={{ borderColor: 'var(--border)' }}>
                     <div className="flex items-center gap-3">
-                      <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.source}</span>
-                      <span className="px-2.5 py-1 rounded-md text-[11px] font-bold bg-[var(--surface-2)] text-[var(--accent)] font-mono-id">
+                      <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{rel.source}</span>
+                      <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-[var(--surface-2)] text-[var(--accent)] font-mono-id">
                         → {rel.type} →
                       </span>
-                      <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.target}</span>
+                      <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{rel.target}</span>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
                         Proof: <strong>{rel.evidence}</strong>
                       </div>
-                      <span className="font-mono-id font-bold text-[var(--success)] shrink-0">
+                      <span className="font-mono-id font-semibold text-[var(--success)] shrink-0">
                         {rel.confidence}%
                       </span>
                     </div>
@@ -864,7 +864,7 @@ export default function FIRIntakePage() {
                 <button
                   onClick={handleBuildNetworkAndCase}
                   disabled={isProcessing}
-                  className="px-6 py-3 rounded-xl text-[14px] font-bold text-white shadow-lg flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+                  className="px-6 py-3 rounded-xl text-[14px] font-semibold text-white shadow-lg flex items-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                   style={{ background: 'var(--accent)' }}
                 >
                   <Network size={16} />
@@ -884,11 +884,11 @@ export default function FIRIntakePage() {
               </div>
 
               <div className="max-w-md mx-auto space-y-2">
-                <h3 className="text-[22px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[22px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Case Established in Database!
                 </h3>
                 <p className="text-[13.5px] text-[var(--ink-secondary)] leading-relaxed">
-                  FIR {extractedData?.fir.fir_number} successfully ingested into PostgreSQL. Intelligence nodes and cryptographic evidence linked to the investigation file.
+                  FIR {extractedData?.fir.fir_number} saved. Entities and evidence are now linked to the case file.
                 </p>
               </div>
 
@@ -923,7 +923,7 @@ export default function FIRIntakePage() {
                 {createdCaseId && (
                   <button
                     onClick={() => router.push(`/cases/${createdCaseId}`)}
-                    className="px-6 py-2.5 rounded-xl text-[13px] font-bold text-white shadow-md flex items-center gap-2 hover:opacity-90 transition-all cursor-pointer"
+                    className="px-6 py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-md flex items-center gap-2 hover:opacity-90 transition-all cursor-pointer"
                     style={{ background: 'var(--accent)' }}
                   >
                     <span>Open Case Intelligence Workspace</span>

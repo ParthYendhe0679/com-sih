@@ -202,7 +202,7 @@ function CaseDetailContent() {
     return (
       <div className="py-24 text-center max-w-md mx-auto">
         <FolderOpen size={48} className="mx-auto mb-3 text-slate-300" />
-        <h2 className="text-xl font-bold text-slate-800">Case Record Not Found</h2>
+        <h2 className="text-xl font-semibold text-slate-800">Case Record Not Found</h2>
         <p className="text-sm text-slate-500 mt-1 mb-6">
           The requested investigation case <span className="font-mono font-semibold text-indigo-600">{caseId}</span> does not exist or has been archived.
         </p>
@@ -241,7 +241,7 @@ function CaseDetailContent() {
           <span>Case Database</span>
         </button>
         <span>/</span>
-        <span className="font-mono-id font-bold text-[var(--accent)]">{currentCase.id}</span>
+        <span className="font-mono-id font-semibold text-[var(--accent)]">{currentCase.id}</span>
         <span>/</span>
         <span className="capitalize" style={{ color: 'var(--ink-secondary)' }}>{activeTab}</span>
       </div>
@@ -255,15 +255,15 @@ function CaseDetailContent() {
           {/* Left: Case ID, Title, Status & Metadata */}
           <div>
             <div className="flex flex-wrap items-center gap-2.5 mb-2">
-              <span className="text-[13px] font-mono-id font-bold px-2.5 py-1 rounded-lg shadow-sm"
+              <span className="text-[13px] font-mono-id font-semibold px-2.5 py-1 rounded-lg shadow-sm"
                 style={{ background: 'var(--accent)', color: '#FFFFFF' }}>
                 {currentCase.id}
               </span>
               <span
-                className="text-[11px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wide"
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wide"
                 style={{
                   background: currentCase.priority === 'Critical' ? 'var(--error-muted)' : 'var(--warning-muted)',
-                  color: currentCase.priority === 'Critical' ? '#DC2626' : '#B45309',
+                  color: currentCase.priority === 'Critical' ? '#DC2626' : '#D97706',
                 }}
               >
                 {currentCase.priority} Priority
@@ -275,7 +275,7 @@ function CaseDetailContent() {
               </span>
             </div>
 
-            <h1 className="text-[26px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[26px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               {currentCase.title}
             </h1>
             <p className="text-[13.5px] mt-1 max-w-4xl leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
@@ -296,7 +296,7 @@ function CaseDetailContent() {
               </div>
               <div>
                 <span style={{ color: 'var(--ink-tertiary)' }}>Last Activity: </span>
-                <span className="font-mono-id font-bold text-[var(--accent)]">{currentCase.lastActivity}</span>
+                <span className="font-mono-id font-semibold text-[var(--accent)]">{currentCase.lastActivity}</span>
               </div>
             </div>
 
@@ -304,11 +304,11 @@ function CaseDetailContent() {
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
                 onClick={() => router.push(`/intelligence/samanvaya?case=${currentCase.backendId || currentCase.id}`)}
-                className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)' }}
+                className="px-4 py-2 rounded-xl text-[12.5px] font-semibold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
+                style={{ background: 'var(--accent)' }}
               >
                 <BrainCircuit size={14} />
-                <span>Launch SAMANVAYA Intelligence</span>
+                <span>Run TRINETRA Analysis</span>
               </button>
               <button
                 onClick={() => { router.push('/fir'); toast.info('Navigating to FIR Processing console'); }}
@@ -351,7 +351,7 @@ function CaseDetailContent() {
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span
-                    className={`text-[10.5px] px-1.5 py-0.5 rounded-md font-mono-id font-bold ${
+                    className={`text-[10.5px] px-1.5 py-0.5 rounded-md font-mono-id font-semibold ${
                       isActive ? 'bg-white/20 text-white' : 'bg-[var(--surface-2)] text-[var(--ink-tertiary)]'
                     }`}
                   >
@@ -373,7 +373,7 @@ function CaseDetailContent() {
             <div className="lg:col-span-7 p-6 rounded-2xl border space-y-4 glass-panel"
               style={{ borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border)' }}>
-                <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Case Dossier Summary
                 </h3>
                 <span className="font-mono-id text-[12px]" style={{ color: 'var(--accent)' }}>
@@ -384,32 +384,32 @@ function CaseDetailContent() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-[13px]">
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>FIR Type</span>
-                  <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>Cognizable Offence</span>
+                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>Cognizable Offence</span>
                 </div>
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>Crime Category</span>
-                  <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{currentCase.crime}</span>
+                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.crime}</span>
                 </div>
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>Investigation Status</span>
-                  <span className="font-bold text-[var(--success)]">{currentCase.status}</span>
+                  <span className="font-semibold text-[var(--success)]">{currentCase.status}</span>
                 </div>
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>Priority Level</span>
-                  <span className="font-bold text-[#DC2626]">{currentCase.priority}</span>
+                  <span className="font-semibold text-[#DC2626]">{currentCase.priority}</span>
                 </div>
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>Jurisdiction Base</span>
-                  <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{currentCase.city}</span>
+                  <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.city}</span>
                 </div>
                 <div className="p-3 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <span className="text-[11px] block" style={{ color: 'var(--ink-tertiary)' }}>Date Ingested</span>
-                  <span className="font-mono-id font-bold" style={{ color: 'var(--ink-primary)' }}>{currentCase.created}</span>
+                  <span className="font-mono-id font-semibold" style={{ color: 'var(--ink-primary)' }}>{currentCase.created}</span>
                 </div>
               </div>
 
               <div className="pt-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ink-tertiary)' }}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider block mb-1.5" style={{ color: 'var(--ink-tertiary)' }}>
                   Investigation Brief
                 </span>
                 <p className="text-[13px] leading-relaxed p-3.5 rounded-xl border"
@@ -423,7 +423,7 @@ function CaseDetailContent() {
             <div className="lg:col-span-5 p-6 rounded-2xl border space-y-4 glass-panel"
               style={{ borderColor: 'var(--border)' }}>
               <div className="border-b pb-3 flex items-center justify-between">
-                <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Ingestion &amp; Resolution Pipeline
                 </h3>
                 <span className="text-[11px] font-mono-id px-2 py-0.5 rounded font-semibold text-[var(--accent)] bg-[var(--accent-muted)]">
@@ -446,7 +446,7 @@ function CaseDetailContent() {
                       <Check size={12} strokeWidth={3} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-[13px] font-bold leading-tight" style={{ color: item.done ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}>
+                      <div className="text-[13px] font-semibold leading-tight" style={{ color: item.done ? 'var(--ink-primary)' : 'var(--ink-tertiary)' }}>
                         {item.done ? '✓ ' : '○ '}{item.step}
                       </div>
                       <div className="text-[11.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -461,17 +461,17 @@ function CaseDetailContent() {
 
           {/* Middle Row: Entity Summary Cards */}
           <div>
-            <h3 className="text-[15px] font-bold mb-3" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[15px] font-semibold mb-3" style={{ color: 'var(--ink-primary)' }}>
               Extracted Case Entity Summary
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
               {[
-                { label: 'People', count: currentCase.personIds.length, icon: User, color: '#4F46E5', sub: currentCase.personIds.length > 0 ? `${currentCase.personIds.length} linked` : 'No suspects/witnesses' },
-                { label: 'Phone Numbers', count: currentCase.phoneIds.length, icon: PhoneIcon, color: '#0EA5E9', sub: currentCase.phoneIds.length > 0 ? `${currentCase.phoneIds.length} numbers` : 'No phone records' },
-                { label: 'Vehicles', count: currentCase.vehicleIds.length, icon: Car, color: '#10B981', sub: currentCase.vehicleIds.length > 0 ? `${currentCase.vehicleIds.length} registered` : 'No vehicle plates' },
-                { label: 'Locations', count: currentCase.locationIds.length, icon: MapPin, color: '#F59E0B', sub: currentCase.locationIds.length > 0 ? `${currentCase.locationIds.length} loci` : 'No geotags' },
-                { label: 'Organizations', count: currentCase.organizationIds.length, icon: FileCode, color: '#14B8A6', sub: currentCase.organizationIds.length > 0 ? `${currentCase.organizationIds.length} entities` : 'No companies' },
-                { label: 'Evidence Items', count: currentCase.evidenceIds.length, icon: Package, color: '#EC4899', sub: currentCase.evidenceIds.length > 0 ? `${currentCase.evidenceIds.length} artifacts` : 'No evidence filed' },
+                { label: 'People', count: currentCase.personIds.length, icon: User, color: '#12376E', sub: currentCase.personIds.length > 0 ? `${currentCase.personIds.length} linked` : 'No suspects/witnesses' },
+                { label: 'Phone Numbers', count: currentCase.phoneIds.length, icon: PhoneIcon, color: '#2563EB', sub: currentCase.phoneIds.length > 0 ? `${currentCase.phoneIds.length} numbers` : 'No phone records' },
+                { label: 'Vehicles', count: currentCase.vehicleIds.length, icon: Car, color: '#16A34A', sub: currentCase.vehicleIds.length > 0 ? `${currentCase.vehicleIds.length} registered` : 'No vehicle plates' },
+                { label: 'Locations', count: currentCase.locationIds.length, icon: MapPin, color: '#D97706', sub: currentCase.locationIds.length > 0 ? `${currentCase.locationIds.length} loci` : 'No geotags' },
+                { label: 'Organizations', count: currentCase.organizationIds.length, icon: FileCode, color: '#0F766E', sub: currentCase.organizationIds.length > 0 ? `${currentCase.organizationIds.length} entities` : 'No companies' },
+                { label: 'Evidence Items', count: currentCase.evidenceIds.length, icon: Package, color: '#DC2626', sub: currentCase.evidenceIds.length > 0 ? `${currentCase.evidenceIds.length} artifacts` : 'No evidence filed' },
               ].map((ent, i) => {
                 const Icon = ent.icon;
                 return (
@@ -482,12 +482,12 @@ function CaseDetailContent() {
                         style={{ background: ent.color }}>
                         <Icon size={16} />
                       </div>
-                      <span className="text-[22px] font-bold font-mono-id" style={{ color: ent.color }}>
+                      <span className="text-[22px] font-semibold font-mono-id" style={{ color: ent.color }}>
                         {ent.count}
                       </span>
                     </div>
                     <div>
-                      <div className="text-[13px] font-bold" style={{ color: 'var(--ink-primary)' }}>{ent.label}</div>
+                      <div className="text-[13px] font-semibold" style={{ color: 'var(--ink-primary)' }}>{ent.label}</div>
                       <div className="text-[11px] truncate" style={{ color: 'var(--ink-tertiary)' }}>{ent.sub}</div>
                     </div>
                   </div>
@@ -498,11 +498,11 @@ function CaseDetailContent() {
 
           {/* Bottom Row: Network Summary & Big CTA */}
           <div className="p-6 rounded-2xl border flex flex-col md:flex-row md:items-center justify-between gap-5 glass-panel-elevated"
-            style={{ borderColor: 'var(--accent)', background: 'linear-gradient(135deg, rgba(79,70,229,0.06), rgba(79,70,229,0.01))' }}>
+            style={{ borderColor: 'var(--accent)', background: 'var(--pastel-sky)' }}>
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Network size={18} style={{ color: 'var(--accent)' }} />
-                <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   Case Network Intelligence Matrix
                 </h3>
               </div>
@@ -513,7 +513,7 @@ function CaseDetailContent() {
 
             <button
               onClick={() => setActiveTab('network')}
-              className="px-6 py-3 rounded-xl text-[14px] font-bold text-white shadow-lg flex items-center gap-2 hover:opacity-95 transition-all shrink-0 cursor-pointer"
+              className="px-6 py-3 rounded-xl text-[14px] font-semibold text-white shadow-lg flex items-center gap-2 hover:opacity-95 transition-all shrink-0 cursor-pointer"
               style={{ background: 'var(--accent)' }}
             >
               <span>OPEN CASE NETWORK</span>
@@ -529,7 +529,7 @@ function CaseDetailContent() {
           {!currentCase.firId ? (
             <div className="p-12 rounded-2xl border text-center glass-panel" style={{ borderColor: 'var(--border)' }}>
               <FileText size={44} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
-              <h3 className="text-xl font-bold" style={{ color: 'var(--ink-primary)' }}>No Primary FIR Linked</h3>
+              <h3 className="text-xl font-semibold" style={{ color: 'var(--ink-primary)' }}>No Primary FIR Linked</h3>
               <p className="text-[13.5px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
                 This investigation dossier is not yet linked to an official police FIR record. Ingest or connect a digital FIR document to view legal transcription and registered complainant particulars.
               </p>
@@ -547,13 +547,13 @@ function CaseDetailContent() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-bold bg-[var(--accent-muted)] text-[var(--accent)]">
+                    <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-semibold bg-[var(--accent-muted)] text-[var(--accent)]">
                       ORIGINAL POLICE DOSSIER
                     </span>
                     <span className="text-xs text-gray-400">•</span>
                     <span className="text-xs font-mono-id text-gray-400">CR.P.C. SEC 154</span>
                   </div>
-                  <h3 className="text-xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                     First Information Report ({currentCase.firId})
                   </h3>
                   <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -595,7 +595,7 @@ function CaseDetailContent() {
 
               {/* Investigation Scope */}
               <div className="p-4 rounded-xl border bg-[var(--surface-0)] space-y-2" style={{ borderColor: 'var(--border)' }}>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--accent)] block">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--accent)] block">
                   Investigation Narrative &amp; Facts
                 </span>
                 <p className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-primary)' }}>
@@ -666,7 +666,7 @@ function CaseDetailContent() {
         <div className="p-6 rounded-2xl border glass-panel space-y-6 animate-fade-in"
           style={{ borderColor: 'var(--border)' }}>
           <div className="border-b pb-4">
-            <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Chronological Case Event Sequence
             </h3>
             <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -676,7 +676,7 @@ function CaseDetailContent() {
 
           <div className="p-12 rounded-2xl border text-center" style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
             <Clock size={40} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
-            <h4 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>No Timeline Events Logged</h4>
+            <h4 className="text-lg font-semibold" style={{ color: 'var(--ink-primary)' }}>No Timeline Events Logged</h4>
             <p className="text-[13px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
               Chronological sequence events will automatically synthesize as incident dates, CDR records, and evidence timestamps are registered.
             </p>
@@ -691,14 +691,14 @@ function CaseDetailContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"
             style={{ borderColor: 'var(--border)' }}>
             <div>
-              <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 Extracted Case Entities Table
               </h3>
               <p className="text-[13px] text-[var(--ink-secondary)]">
                 Structured tabular index of all extracted suspects, associates, assets, and organizations
               </p>
             </div>
-            <span className="text-[12px] font-mono-id px-3 py-1 rounded-xl bg-[var(--surface-2)] text-[var(--accent)] font-bold">
+            <span className="text-[12px] font-mono-id px-3 py-1 rounded-xl bg-[var(--surface-2)] text-[var(--accent)] font-semibold">
               {entitiesData?.total_entities || currentCase.personIds.length + currentCase.phoneIds.length} Entities Indexed
             </span>
           </div>
@@ -761,7 +761,7 @@ function CaseDetailContent() {
               return (
                 <div className="p-12 rounded-2xl border text-center" style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
                   <User size={40} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
-                  <h4 className="text-lg font-bold" style={{ color: 'var(--ink-primary)' }}>No Matching Entities Found</h4>
+                  <h4 className="text-lg font-semibold" style={{ color: 'var(--ink-primary)' }}>No Matching Entities Found</h4>
                   <p className="text-[13px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
                     No entities match the selected filter or search query.
                   </p>
@@ -773,7 +773,7 @@ function CaseDetailContent() {
               <div className="overflow-x-auto rounded-xl border" style={{ borderColor: 'var(--border)' }}>
                 <table className="w-full text-left text-[13px] border-collapse">
                   <thead>
-                    <tr className="border-b text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]"
+                    <tr className="border-b text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]"
                       style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
                       <th className="py-3 px-4">Entity &amp; Value</th>
                       <th className="py-3 px-4">Category</th>
@@ -786,13 +786,13 @@ function CaseDetailContent() {
                     {filtered.map((ent, idx) => {
                       const t = (ent.entity_type || '').toUpperCase();
                       const typeBadge =
-                        t === 'PERSON' ? { bg: 'rgba(99, 102, 241, 0.12)', color: '#6366F1', label: 'PERSON' } :
-                        t === 'PHONE' ? { bg: 'rgba(14, 165, 233, 0.12)', color: '#0EA5E9', label: 'PHONE' } :
-                        t === 'VEHICLE' ? { bg: 'rgba(16, 185, 129, 0.12)', color: '#10B981', label: 'VEHICLE' } :
-                        t.includes('FINANCIAL') || t.includes('TRANSACTION') ? { bg: 'rgba(20, 184, 166, 0.12)', color: '#14B8A6', label: 'FINANCIAL' } :
-                        t === 'LEGAL_SECTION' ? { bg: 'rgba(139, 92, 246, 0.12)', color: '#8B5CF6', label: 'LEGAL' } :
-                        t === 'LOCATION' ? { bg: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B', label: 'LOCATION' } :
-                        { bg: 'rgba(236, 72, 153, 0.12)', color: '#EC4899', label: 'DIGITAL' };
+                        t === 'PERSON' ? { bg: 'rgba(99, 102, 241, 0.12)', color: '#12376E', label: 'PERSON' } :
+                        t === 'PHONE' ? { bg: 'rgba(14, 165, 233, 0.12)', color: '#2563EB', label: 'PHONE' } :
+                        t === 'VEHICLE' ? { bg: 'rgba(16, 185, 129, 0.12)', color: '#16A34A', label: 'VEHICLE' } :
+                        t.includes('FINANCIAL') || t.includes('TRANSACTION') ? { bg: 'rgba(20, 184, 166, 0.12)', color: '#0F766E', label: 'FINANCIAL' } :
+                        t === 'LEGAL_SECTION' ? { bg: 'rgba(139, 92, 246, 0.12)', color: '#5B4BC4', label: 'LEGAL' } :
+                        t === 'LOCATION' ? { bg: 'rgba(245, 158, 11, 0.12)', color: '#D97706', label: 'LOCATION' } :
+                        { bg: 'rgba(236, 72, 153, 0.12)', color: '#DC2626', label: 'DIGITAL' };
 
                       return (
                         <tr key={ent.id || idx} className="hover:bg-[var(--surface-1)] transition-colors">
@@ -803,7 +803,7 @@ function CaseDetailContent() {
                             )}
                           </td>
                           <td className="py-3 px-4">
-                            <span className="text-[10.5px] px-2 py-0.5 rounded font-mono-id font-bold"
+                            <span className="text-[10.5px] px-2 py-0.5 rounded font-mono-id font-semibold"
                               style={{ background: typeBadge.bg, color: typeBadge.color }}>
                               {typeBadge.label}
                             </span>
@@ -816,7 +816,7 @@ function CaseDetailContent() {
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <span className="font-mono-id font-bold text-[12px] text-[var(--success)]">{ent.confidence}%</span>
+                              <span className="font-mono-id font-semibold text-[12px] text-[var(--success)]">{ent.confidence}%</span>
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -857,13 +857,13 @@ function CaseDetailContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: 'var(--border)' }}>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-bold bg-[var(--accent-muted)] text-[var(--accent)]">
+                <span className="text-[11px] font-mono-id uppercase px-2.5 py-0.5 rounded font-semibold bg-[var(--accent-muted)] text-[var(--accent)]">
                   CROSS-ENTITY INTELLIGENCE
                 </span>
                 <span className="text-xs text-gray-400">•</span>
                 <span className="text-xs font-mono-id text-gray-400">MULTI-MODAL DISCOVERY</span>
               </div>
-              <h3 className="text-xl font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-xl font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                 Discovered Relationships Ledger
               </h3>
               <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -873,7 +873,7 @@ function CaseDetailContent() {
 
             <button
               onClick={() => setActiveTab('network')}
-              className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
+              className="px-4 py-2 rounded-xl text-[12.5px] font-semibold text-white flex items-center gap-1.5 shadow-md hover:opacity-90 transition-all cursor-pointer"
               style={{ background: 'var(--accent)' }}
             >
               <Network size={14} />
@@ -936,7 +936,7 @@ function CaseDetailContent() {
               return (
                 <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
                   <Network size={36} className="mx-auto mb-3 opacity-40 text-[var(--ink-tertiary)]" />
-                  <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Discovered Relationships</h4>
+                  <h4 className="font-semibold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Discovered Relationships</h4>
                   <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
                     No cross-entity links match the active filters.
                   </p>
@@ -951,20 +951,20 @@ function CaseDetailContent() {
                     style={{ borderColor: 'var(--border)' }}>
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.source_name}</span>
+                        <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{rel.source_name}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-mono-id bg-[var(--surface-2)] text-[var(--ink-secondary)]">
                           {rel.source_type}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-bold bg-[var(--surface-2)] text-[var(--accent)] font-mono-id">
+                      <div className="flex items-center gap-1.5 px-3 py-1 rounded-md text-[11px] font-semibold bg-[var(--surface-2)] text-[var(--accent)] font-mono-id">
                         <span>→</span>
                         <span>{rel.relationship_type}</span>
                         <span>→</span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <span className="font-bold" style={{ color: 'var(--ink-primary)' }}>{rel.target_name}</span>
+                        <span className="font-semibold" style={{ color: 'var(--ink-primary)' }}>{rel.target_name}</span>
                         <span className="text-[10px] px-1.5 py-0.5 rounded font-mono-id bg-[var(--surface-2)] text-[var(--ink-secondary)]">
                           {rel.target_type}
                         </span>
@@ -975,7 +975,7 @@ function CaseDetailContent() {
                       <div className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
                         Proof: <strong style={{ color: 'var(--ink-primary)' }}>{rel.evidence_basis}</strong>
                       </div>
-                      <span className="font-mono-id font-bold text-[var(--success)]">
+                      <span className="font-mono-id font-semibold text-[var(--success)]">
                         {rel.confidence}%
                       </span>
                       <button
@@ -1001,7 +1001,7 @@ function CaseDetailContent() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4"
             style={{ borderColor: 'var(--border)' }}>
             <div>
-              <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 Case Evidence Dossier
               </h3>
               <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -1021,7 +1021,7 @@ function CaseDetailContent() {
           {/* Evidence Grid or Zero State */}
           <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
             <FileText size={36} className="mx-auto mb-3 opacity-40 text-[var(--ink-tertiary)]" />
-            <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Evidence Items Attached</h4>
+            <h4 className="font-semibold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Evidence Items Attached</h4>
             <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
               No digital or physical evidence items have been uploaded or registered under this case dossier.
             </p>
@@ -1042,7 +1042,7 @@ function CaseDetailContent() {
         <div className="p-6 rounded-2xl border glass-panel space-y-5 animate-fade-in"
           style={{ borderColor: 'var(--border)' }}>
           <div className="border-b pb-4">
-            <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Historical Intelligence &amp; Correlated Cases
             </h3>
             <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -1053,7 +1053,7 @@ function CaseDetailContent() {
           {/* Historical Correlations or Zero State */}
           <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
             <History size={36} className="mx-auto mb-3 opacity-40 text-[var(--ink-tertiary)]" />
-            <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Historical Correlations Found</h4>
+            <h4 className="font-semibold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Historical Correlations Found</h4>
             <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
               Automated pattern analysis did not identify any correlated historical cases or cross-jurisdictional crime rings matching this dossier.
             </p>
@@ -1070,15 +1070,15 @@ function CaseDetailContent() {
             <div>
               <div className="flex items-center gap-2">
                 <Sparkles size={18} style={{ color: 'var(--accent)' }} />
-                <h3 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
-                  Explainable Investigation Insights (KAVA AI)
+                <h3 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
+                  Explainable Investigation Insights (NETRA AI)
                 </h3>
               </div>
               <p className="text-[13px] text-[var(--ink-secondary)]">
                 Autonomous heuristic pattern analysis for {currentCase.id}. All insights require investigator review.
               </p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold border"
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border"
               style={{ background: 'rgba(217,119,6,0.1)', borderColor: 'rgba(217,119,6,0.3)', color: '#D97706' }}>
               <AlertTriangle size={12} />
               <span>Requires Investigator Review</span>
@@ -1088,9 +1088,9 @@ function CaseDetailContent() {
           {/* Insights List or Zero State */}
           <div className="p-12 text-center rounded-2xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
             <Sparkles size={36} className="mx-auto mb-3 opacity-40 text-[var(--accent)]" />
-            <h4 className="font-bold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Heuristic Insights Generated</h4>
+            <h4 className="font-semibold text-[15px]" style={{ color: 'var(--ink-primary)' }}>No Heuristic Insights Generated</h4>
             <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mx-auto mt-1">
-              KAVA AI heuristic engine requires active evidence nodes and corroborated relationships to synthesize explainable anomalies.
+              NETRA AI requires active evidence nodes and corroborated relationships to synthesize explainable anomalies.
             </p>
           </div>
         </div>

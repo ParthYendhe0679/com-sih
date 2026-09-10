@@ -241,7 +241,7 @@ export default function CaseSearcherPage() {
     <div className="space-y-6 animate-fade-in max-w-5xl mx-auto">
       {/* Header */}
       <div>
-        <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+        <h1 className="text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
           Multi-Dimensional Case Searcher
         </h1>
         <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -326,14 +326,14 @@ export default function CaseSearcherPage() {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[12px] font-mono-id font-bold"
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-[12px] font-mono-id font-semibold"
                     style={{ background: 'var(--glass-2)', color: 'var(--accent)' }}
                   >
                     {item.type.slice(0, 2).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-[14px] truncate" style={{ color: 'var(--ink-primary)' }}>
+                      <span className="font-semibold text-[14px] truncate" style={{ color: 'var(--ink-primary)' }}>
                         {item.name}
                       </span>
                       <span className="font-mono-id text-[11px] text-[var(--accent)] font-semibold">

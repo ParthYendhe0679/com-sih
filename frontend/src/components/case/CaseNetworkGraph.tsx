@@ -28,73 +28,73 @@ export const ENTITY_TYPE_CONFIG: Record<
 > = {
   Person: {
     label: 'People',
-    color: '#4F46E5', // Indigo / Purple
+    color: '#12376E', // Indigo / Purple
     border: 'rgba(79, 70, 229, 0.4)',
     bg: 'rgba(79, 70, 229, 0.12)',
-    iconBg: '#4F46E5',
+    iconBg: '#12376E',
   },
   Phone: {
     label: 'Phones',
-    color: '#0284C7', // Sky Blue / Cyan
+    color: '#2563EB', // Sky Blue / Cyan
     border: 'rgba(2, 132, 199, 0.4)',
     bg: 'rgba(2, 132, 199, 0.12)',
-    iconBg: '#0284C7',
+    iconBg: '#2563EB',
   },
   Vehicle: {
     label: 'Vehicles',
-    color: '#10B981', // Emerald Green
+    color: '#16A34A', // Emerald Green
     border: 'rgba(16, 185, 129, 0.4)',
     bg: 'rgba(16, 185, 129, 0.12)',
-    iconBg: '#10B981',
+    iconBg: '#16A34A',
   },
   Location: {
     label: 'Locations',
-    color: '#F59E0B', // Amber / Gold
+    color: '#D97706', // Amber / Gold
     border: 'rgba(245, 158, 11, 0.4)',
     bg: 'rgba(245, 158, 11, 0.12)',
-    iconBg: '#F59E0B',
+    iconBg: '#D97706',
   },
   Financial: {
     label: 'Financials',
-    color: '#06B6D4', // Teal / Cyan
+    color: '#0F766E', // Teal / Cyan
     border: 'rgba(6, 182, 212, 0.4)',
     bg: 'rgba(6, 182, 212, 0.12)',
-    iconBg: '#06B6D4',
+    iconBg: '#0F766E',
   },
   Legal_Section: {
     label: 'Legal Sections',
-    color: '#8B5CF6', // Violet
+    color: '#5B4BC4', // Violet
     border: 'rgba(139, 92, 246, 0.4)',
     bg: 'rgba(139, 92, 246, 0.12)',
-    iconBg: '#8B5CF6',
+    iconBg: '#5B4BC4',
   },
   FIR: {
     label: 'FIR Dossier',
-    color: '#EF4444', // Red
+    color: '#DC2626', // Red
     border: 'rgba(239, 68, 68, 0.4)',
     bg: 'rgba(239, 68, 68, 0.12)',
-    iconBg: '#EF4444',
+    iconBg: '#DC2626',
   },
   Case: {
     label: 'Case Master',
-    color: '#3B82F6', // Cobalt Blue
+    color: '#2563EB', // Cobalt Blue
     border: 'rgba(59, 130, 246, 0.4)',
     bg: 'rgba(59, 130, 246, 0.12)',
-    iconBg: '#3B82F6',
+    iconBg: '#2563EB',
   },
   Evidence: {
     label: 'Evidence',
-    color: '#EC4899', // Pink
+    color: '#DC2626', // Pink
     border: 'rgba(236, 72, 153, 0.4)',
     bg: 'rgba(236, 72, 153, 0.12)',
-    iconBg: '#EC4899',
+    iconBg: '#DC2626',
   },
   Organization: {
     label: 'Organizations',
-    color: '#D946EF', // Fuchsia
+    color: '#5B4BC4', // Fuchsia
     border: 'rgba(217, 70, 239, 0.4)',
     bg: 'rgba(217, 70, 239, 0.12)',
-    iconBg: '#D946EF',
+    iconBg: '#5B4BC4',
   },
 };
 
@@ -116,7 +116,7 @@ export const normalizeEntityType = (rawType?: string): string => {
 
 export const getNodeColor = (type: string): string => {
   const norm = normalizeEntityType(type);
-  return ENTITY_TYPE_CONFIG[norm]?.color || '#64748B';
+  return ENTITY_TYPE_CONFIG[norm]?.color || '#9CA3AF';
 };
 
 export default function CaseNetworkGraph({
@@ -313,7 +313,7 @@ export default function CaseNetworkGraph({
     setSyncingGraph(true);
     try {
       const res = await casesApi.syncCaseGraph(caseId);
-      toast.success(res.message || 'Graph synchronized into Neo4j');
+      toast.success(res.message || 'Case network updated');
       await loadNetwork();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Graph synchronization failed.');
@@ -410,7 +410,7 @@ export default function CaseNetworkGraph({
             {
               selector: 'node:selected',
               style: {
-                'border-color': '#4F46E5',
+                'border-color': '#12376E',
                 'border-width': 4,
                 width: 44,
                 height: 44,
@@ -419,7 +419,7 @@ export default function CaseNetworkGraph({
             {
               selector: 'node.highlighted',
               style: {
-                'border-color': '#4F46E5',
+                'border-color': '#12376E',
                 'border-width': 3.5,
                 width: 42,
                 height: 42,
@@ -449,7 +449,7 @@ export default function CaseNetworkGraph({
                 'text-background-color': '#FFFFFF',
                 'text-background-padding': '2px',
                 'text-background-shape': 'roundrectangle',
-                color: '#64748B',
+                color: '#9CA3AF',
                 'transition-property': 'line-color, width, opacity',
                 'transition-duration': 0.2,
               },
@@ -458,9 +458,9 @@ export default function CaseNetworkGraph({
               selector: 'edge.highlighted',
               style: {
                 width: 3.5,
-                'line-color': '#4F46E5',
-                'target-arrow-color': '#4F46E5',
-                color: '#4F46E5',
+                'line-color': '#12376E',
+                'target-arrow-color': '#12376E',
+                color: '#12376E',
                 'font-weight': 700,
                 opacity: 1,
               },
@@ -612,7 +612,11 @@ export default function CaseNetworkGraph({
         cyRef.current = null;
       }
     };
-  }, [caseNodes, caseEdges, initialSelectedEntityId, caseId]);
+    // initialSelectedEntityId is deliberately excluded: it is an initial focus
+    // hint, not graph data. Including it rebuilt the graph mid-interaction and
+    // dropped the node click handlers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [caseNodes, caseEdges, caseId]);
 
   // Automatically resize cytoscape canvas and re-center when side panel opens or closes
   useEffect(() => {
@@ -833,7 +837,7 @@ export default function CaseNetworkGraph({
               style={{ borderColor: !isAllSelected ? undefined : 'var(--border)' }}
               title="Click to multi-select entity categories"
             >
-              <Filter size={13} style={{ color: !isAllSelected ? '#4F46E5' : 'var(--ink-tertiary)' }} />
+              <Filter size={13} style={{ color: !isAllSelected ? '#12376E' : 'var(--ink-tertiary)' }} />
               <span>
                 {isAllSelected
                   ? `All Categories (${caseNodes.length})`
@@ -931,7 +935,7 @@ export default function CaseNetworkGraph({
                             </span>
                           </div>
                           <span
-                            className="text-[10.5px] px-1.5 py-0.5 rounded-full font-mono-id font-bold"
+                            className="text-[10.5px] px-1.5 py-0.5 rounded-full font-mono-id font-semibold"
                             style={{ background: cfg.bg, color: cfg.color }}
                           >
                             {count}
@@ -1016,7 +1020,7 @@ export default function CaseNetworkGraph({
             disabled={syncingGraph}
             className="px-2.5 py-1.5 rounded-xl border bg-[var(--surface-2)] hover:bg-[var(--surface-3)] transition-colors flex items-center gap-1.5 text-[12px] font-medium"
             style={{ borderColor: 'var(--border)', color: 'var(--ink-primary)' }}
-            title="Synchronize case intelligence into Neo4j Graph Database"
+            title="Rebuild the case network"
           >
             <RefreshCw size={13} className={syncingGraph ? 'animate-spin text-blue-500' : 'text-blue-600'} />
             <span>{syncingGraph ? 'Syncing...' : 'Sync Graph'}</span>
@@ -1029,7 +1033,7 @@ export default function CaseNetworkGraph({
         className="flex flex-wrap items-center gap-1.5 px-3 py-2 border-b z-10 text-[11.5px] overflow-x-auto select-none"
         style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
       >
-        <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mr-1 shrink-0">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mr-1 shrink-0">
           Color Code:
         </span>
         
@@ -1038,7 +1042,7 @@ export default function CaseNetworkGraph({
           onClick={handleSelectAll}
           className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
             isAllSelected
-              ? 'ring-2 ring-[var(--accent)] bg-[var(--surface-1)] shadow-xs font-bold text-[var(--ink-primary)]'
+              ? 'ring-2 ring-[var(--accent)] bg-[var(--surface-1)] shadow-xs font-semibold text-[var(--ink-primary)]'
               : 'hover:bg-[var(--surface-3)] text-[var(--ink-secondary)]'
           }`}
           style={{
@@ -1065,7 +1069,7 @@ export default function CaseNetworkGraph({
               onClick={() => handleToggleType(typeKey)}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 isCategorySelected
-                  ? 'shadow-xs font-bold ring-2'
+                  ? 'shadow-xs font-semibold ring-2'
                   : 'hover:opacity-90 font-medium opacity-50'
               }`}
               style={{
@@ -1087,7 +1091,7 @@ export default function CaseNetworkGraph({
               />
               <span className="whitespace-nowrap">{cfg.label}</span>
               <span
-                className="text-[10px] px-1 rounded-full font-mono-id font-bold"
+                className="text-[10px] px-1 rounded-full font-mono-id font-semibold"
                 style={{ background: cfg.bg, color: cfg.color }}
               >
                 {count}
@@ -1107,7 +1111,7 @@ export default function CaseNetworkGraph({
         ) : networkError ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[var(--ink-tertiary)]">
             <AlertTriangle size={32} className="text-[var(--warning)] mb-3" />
-            <h4 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h4 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Network Could Not Be Loaded
             </h4>
             <p className="text-[13px] text-[var(--ink-secondary)] mt-1 max-w-md">
@@ -1126,7 +1130,7 @@ export default function CaseNetworkGraph({
             <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-[var(--accent)] mb-3 bg-[var(--surface-2)]">
               <NetworkIcon size={28} />
             </div>
-            <h4 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h4 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               No Intelligence Network Available For Case {caseId}
             </h4>
             <p className="text-[13px] text-[var(--ink-secondary)] mt-1 max-w-md">
@@ -1143,7 +1147,7 @@ export default function CaseNetworkGraph({
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-[var(--surface-1)]/80 backdrop-blur-xs">
             <div className="p-5 rounded-2xl bg-[var(--surface-1)] border shadow-xl max-w-sm" style={{ borderColor: 'var(--border)' }}>
               <Filter size={28} className="mx-auto mb-2 text-[var(--accent)]" />
-              <h5 className="font-bold text-[14px] text-[var(--ink-primary)]">
+              <h5 className="font-semibold text-[14px] text-[var(--ink-primary)]">
                 No Matching Entities in Network
               </h5>
               <p className="text-[12px] text-[var(--ink-secondary)] mt-1 mb-4">
@@ -1173,7 +1177,7 @@ export default function CaseNetworkGraph({
           >
             <div className="flex items-center gap-2 mb-1">
               <span className="w-2.5 h-2.5 rounded-full" style={{ background: getNodeColor(hoveredNode.node.type) }} />
-              <span className="font-bold text-[13px]" style={{ color: 'var(--ink-primary)' }}>{hoveredNode.node.label}</span>
+              <span className="font-semibold text-[13px]" style={{ color: 'var(--ink-primary)' }}>{hoveredNode.node.label}</span>
             </div>
             <div className="space-y-0.5" style={{ color: 'var(--ink-secondary)' }}>
               <div>Type: <strong style={{ color: 'var(--ink-primary)' }}>{hoveredNode.node.type}</strong></div>
@@ -1190,7 +1194,7 @@ export default function CaseNetworkGraph({
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
             <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
+              <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--accent)' }}>
                 Relationship Link
               </span>
               <button onClick={() => setSelectedEdge(null)} className="text-[var(--ink-tertiary)] hover:text-[var(--ink-primary)]">
@@ -1198,12 +1202,12 @@ export default function CaseNetworkGraph({
               </button>
             </div>
             <div className="space-y-2 mb-3">
-              <div className="p-2 rounded-lg bg-[var(--surface-2)] text-center font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <div className="p-2 rounded-lg bg-[var(--surface-2)] text-center font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 {selectedEdge.relationship}
               </div>
               <div className="flex items-center justify-between text-[12px]">
                 <span style={{ color: 'var(--ink-tertiary)' }}>Confidence</span>
-                <span className="font-mono-id font-bold text-[var(--success)]">{selectedEdge.confidence || 88}%</span>
+                <span className="font-mono-id font-semibold text-[var(--success)]">{selectedEdge.confidence || 88}%</span>
               </div>
               <div className="flex items-center justify-between text-[12px]">
                 <span style={{ color: 'var(--ink-tertiary)' }}>Source</span>
@@ -1232,16 +1236,16 @@ export default function CaseNetworkGraph({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getNodeColor(selectedNode.type) }} />
-                    <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: getNodeColor(selectedNode.type) }}>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: getNodeColor(selectedNode.type) }}>
                       {normalizeEntityType(selectedNode.type)}
                     </span>
                     {Boolean(selectedNode.data?.role) && (
-                      <span className="text-[10px] font-mono-id font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                      <span className="text-[10px] font-mono-id font-semibold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                         {String(selectedNode.data?.role)}
                       </span>
                     )}
                   </div>
-                  <h3 className="text-[17px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[17px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                     {selectedNode.label}
                   </h3>
                   <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>
@@ -1264,13 +1268,13 @@ export default function CaseNetworkGraph({
                 style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
                 <div className="flex items-center justify-between text-[12px]">
                   <span style={{ color: 'var(--ink-tertiary)' }}>Confidence Rating:</span>
-                  <span className="font-mono-id font-bold text-[var(--success)]">
+                  <span className="font-mono-id font-semibold text-[var(--success)]">
                     {Math.round((Number(selectedNode.data?.confidence) || 0.95) * 100)}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-[12px]">
                   <span style={{ color: 'var(--ink-tertiary)' }}>Direct Connections:</span>
-                  <span className="font-mono-id font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <span className="font-mono-id font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     {connectedNeighbors.length} entities
                   </span>
                 </div>
@@ -1286,7 +1290,7 @@ export default function CaseNetworkGraph({
 
               {/* Dynamic Entity Attributes */}
               <div className="space-y-2 mb-4">
-                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
                   Entity Intelligence Attributes
                 </span>
                 <div className="p-3 rounded-xl border space-y-2 text-[12px]" style={{ borderColor: 'var(--border)' }}>
@@ -1313,7 +1317,7 @@ export default function CaseNetworkGraph({
 
               {/* Connected Entities */}
               <div className="space-y-2 mb-4">
-                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
                   Connected Entities ({connectedNeighbors.length})
                 </span>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
@@ -1343,7 +1347,7 @@ export default function CaseNetworkGraph({
 
               {/* Related Cases */}
               <div className="space-y-2 mb-4">
-                <span className="text-[11px] font-bold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
+                <span className="text-[11px] font-semibold uppercase tracking-wider block" style={{ color: 'var(--ink-tertiary)' }}>
                   Related Historical Cases
                 </span>
                 <div className="flex flex-wrap gap-1.5">

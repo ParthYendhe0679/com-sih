@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — System Entity Data (Clean / Live-Only)
+// TRINETRA — System Entity Data (Clean / Live-Only)
 // ============================================================
 import {
   Evidence, Vehicle, Phone, Location, Organization, Alert,

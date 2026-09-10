@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Cases Data (Clean / Live-Only)
+// TRINETRA — Cases Data (Clean / Live-Only)
 // ============================================================
 import { Case } from '@/types';
 

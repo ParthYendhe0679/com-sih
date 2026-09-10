@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Analytics Hub Telemetry & Predictive API Client
+// TRINETRA — Analytics Hub Telemetry & Predictive API Client
 // ============================================================
 
 import { apiClient } from './client';

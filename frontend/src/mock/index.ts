@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Mock Data Barrel Export
+// TRINETRA — Mock Data Barrel Export
 // ============================================================
 export { cases } from './cases';
 export { people } from './people';

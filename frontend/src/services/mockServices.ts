@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Mock Service Layer
+// TRINETRA — Mock Service Layer
 // ============================================================
 import { cases } from '@/mock/cases';
 import { people } from '@/mock/people';

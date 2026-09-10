@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — People Dossiers Data (Clean / Live-Only)
+// TRINETRA — People Dossiers Data (Clean / Live-Only)
 // ============================================================
 import { Person } from '@/types';
 

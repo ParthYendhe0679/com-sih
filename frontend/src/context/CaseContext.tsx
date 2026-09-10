@@ -18,7 +18,7 @@ export interface CaseStoreContextType {
 
 const CaseContext = createContext<CaseStoreContextType | undefined>(undefined);
 
-const ACTIVE_CASE_STORAGE_KEY = 'kritagas_active_case_id';
+const ACTIVE_CASE_STORAGE_KEY = 'TRINETRA_active_case_id';
 
 export function CaseProvider({ children }: { children: React.ReactNode }) {
   const [cases, setCases] = useState<BackendCase[]>(() => {

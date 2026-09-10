@@ -15,12 +15,12 @@ const actionItems = [
   { label: 'Open Cases', icon: FolderOpen, action: '/cases' },
   { label: 'Ingest Offline FIR', icon: FileText, action: '/fir' },
   { label: 'Police Triage Queue', icon: FileText, action: '/police' },
-  { label: 'Launch SAMANVAYA Intelligence', icon: BrainCircuit, action: '/intelligence/samanvaya' },
+  { label: 'Run TRINETRA Analysis', icon: BrainCircuit, action: '/intelligence/samanvaya' },
   { label: 'Open Network Analysis', icon: Network, action: '/network' },
   { label: 'Open Geospatial Map', icon: Map, action: '/map' },
   { label: 'Search Historical Intelligence', icon: History, action: '/historical' },
   { label: 'Open Evidence Hub', icon: Package, action: '/evidence' },
-  { label: 'Ask KRITAGAS AI', icon: Bot, action: '/ai' },
+  { label: 'Ask TRINETRA AI', icon: Bot, action: '/ai' },
 ];
 
 const typeIcons: Record<string, React.ElementType> = {

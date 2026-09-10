@@ -1,7 +1,9 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================================
-   KRITAGAS — Professional Intelligence Platform Design System
+   TRINETRA — Professional Intelligence Platform Design System
    v2.0 — Complete UI/UX Redesign
    ============================================================ */
 
@@ -26,84 +28,110 @@
 }
 
 :root {
-  /* Layout tokens */
+  /* Layout */
   --sidebar-width: 272px;
   --sidebar-collapsed-width: 68px;
-  --topbar-height: 64px;
-  --content-max-width: 1680px;
-  --content-padding: 32px;
-  --content-padding-sm: 24px;
+  --topbar-height: 68px;
+  --content-max-width: 100%;
+  --content-padding: 28px;
+  --content-padding-sm: 20px;
 
-  /* Ambient backdrop gradient */
-  --background: #F2F3F7;
-  --ambient-gradient: radial-gradient(at 15% 15%, rgba(91,91,214,0.07) 0px, transparent 55%),
-                      radial-gradient(at 85% 85%, rgba(16,185,129,0.04) 0px, transparent 50%);
-  --foreground: #18181B;
+  /* The reference pairs a white sidebar with a soft grey working area. Cards
+     are white and sit on that grey — that contrast is what gives the layout
+     its structure, so the page ground is never white. */
+  --background: #F4F4F6;
+  --ambient-gradient: none;
+  --foreground: #0A0A0A;
 
-  /* Glass Levels (Light Mode) */
-  --glass-0: rgba(255, 255, 255, 0.45);
-  --glass-1: rgba(255, 255, 255, 0.72);
-  --glass-2: rgba(255, 255, 255, 0.85);
-  --glass-3: rgba(255, 255, 255, 0.95);
+  --glass-0: #FFFFFF;
+  --glass-1: #FFFFFF;
+  --glass-2: #FFFFFF;
+  --glass-3: #FFFFFF;
 
-  /* Solid surfaces */
-  --surface-0: #F2F3F7;
-  --surface-1: #FFFFFF;
-  --surface-2: #F4F5F9;
-  --surface-3: #EAEBF2;
+  --surface-0: #F4F4F6;   /* working area                        */
+  --surface-1: #FFFFFF;   /* cards, sidebar                      */
+  --surface-2: #F4F4F5;   /* hover, input fills, segmented track */
+  --surface-3: #EBEBEE;   /* pressed / selected                  */
 
-  /* Inks */
-  --ink-primary: #111827;
-  --ink-secondary: #4B5563;
-  --ink-tertiary: #9CA3AF;
-  --ink-faint: #D1D5DB;
+  /* Ink */
+  --ink-primary: #0A0A0A;
+  --ink-secondary: #71717A;
+  --ink-tertiary: #A1A1AA;
+  --ink-faint: #D4D4D8;
 
-  /* Glass Borders */
-  --border: rgba(17, 24, 39, 0.08);
-  --border-strong: rgba(17, 24, 39, 0.15);
-  --glass-border: rgba(255, 255, 255, 0.55);
-  --glass-border-subtle: rgba(17, 24, 39, 0.06);
+  --border: #EFEFF1;
+  --border-strong: #E4E4E7;
+  --glass-border: #EFEFF1;
+  --glass-border-subtle: #F4F4F5;
 
-  /* Primary Accent: Deep Intelligence Indigo */
-  --accent: #4F46E5;
-  --accent-light: #6366F1;
-  --accent-dark: #3730A3;
-  --accent-muted: rgba(79, 70, 229, 0.08);
-  --accent-subtle: rgba(79, 70, 229, 0.14);
+  /* Accent: the teal from the reference's feature card. Used for the hero
+     surface, sparklines and selected states — not for body text. */
+  --accent: #17A2A2;
+  --accent-light: #3BC5C0;
+  --accent-dark: #128585;
+  --accent-muted: #E3F5F4;
+  --accent-subtle: #C7EBE9;
 
-  /* Semantics */
-  --success: #16A34A;
-  --success-muted: rgba(22, 163, 74, 0.10);
-  --warning: #D97706;
-  --warning-muted: rgba(217, 119, 6, 0.10);
+  /* Primary buttons in the reference are black with white text. */
+  --btn-dark: #111111;
+  --btn-dark-hover: #000000;
+
+  /* Highlight kept as an alias so older call sites keep working. */
+  --highlight: #17A2A2;
+  --highlight-ink: #FFFFFF;
+  --highlight-soft: #E3F5F4;
+  --highlight-edge: #17A2A2;
+
+  /* Status pills, taken from the reference's Done / Pending chips */
+  --success: #0F9B77;
+  --success-muted: #D7F0E8;
+  --warning: #C2711C;
+  --warning-muted: #FDEBD3;
   --error: #DC2626;
-  --error-muted: rgba(220, 38, 38, 0.10);
-  --info: #2563EB;
-  --info-muted: rgba(37, 99, 235, 0.10);
+  --error-muted: #FCE7E7;
+  --info: #6D62D6;
+  --info-muted: #E9E7FA;
 
-  /* Sidebar Theme — Crisp Modern White */
+  /* Soft pastel scale. The reference colours its chart bars and chips in
+     light, low-saturation fills — never one flat hue repeated. Each pair is
+     a fill and the ink that stays readable on it. */
+  --pastel-mint:   #DFF3EC;  --pastel-mint-ink:   #12806A;
+  --pastel-sky:    #E2EFFB;  --pastel-sky-ink:    #2B6CB0;
+  --pastel-lilac:  #ECEAFB;  --pastel-lilac-ink:  #5B4BC4;
+  --pastel-peach:  #FDECDD;  --pastel-peach-ink:  #C2711C;
+  --pastel-rose:   #FBE9EF;  --pastel-rose-ink:   #B4436A;
+  --pastel-sand:   #F6EFE0;  --pastel-sand-ink:   #8A6A2F;
+  --pastel-teal:   #DDF1F1;  --pastel-teal-ink:   #12807F;
+
+  /* Categorical set for charts, teams and graph nodes */
+  --cat-teal: #17A2A2;
+  --cat-mint: #A7E8DC;
+  --cat-purple: #8B7FE8;
+  --cat-orange: #F97316;
+  --cat-lavender: #C9C5F0;
+
+  /* Sidebar: white, grey pill for the active row, no rules between items */
   --sidebar-bg: #FFFFFF;
-  --sidebar-bg-hover: #F8FAFC;
-  --sidebar-bg-active: #EEF2FF;
-  --sidebar-ink-primary: #0F172A;
-  --sidebar-ink-secondary: #475569;
-  --sidebar-ink-tertiary: #94A3B8;
-  --sidebar-border: #E2E8F0;
-  --sidebar-section-label: #94A3B8;
-  --sidebar-accent: #4F46E5;
+  --sidebar-bg-hover: #F7F7F8;
+  --sidebar-bg-active: #F4F4F5;
+  --sidebar-ink-primary: #0A0A0A;
+  --sidebar-ink-secondary: #71717A;
+  --sidebar-ink-tertiary: #A1A1AA;
+  --sidebar-border: #EFEFF1;
+  --sidebar-section-label: #A1A1AA;
+  --sidebar-accent: #0A0A0A;
 
-  /* Shadows */
-  --glass-shadow-sm: 0 1px 6px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0,0,0,0.03);
-  --glass-shadow-md: 0 4px 18px rgba(0, 0, 0, 0.07);
-  --glass-shadow-lg: 0 8px 36px rgba(0, 0, 0, 0.10);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-  --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.08);
+  /* Cards carry no shadow in the reference — the grey ground separates them. */
+  --glass-shadow-sm: none;
+  --glass-shadow-md: 0 1px 2px rgba(9, 9, 11, 0.04);
+  --glass-shadow-lg: 0 8px 30px rgba(9, 9, 11, 0.08);
+  --shadow-card: none;
+  --shadow-card-hover: 0 2px 10px rgba(9, 9, 11, 0.06);
 
-  /* Blur */
-  --blur-glass: blur(14px);
+  --blur-glass: none;
 
-  /* Radius */
-  --radius-sm: 6px;
+  /* Generous corners, as in the reference */
+  --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 14px;
   --radius-xl: 18px;
@@ -137,22 +165,27 @@
   --glass-border: rgba(255, 255, 255, 0.10);
   --glass-border-subtle: rgba(255, 255, 255, 0.05);
 
-  --accent: #6366F1;
-  --accent-light: #818CF8;
-  --accent-dark: #4F46E5;
-  --accent-muted: rgba(99, 102, 241, 0.13);
-  --accent-subtle: rgba(99, 102, 241, 0.22);
+  --highlight: #D2F824;
+  --highlight-ink: #111827;
+  --highlight-soft: rgba(210, 248, 36, 0.10);
+  --highlight-edge: #A9C918;
+
+  --accent: #6E9BE0;
+  --accent-light: #93B6EC;
+  --accent-dark: #4E7CC4;
+  --accent-muted: rgba(110, 155, 224, 0.14);
+  --accent-subtle: rgba(110, 155, 224, 0.24);
 
   /* Sidebar in dark mode stays deep */
   --sidebar-bg: #080B14;
   --sidebar-bg-hover: rgba(255, 255, 255, 0.05);
-  --sidebar-bg-active: rgba(99, 102, 241, 0.18);
+  --sidebar-bg-active: rgba(110, 155, 224, 0.16);
   --sidebar-ink-primary: #E2E8F0;
   --sidebar-ink-secondary: #94A3B8;
   --sidebar-ink-tertiary: #475569;
   --sidebar-border: rgba(255, 255, 255, 0.06);
   --sidebar-section-label: #475569;
-  --sidebar-accent: #818CF8;
+  --sidebar-accent: #93B6EC;
 
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.32);
   --shadow-card-hover: 0 8px 25px rgba(0, 0, 0, 0.5);
@@ -172,10 +205,48 @@ body {
   background-attachment: fixed;
   color: var(--ink-primary);
   font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: -0.006em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Typography scale
+   Headings use the display face and negative tracking so page
+   titles read as titles, not as enlarged body copy.
+   ============================================================ */
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.028em;
+  color: var(--ink-primary);
+}
+
+h1 { font-size: 30px; line-height: 1.15; font-weight: 600; }
+h2 { font-size: 20px; line-height: 1.25; font-weight: 600; }
+h3 { font-size: 16px; line-height: 1.3;  font-weight: 600; }
+
+/* Small uppercase labels above metrics and sections. */
+.label-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-tertiary);
+}
+
+/* Digits that sit in columns or headline a metric tile. */
+.tabular, .metric-value {
+  font-variant-numeric: tabular-nums;
+}
+
+.metric-value {
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 /* ============================================================
@@ -183,18 +254,14 @@ body {
    ============================================================ */
 
 .glass-panel {
-  background: var(--glass-1);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
-  border: 1px solid var(--glass-border-subtle);
-  box-shadow: var(--glass-shadow-sm);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
 }
 
 .glass-panel-elevated {
-  background: var(--glass-2);
-  backdrop-filter: var(--blur-glass);
-  -webkit-backdrop-filter: var(--blur-glass);
-  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  border: 1px solid var(--border);
   box-shadow: var(--glass-shadow-md);
 }
 
@@ -218,7 +285,7 @@ body {
    Card System
    ============================================================ */
 
-.kritagas-card {
+.TRINETRA-card {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -227,11 +294,11 @@ body {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.kritagas-card:hover {
+.TRINETRA-card:hover {
   box-shadow: var(--shadow-card-hover);
 }
 
-.kritagas-card-compact {
+.TRINETRA-card-compact {
   background: var(--surface-1);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
@@ -273,7 +340,7 @@ body {
 /* Page title — 28-32px */
 .page-title {
   font-size: 30px;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.025em;
   color: var(--ink-primary);
   line-height: 1.2;
@@ -324,7 +391,7 @@ body {
 /* Section label in sidebar — 12px */
 .nav-section-label {
   font-size: 11.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -368,7 +435,7 @@ body {
 .form-label {
   display: block;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--ink-secondary);
@@ -387,8 +454,9 @@ body {
   padding: 12px 24px;
   font-size: 15px;
   font-weight: 600;
+  /* Primary action carries the product's own accent. */
   color: #FFFFFF;
-  background: var(--accent);
+  background: #5184d0;
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -397,9 +465,7 @@ body {
 }
 
 .btn-primary:hover {
-  background: var(--accent-dark);
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
-  transform: translateY(-1px);
+  background: #3970b9;
 }
 
 .btn-primary:active {
@@ -459,18 +525,24 @@ body {
    ============================================================ */
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 6px;
+  background: #E5E7EB;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--ink-tertiary);
+  background: #D1D5DB;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.24);
 }
 
 /* ============================================================
@@ -572,7 +644,7 @@ body {
   justify-content: center;
   flex-shrink: 0;
   font-size: 16px;
-  font-weight: 700;
+  font-weight: 600;
   border: 2px solid var(--border);
   background: var(--surface-1);
   color: var(--ink-tertiary);
@@ -723,8 +795,8 @@ body {
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes slide-in-right {
@@ -733,8 +805,8 @@ body {
 }
 
 @keyframes slide-in-up {
-  from { opacity: 0; transform: translateY(16px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes shimmer {
@@ -752,7 +824,7 @@ body {
 }
 
 .animate-fade-in {
-  animation: fade-in 0.25s ease-out both;
+  animation: fade-in 0.28s ease-out both;
 }
 
 .animate-slide-in-right {
@@ -760,7 +832,7 @@ body {
 }
 
 .animate-slide-in-up {
-  animation: slide-in-up 0.22s ease-out both;
+  animation: slide-in-up 0.28s ease-out both;
 }
 
 .animate-spin-slow {
@@ -794,10 +866,8 @@ body {
    ============================================================ */
 
 .login-bg-pattern {
-  background-image:
-    radial-gradient(circle at 20% 80%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-    radial-gradient(circle at 50% 50%, rgba(129, 140, 248, 0.04) 0%, transparent 70%);
+  /* deliberately empty — the sign-in page carries no colour wash */
+  background-image: none;
 }
 
 .dark .login-bg-pattern {
@@ -810,9 +880,9 @@ body {
 /* Subtle grid for login */
 .login-grid {
   background-image:
-    linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
-  background-size: 48px 48px;
+    linear-gradient(to right, rgba(17,24,39,0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(17,24,39,0.025) 1px, transparent 1px);
+  background-size: 56px 56px;
 }
 
 .dark .login-grid {
@@ -820,4 +890,137 @@ body {
     linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
   background-size: 48px 48px;
+}
+
+/* ============================================================
+   Card patterns taken from the reference design
+   ------------------------------------------------------------
+   Three card treatments do all the work there:
+     .card-solid   white, no border      — data panels and tables
+     .card-dashed  white, dashed hairline — "at a glance" tiles
+     .card-feature teal gradient          — the one hero surface
+   ============================================================ */
+
+.card-solid {
+  background: var(--surface-1);
+  border-radius: 18px;
+  border: none;
+}
+
+.card-dashed {
+  /* The reference's "at a glance" tiles are outlined, not filled — the dash
+     is what separates them from the solid data panels below. */
+  background: var(--surface-1);
+  border-radius: 18px;
+  border: 1.5px dashed #D8D8DE;
+}
+.card-dashed:hover { border-color: #BDBDC7; }
+
+.card-feature {
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3BC5C0 0%, #17A2A2 60%, #128585 100%);
+  color: #FFFFFF;
+}
+
+/* Square icon chip that sits in a card corner */
+.icon-chip {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Status pill: soft fill, saturated text, fully round */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 11px;
+  border-radius: 9999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.pill-done    { background: var(--success-muted); color: var(--success); }
+.pill-pending { background: var(--warning-muted); color: var(--warning); }
+.pill-alert   { background: var(--error-muted);   color: var(--error);   }
+.pill-info    { background: var(--info-muted);    color: var(--info);    }
+.pill-neutral { background: var(--surface-2);     color: var(--ink-secondary); }
+
+/* Outline "Details" button from the transactions table */
+.btn-ghost {
+  padding: 6px 14px;
+  border-radius: 9px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--ink-primary);
+  font-size: 12px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+.btn-ghost:hover { background: var(--surface-2); }
+
+/* Solid black circular action, as on the Savings card */
+.btn-round-dark {
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: var(--btn-dark);
+  color: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease;
+  cursor: pointer;
+}
+.btn-round-dark:hover { background: #000000; }
+
+/* Segmented control (Full Statistics / Results Summary) */
+.segmented {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 9999px;
+  background: var(--surface-2);
+  gap: 2px;
+}
+.segmented-item {
+  padding: 7px 18px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer;
+}
+.segmented-item[data-active="true"] {
+  background: var(--surface-1);
+  color: var(--ink-primary);
+  box-shadow: 0 1px 2px rgba(9, 9, 11, 0.06);
+}
+
+/* Search field with the pill shape used above the table */
+.input-pill {
+  background: var(--surface-2);
+  border: none;
+  border-radius: 9999px;
+  padding: 9px 16px 9px 38px;
+  font-size: 13px;
+  color: var(--ink-primary);
+  width: 100%;
+}
+.input-pill::placeholder { color: var(--ink-tertiary); }
+.input-pill:focus { outline: 2px solid var(--accent-subtle); outline-offset: 0; }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-in,
+  .animate-slide-in-up,
+  .animate-slide-in-right {
+    animation: none;
+  }
 }

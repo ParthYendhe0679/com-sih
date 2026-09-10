@@ -36,6 +36,9 @@ export default function FIRIntakePage() {
   // Online FIRs list from backend
   const [onlineFIRs, setOnlineFIRs] = useState<BackendFIR[]>([]);
   const [loadingOnline, setLoadingOnline] = useState(false);
+  // Which FIR is currently being accepted or rejected, so only that card
+  // shows a spinner rather than the whole queue.
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   // Pipeline execution state
   const [currentStep, setCurrentStep] = useState<PipelineStep>('intake');
@@ -72,6 +75,52 @@ export default function FIRIntakePage() {
       console.warn('Queue fetch:', err);
     } finally {
       setLoadingOnline(false);
+    }
+  };
+
+  /**
+   * Station Duty Officer decision on a citizen complaint.
+   *
+   * A case can only be raised from an ACCEPTED FIR, so without this step a
+   * complaint filed from the citizen portal reached the police queue and then
+   * had nowhere to go. The backend already exposed the transition; the console
+   * simply never offered it.
+   */
+  const handleReviewFIR = async (
+    fir: BackendFIR,
+    decision: 'ACCEPTED' | 'REJECTED'
+  ) => {
+    let rejection_reason: string | undefined;
+    if (decision === 'REJECTED') {
+      const reason = window.prompt(
+        `Reason for rejecting ${fir.fir_number}? The complainant is notified with this text.`
+      );
+      if (reason === null) return;            // officer cancelled
+      if (!reason.trim()) {
+        toast.error('A rejection needs a reason.');
+        return;
+      }
+      rejection_reason = reason.trim();
+    }
+
+    setReviewingId(fir.id);
+    try {
+      const updated = await firsApi.reviewFir(fir.id, {
+        status: decision,
+        ...(rejection_reason ? { rejection_reason } : {}),
+      });
+      setOnlineFIRs((prev) =>
+        prev.map((f) => (f.id === fir.id ? { ...f, ...updated } : f))
+      );
+      toast.success(
+        decision === 'ACCEPTED'
+          ? `${fir.fir_number} accepted. You can now create a case from it.`
+          : `${fir.fir_number} rejected. The complainant has been notified.`
+      );
+    } catch (err: any) {
+      toast.error(err?.message || 'Could not record the decision. Please retry.');
+    } finally {
+      setReviewingId(null);
     }
   };
 
@@ -264,14 +313,76 @@ export default function FIRIntakePage() {
                     )}
                   </div>
 
-                  <button
-                    onClick={() => handleSelectOnlineFIR(fir)}
-                    className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center justify-center gap-1.5 hover:opacity-90 transition-all mt-3 cursor-pointer"
-                    style={{ background: 'var(--accent)' }}
-                  >
-                    <span>Create Case for Investigation</span>
-                    <ArrowRight size={14} />
-                  </button>
+                  {/* The action offered depends on where the FIR is in its
+                      lifecycle. A case can only be raised once an officer has
+                      accepted the complaint. */}
+                  {(() => {
+                    const status = String(fir.status || '').toUpperCase();
+                    const busy = reviewingId === fir.id;
+
+                    if (status === 'SUBMITTED' || status === 'UNDER_REVIEW') {
+                      return (
+                        <div className="mt-3 space-y-2">
+                          <button
+                            onClick={() => handleReviewFIR(fir, 'ACCEPTED')}
+                            disabled={busy}
+                            className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                            style={{ background: 'var(--accent)' }}
+                          >
+                            {busy ? (
+                              <><Loader2 size={14} className="animate-spin" /> Recording…</>
+                            ) : (
+                              <><Check size={14} /> Accept complaint</>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleReviewFIR(fir, 'REJECTED')}
+                            disabled={busy}
+                            className="w-full py-2 rounded-xl text-[12.5px] font-semibold border transition-colors cursor-pointer hover:bg-[var(--surface-2)] disabled:opacity-60 disabled:cursor-not-allowed"
+                            style={{ borderColor: 'var(--border-strong)', color: 'var(--ink-secondary)' }}
+                          >
+                            Reject
+                          </button>
+                          <p className="text-[11px] text-center" style={{ color: 'var(--ink-tertiary)' }}>
+                            Accept the complaint to open a case from it.
+                          </p>
+                        </div>
+                      );
+                    }
+
+                    if (status === 'REJECTED') {
+                      return (
+                        <div
+                          className="mt-3 rounded-xl px-3 py-2.5 text-[12px]"
+                          style={{ background: 'var(--error-muted)', color: 'var(--error)' }}
+                        >
+                          Rejected{fir.rejection_reason ? ` — ${fir.rejection_reason}` : '.'}
+                        </div>
+                      );
+                    }
+
+                    if (status === 'CONVERTED_TO_CASE') {
+                      return (
+                        <div
+                          className="mt-3 rounded-xl px-3 py-2.5 text-[12px] text-center"
+                          style={{ background: 'var(--success-muted)', color: 'var(--success)' }}
+                        >
+                          A case has already been opened from this FIR.
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <button
+                        onClick={() => handleSelectOnlineFIR(fir)}
+                        className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity mt-3 cursor-pointer"
+                        style={{ background: 'var(--accent)' }}
+                      >
+                        <span>Create Case for Investigation</span>
+                        <ArrowRight size={14} />
+                      </button>
+                    );
+                  })()}
                 </div>
               ))}
             </div>

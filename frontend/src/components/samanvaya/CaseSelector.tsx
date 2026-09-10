@@ -34,7 +34,7 @@ interface Props {
   onOpenIngestion: () => void;
 }
 
-const priorityColor = (p?: string) => SEVERITY_COLORS[(p || '').toUpperCase()] || '#0891B2';
+const priorityColor = (p?: string) => SEVERITY_COLORS[(p || '').toUpperCase()] || '#0F766E';
 
 export default function CaseSelector({
   cases,
@@ -77,7 +77,7 @@ export default function CaseSelector({
         <EmptyState
           icon={FolderOpen}
           title="No active cases available"
-          message="SAMANVAYA analyses registered cases. Once a case is created and linked to an FIR it will appear here for selection."
+          message="TRINETRA Analysis works on registered cases. Once a case is created and linked to an FIR it will appear here for selection."
         />
       </Panel>
     );
@@ -119,15 +119,17 @@ export default function CaseSelector({
                 key={c.id}
                 onClick={() => onSelect(c.id)}
                 aria-pressed={active}
-                className="text-left rounded-xl border p-3.5 transition-all cursor-pointer hover:-translate-y-0.5"
+                className="text-left rounded-xl border p-3.5 transition-colors cursor-pointer hover:bg-[var(--surface-2)]"
                 style={{
-                  background: active ? tint(pc, 0.07) : 'var(--surface-2)',
-                  borderColor: active ? pc : 'var(--border)',
-                  boxShadow: active ? `0 0 0 1px ${pc}` : 'none',
+                  // Selection is a UI state, so it uses the theme highlight.
+                  // Tinting by priority made every critical card look alarming
+                  // just for being picked.
+                  background: active ? 'var(--highlight-soft)' : 'var(--surface-1)',
+                  borderColor: active ? 'var(--highlight-edge)' : 'var(--border-strong)',
                 }}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="font-mono text-[12.5px] font-bold text-[var(--ink-primary)] truncate">
+                  <span className="font-mono text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">
                     {c.case_number}
                   </span>
                   <Badge color={pc}>{c.priority}</Badge>
@@ -137,7 +139,7 @@ export default function CaseSelector({
                   {c.title}
                 </div>
 
-                <div className="text-[11.5px] font-semibold mt-1.5" style={{ color: pc }}>
+                <div className="text-[11.5px] font-semibold mt-1.5" style={{ color: 'var(--ink-secondary)' }}>
                   {c.crime_category}
                 </div>
 
@@ -163,24 +165,24 @@ export default function CaseSelector({
       </Panel>
 
       {/* ── Case preview ──────────────────────────────────── */}
-      <Panel className="xl:col-span-5" accent={selected ? priorityColor(selected.priority) : undefined}>
+      <Panel className="xl:col-span-5">
         {selected ? (
           <div className="space-y-4">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-mono text-[13px] font-bold text-[var(--ink-primary)]">
+                <span className="font-mono text-[13px] font-semibold text-[var(--ink-primary)]">
                   {selected.case_number}
                 </span>
                 <Badge color={priorityColor(selected.priority)} solid>
                   {selected.priority}
                 </Badge>
-                <Badge color="#0891B2">{selected.status}</Badge>
-                {alreadyAnalysed && <Badge color="#059669">Analysed</Badge>}
+                <Badge color="#0F766E">{selected.status}</Badge>
+                {alreadyAnalysed && <Badge color="#16A34A">Analysed</Badge>}
               </div>
-              <h3 className="text-[17px] font-bold text-[var(--ink-primary)] mt-2 leading-snug">
+              <h3 className="text-[17px] font-semibold text-[var(--ink-primary)] mt-2 leading-snug">
                 {selected.title}
               </h3>
-              <div className="text-[13px] font-semibold mt-1" style={{ color: priorityColor(selected.priority) }}>
+              <div className="text-[13px] font-semibold mt-1" style={{ color: 'var(--ink-secondary)' }}>
                 {selected.crime_category}
               </div>
             </div>
@@ -201,7 +203,7 @@ export default function CaseSelector({
                   className="rounded-lg border px-3 py-2.5"
                   style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}
                 >
-                  <dt className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1">
+                  <dt className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1">
                     <f.icon size={11} />
                     {f.label}
                   </dt>
@@ -214,8 +216,8 @@ export default function CaseSelector({
               <button
                 onClick={onStart}
                 disabled={starting}
-                className="w-full px-4 py-3 rounded-xl text-[13.5px] font-bold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110"
-                style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+                className="w-full px-4 py-3 rounded-xl text-[13.5px] font-semibold text-white flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed hover:brightness-110"
+                style={{ background: 'var(--accent)' }}
               >
                 {starting ? (
                   <>
@@ -225,7 +227,7 @@ export default function CaseSelector({
                 ) : (
                   <>
                     <Play size={16} />
-                    {alreadyAnalysed ? 'Re-run SAMANVAYA investigation' : 'Start SAMANVAYA investigation'}
+                    {alreadyAnalysed ? 'Re-run analysis' : 'Start analysis'}
                   </>
                 )}
               </button>
@@ -250,7 +252,7 @@ export default function CaseSelector({
           <EmptyState
             icon={FolderOpen}
             title="No case selected"
-            message="Select an active case from the list to review its details and begin SAMANVAYA intelligence analysis."
+            message="Select an active case from the list to review its details and begin the analysis."
           />
         )}
       </Panel>

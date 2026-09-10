@@ -67,15 +67,15 @@ type TabKey =
 
 const TABS: Array<{ key: TabKey; label: string; icon: typeof LayoutDashboard; needsDossier?: boolean }> = [
   { key: 'select', label: 'Case', icon: LayoutDashboard },
-  { key: 'data', label: 'Data sources', icon: Database },
-  { key: 'agents', label: 'Agents', icon: Cpu },
-  { key: 'summary', label: 'Intelligence summary', icon: Target, needsDossier: true },
+  { key: 'data', label: 'Evidence sources', icon: Database },
+  { key: 'agents', label: 'Analysis steps', icon: Cpu },
+  { key: 'summary', label: 'Summary', icon: Target, needsDossier: true },
   { key: 'network', label: 'Network', icon: Share2, needsDossier: true },
-  { key: 'tree', label: 'Investigation tree', icon: Layers, needsDossier: true },
-  { key: 'map', label: 'Geographic', icon: MapPin, needsDossier: true },
+  { key: 'tree', label: 'Case tree', icon: Layers, needsDossier: true },
+  { key: 'map', label: 'Map', icon: MapPin, needsDossier: true },
   { key: 'timeline', label: 'Timeline', icon: Clock, needsDossier: true },
-  { key: 'comms', label: 'Communications', icon: Phone },
-  { key: 'dossier', label: 'Official dossier', icon: FileText, needsDossier: true },
+  { key: 'comms', label: 'Phone calls', icon: Phone },
+  { key: 'dossier', label: 'Final report', icon: FileText, needsDossier: true },
 ];
 
 const POLL_MS = 1500;
@@ -176,13 +176,13 @@ function SamanvayaWorkspace() {
             const finished = await samanvayaApi.getFinalResults(caseId);
             setDossier(finished);
             loadSources(caseId);
-            toast.success('SAMANVAYA analysis complete — all five agents finished.');
+            toast.success('Analysis complete — all five steps finished.');
             setTab('summary');
           } else if (live.status === 'FAILED') {
             stopPolling();
             setStarting(false);
             setPipelineError(live.error || 'The pipeline stopped before completing.');
-            toast.error('SAMANVAYA analysis failed.');
+            toast.error('Analysis failed.');
           }
         } catch (err: any) {
           // A single dropped poll is not fatal; surface it only if it persists.
@@ -244,7 +244,7 @@ function SamanvayaWorkspace() {
     setDossier(null);
     try {
       await samanvayaApi.startPipeline(selectedCaseId, false);
-      toast.success('SAMANVAYA multi-agent analysis started.');
+      toast.success('TRINETRA Analysis started.');
       setTab('agents');
       setSelectedAgentId('agent-1');
       beginPolling(selectedCaseId);
@@ -318,7 +318,7 @@ function SamanvayaWorkspace() {
         ? 'Ready to start the multi-agent investigation'
         : 'Select a case to begin');
 
-  const priorityColor = SEVERITY_COLORS[(selectedCase?.priority || '').toUpperCase()] || '#4F46E5';
+  const priorityColor = SEVERITY_COLORS[(selectedCase?.priority || '').toUpperCase()] || '#12376E';
 
   return (
     <div className="max-w-[1680px] mx-auto pb-16 space-y-5">
@@ -332,38 +332,29 @@ function SamanvayaWorkspace() {
         }}
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4 min-w-0">
+          <div className="flex items-start gap-3.5 min-w-0">
+            {/* A soft tile instead of a heavy black block, and the badge and
+                step count are dropped — the rail below already shows both. */}
             <span
-              className="w-[52px] h-[52px] rounded-2xl flex items-center justify-center text-white shrink-0"
-              style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+              className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'var(--pastel-teal)', color: 'var(--pastel-teal-ink)' }}
             >
-              <BrainCircuit size={26} />
+              <BrainCircuit size={21} />
             </span>
             <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <Badge color="#4F46E5" solid>
-                  Multi-agent intelligence
-                </Badge>
-                <span className="text-[11px] font-semibold text-[var(--ink-tertiary)]">
-                  5 specialised agents · one connected investigation
-                </span>
-              </div>
-              <h1 className="text-[26px] font-bold tracking-tight text-[var(--ink-primary)] mt-1.5 leading-none">
-                SAMANVAYA
+              <h1 className="text-[24px] font-semibold tracking-tight text-[var(--ink-primary)] leading-none">
+                TRINETRA Analysis
               </h1>
               {selectedCase ? (
                 <div className="flex flex-wrap items-center gap-2 mt-2">
-                  <span className="font-mono text-[13px] font-bold text-[var(--ink-primary)]">
+                  <span className="font-mono text-[13px] font-semibold text-[var(--ink-primary)]">
                     {selectedCase.case_number}
                   </span>
-                  <span className="text-[13px] font-semibold" style={{ color: priorityColor }}>
+                  <span className="text-[13px] text-[var(--ink-secondary)]">
                     {selectedCase.crime_category}
                   </span>
                   <Badge color={priorityColor}>{selectedCase.priority}</Badge>
-                  <Badge color="#0891B2">{selectedCase.status}</Badge>
-                  <span className="text-[12px] text-[var(--ink-tertiary)]">
-                    {selectedCase.area || selectedCase.city} · {selectedCase.police_station || 'Jurisdiction HQ'}
-                  </span>
+                  <Badge color="var(--accent)">{selectedCase.status}</Badge>
                 </div>
               ) : (
                 <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1.5">
@@ -397,8 +388,8 @@ function SamanvayaWorkspace() {
             <button
               onClick={startPipeline}
               disabled={running || !selectedCaseId}
-              className="px-4 py-2 rounded-xl text-[12.5px] font-bold text-white flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:brightness-110"
-              style={{ background: 'linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%)' }}
+              className="px-4 py-2 rounded-lg text-[12.5px] font-semibold flex items-center gap-2 cursor-pointer transition-opacity disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90"
+              style={{ background: 'var(--highlight)', color: 'var(--highlight-ink)' }}
             >
               {running ? (
                 <>
@@ -436,7 +427,7 @@ function SamanvayaWorkspace() {
       {pipelineError && (
         <ErrorState
           title="Analysis error"
-          message="The SAMANVAYA pipeline reported an error for this case."
+          message="The analysis reported an error for this case."
           details={pipelineError}
           onRetry={startPipeline}
         />
@@ -470,7 +461,7 @@ function SamanvayaWorkspace() {
               {t.label}
               {badge !== null && (
                 <span
-                  className="px-1.5 py-px rounded text-[10px] font-bold tabular-nums"
+                  className="px-1.5 py-px rounded text-[10px] font-semibold tabular-nums"
                   style={{
                     background: active ? 'var(--accent)' : 'var(--surface-3)',
                     color: active ? '#FFFFFF' : 'var(--ink-secondary)',
@@ -521,8 +512,8 @@ function SamanvayaWorkspace() {
             {status?.console && status.console.length > 0 && (
               <AgentConsole
                 lines={status.console}
-                color="#4F46E5"
-                title="Orchestrator processing telemetry"
+                color="#12376E"
+                title="What the system is doing right now"
                 animate={Boolean(running)}
                 defaultOpen={Boolean(running)}
                 maxHeight={220}
@@ -568,7 +559,7 @@ function SamanvayaWorkspace() {
       <Panel>
         <p className="text-[12px] leading-relaxed text-[var(--ink-secondary)]">
           <strong className="text-[var(--ink-primary)]">AI-assisted analysis.</strong> Every finding,
-          relationship and lead produced by SAMANVAYA requires independent verification by the investigating
+          relationship and lead produced by TRINETRA Analysis requires independent verification by the investigating
           officer. Confidence values describe confidence in a data relationship or analytical match — they are
           not probabilities of guilt.
         </p>
@@ -613,7 +604,7 @@ export default function SamanvayaPage() {
       fallback={
         <div className="py-24 flex items-center justify-center gap-3 text-[var(--ink-secondary)]">
           <Loader2 size={18} className="animate-spin" />
-          <span className="text-[13px] font-medium">Loading SAMANVAYA workspace…</span>
+          <span className="text-[13px] font-medium">Loading TRINETRA Analysis…</span>
         </div>
       }
     >

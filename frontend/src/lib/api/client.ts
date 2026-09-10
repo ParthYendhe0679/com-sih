@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Central API Client
+// TRINETRA — Central API Client
 // ============================================================
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000/api/v1';
@@ -42,12 +42,12 @@ class ApiClient {
 
   private getToken(): string | null {
     if (typeof window === 'undefined') return null;
-    let token = localStorage.getItem('kritagas_token');
+    let token = localStorage.getItem('TRINETRA_token');
     if (!token) {
-      const role = localStorage.getItem('kritagas_role') || 'police';
+      const role = localStorage.getItem('TRINETRA_role') || 'police';
       token = `demo-token-${role}-session`;
       try {
-        localStorage.setItem('kritagas_token', token);
+        localStorage.setItem('TRINETRA_token', token);
       } catch (_) {}
     }
     return token;
@@ -121,7 +121,7 @@ class ApiClient {
       }
       // Network or CORS failure
       throw new ApiError(
-        err.message || 'Network connection to KRITAGAS backend failed.',
+        err.message || 'Network connection to TRINETRA backend failed.',
         0,
         'NETWORK_ERROR',
         err

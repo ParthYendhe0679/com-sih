@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Multi-Entity Search Service API
+// TRINETRA — Multi-Entity Search Service API
 // ============================================================
 
 import { apiClient } from './client';

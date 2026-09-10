@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Authentication Service API
+// TRINETRA — Authentication Service API
 // ============================================================
 
 import { apiClient } from './client';
@@ -36,9 +36,9 @@ export const authApi = {
     }, { skipAuth: true });
 
     if (typeof window !== 'undefined' && data?.access_token) {
-      localStorage.setItem('kritagas_token', data.access_token);
-      localStorage.setItem('kritagas_user', JSON.stringify(data));
-      localStorage.setItem('kritagas_role', data.role.toLowerCase());
+      localStorage.setItem('TRINETRA_token', data.access_token);
+      localStorage.setItem('TRINETRA_user', JSON.stringify(data));
+      localStorage.setItem('TRINETRA_role', data.role.toLowerCase());
     }
 
     return data;
@@ -60,20 +60,20 @@ export const authApi = {
 
   logout(): void {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('kritagas_token');
-      localStorage.removeItem('kritagas_user');
-      localStorage.removeItem('kritagas_role');
+      localStorage.removeItem('TRINETRA_token');
+      localStorage.removeItem('TRINETRA_user');
+      localStorage.removeItem('TRINETRA_role');
     }
   },
 
   getStoredToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('kritagas_token');
+    return localStorage.getItem('TRINETRA_token');
   },
 
   getStoredUser(): LoginResponse | null {
     if (typeof window === 'undefined') return null;
-    const str = localStorage.getItem('kritagas_user');
+    const str = localStorage.getItem('TRINETRA_user');
     if (!str) return null;
     try {
       return JSON.parse(str);

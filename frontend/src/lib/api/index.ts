@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Central API Module Export
+// TRINETRA — Central API Module Export
 // ============================================================
 
 export * from './client';

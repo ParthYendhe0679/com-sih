@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — SAMANVAYA Multi-Agent Intelligence API Client
+// TRINETRA — SAMANVAYA Multi-Agent Intelligence API Client
 // ============================================================
 
 import { apiClient } from './client';

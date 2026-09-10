@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Evidence Service API
+// TRINETRA — Evidence Service API
 // ============================================================
 
 import { apiClient } from './client';

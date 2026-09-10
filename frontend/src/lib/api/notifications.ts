@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — In-App Notifications Service API
+// TRINETRA — In-App Notifications Service API
 // ============================================================
 
 import { apiClient } from './client';

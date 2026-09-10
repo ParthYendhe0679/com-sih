@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Dashboard Analytics Service API
+// TRINETRA — Dashboard Analytics Service API
 // ============================================================
 
 import { apiClient } from './client';

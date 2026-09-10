@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — Investigation Cases Service API
+// TRINETRA — Investigation Cases Service API
 // ============================================================
 
 import { apiClient } from './client';
@@ -200,7 +200,7 @@ export function invalidateClientCaseCache(caseId?: string): void {
   }
   if (typeof window !== 'undefined') {
     try {
-      sessionStorage.removeItem('kritagas_cases_list_cache');
+      sessionStorage.removeItem('TRINETRA_cases_list_cache');
       window.dispatchEvent(new CustomEvent('CASE_INVALIDATED', { detail: { caseId } }));
     } catch (_) {}
   }
@@ -215,7 +215,7 @@ export const casesApi = {
     }
     if (typeof window !== 'undefined') {
       try {
-        const stored = sessionStorage.getItem('kritagas_cases_list_cache');
+        const stored = sessionStorage.getItem('TRINETRA_cases_list_cache');
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) return parsed;
@@ -232,7 +232,7 @@ export const casesApi = {
     }
     if (typeof window !== 'undefined') {
       try {
-        const stored = sessionStorage.getItem('kritagas_cases_list_cache');
+        const stored = sessionStorage.getItem('TRINETRA_cases_list_cache');
         if (stored) {
           const list: BackendCase[] = JSON.parse(stored);
           const found = list.find((c) => c.id === idOrNumber || c.case_number === idOrNumber);
@@ -266,7 +266,7 @@ export const casesApi = {
       }
       if (typeof window !== 'undefined') {
         try {
-          sessionStorage.setItem('kritagas_cases_list_cache', JSON.stringify(result.items.slice(0, 50)));
+          sessionStorage.setItem('TRINETRA_cases_list_cache', JSON.stringify(result.items.slice(0, 50)));
         } catch (_) {}
       }
     }

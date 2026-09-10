@@ -1,5 +1,5 @@
 // ============================================================
-// KRITAGAS — FIR & Complaint Intake Service API
+// TRINETRA — FIR & Complaint Intake Service API
 // ============================================================
 
 import { apiClient } from './client';

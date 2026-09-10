@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
@@ -47,23 +48,23 @@ const policeNav: NavSection[] = [
     items: [
       { href: '/cases', label: 'Cases', icon: FolderOpen },
       { href: '/cases/search', label: 'Case Search', icon: Search },
-      { href: '/fir', label: 'FIR Intake / Processing', icon: FileText },
+      { href: '/fir', label: 'FIR Intake', icon: FileText },
     ],
   },
   {
     label: 'Intelligence',
     defaultOpen: true,
     items: [
-      { href: '/intelligence/samanvaya', label: 'Investigation Agents', icon: BrainCircuit, badge: 'SAMANVAYA', pulse: true },
-      { href: '/historical', label: 'Historical Intelligence', icon: History },
-      { href: '/ai', label: 'KAVA AI', icon: Bot },
+      { href: '/intelligence/samanvaya', label: 'Case Analysis', icon: BrainCircuit, badge: 'AI', pulse: true },
+      { href: '/historical', label: 'Past Cases', icon: History },
+      { href: '/ai', label: 'NETRA AI', icon: Bot },
     ],
   },
   {
     label: 'Evidence',
     defaultOpen: false,
     items: [
-      { href: '/evidence', label: 'Evidence Intelligence', icon: Package },
+      { href: '/evidence', label: 'Evidence Vault', icon: Package },
     ],
   },
   {
@@ -169,73 +170,79 @@ export default function Sidebar() {
     router.push('/login');
   };
 
-  const isActive = (href: string) => {
-    const [path, query] = href.split('?');
-    if (path === '/cases/search') return pathname === '/cases/search';
+  // Only ever one row is active. A plain prefix test lights up both /cases and
+  // /cases/search at once, so the winner is the LONGEST href that matches the
+  // current path — the most specific item wins and its parent stays quiet.
+  const activeHref = React.useMemo(() => {
+    const candidates = sections.flatMap((sec) => sec.items.map((i) => i.href));
+    let best: string | null = null;
 
-    if (query) {
-      if (pathname !== path) return false;
-      const itemParams = new URLSearchParams(query);
-      for (const [key, value] of itemParams.entries()) {
-        if (searchParams.get(key) !== value) return false;
+    for (const href of candidates) {
+      const [path, query] = href.split('?');
+      if (pathname !== path) {
+        // Prefix match, but only on a path-segment boundary.
+        const prefixOk =
+          path !== '/dashboard' &&
+          path !== '/citizen' &&
+          path !== '/admin' &&
+          Boolean(pathname?.startsWith(path + '/'));
+        if (!prefixOk) continue;
+      } else if (query) {
+        const itemParams = new URLSearchParams(query);
+        let ok = true;
+        for (const [k, v] of itemParams.entries()) {
+          if (searchParams.get(k) !== v) { ok = false; break; }
+        }
+        if (!ok) continue;
+      } else {
+        // Exact path with no query: a tabbed root only wins on its default tab.
+        if (path === '/admin') {
+          const tab = searchParams.get('tab');
+          if (tab && tab !== 'dashboard') continue;
+        }
+        if (path === '/citizen') {
+          const tab = searchParams.get('tab');
+          if (tab && tab !== 'overview') continue;
+        }
       }
-      return true;
+      if (best === null || href.length > best.length) best = href;
     }
+    return best;
+  }, [sections, pathname, searchParams]);
 
-    if (pathname === href) {
-      if (href === '/admin') {
-        const tab = searchParams.get('tab');
-        return !tab || tab === 'dashboard';
-      }
-      if (href === '/citizen') {
-        const tab = searchParams.get('tab');
-        return !tab || tab === 'overview';
-      }
-      return true;
-    }
-
-    return (
-      href !== '/dashboard' &&
-      href !== '/citizen' &&
-      href !== '/admin' &&
-      Boolean(pathname?.startsWith(href))
-    );
-  };
+  const isActive = (href: string) => href === activeHref;
 
   return (
     <aside
       className={cn(
-        'fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ease-out overflow-hidden bg-white border-r shadow-xs',
+        'fixed left-0 top-0 h-full z-40 flex flex-col transition-all duration-200 ease-out overflow-hidden bg-white',
         collapsed ? 'w-[68px]' : 'w-[272px]'
       )}
       style={{
         background: 'var(--sidebar-bg, #FFFFFF)',
-        borderColor: 'var(--sidebar-border, #E2E8F0)',
+        borderColor: 'var(--sidebar-border, #E1E5EA)',
       }}
     >
       {/* ── Brand Header (At Top) ─────────────────────────────── */}
       <div
         className={cn(
-          'h-16 shrink-0 flex items-center px-5 border-b transition-all',
+          'h-[72px] shrink-0 flex items-center px-5 transition-all',
           collapsed ? 'justify-center px-2' : 'justify-between'
         )}
-        style={{ borderColor: 'var(--sidebar-border, #E2E8F0)' }}
       >
         <Link href="/dashboard" className="flex items-center gap-3 min-w-0 group">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-[15px] font-black text-white shadow-sm shrink-0 bg-gradient-to-tr from-indigo-600 to-indigo-500 group-hover:scale-105 transition-transform"
+            className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden"
           >
-            K
+            <Image src="/trinetra-logo.png" alt="TRINETRA" width={40} height={40} className="object-contain" style={{ width: 'auto', height: 'auto' }} />
           </div>
           {!collapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-[14.5px] font-bold tracking-tight leading-none text-slate-900">
-                KRITAGAS
-              </span>
-              <span className="text-[9.5px] font-bold uppercase tracking-widest text-slate-400 mt-1">
-                Intelligence Platform
-              </span>
-            </div>
+            <span
+              className="text-[19px] font-semibold tracking-[-0.02em] leading-none truncate"
+              style={{ color: 'var(--ink-primary)' }}
+            >
+              TRINETRA
+            </span>
           )}
         </Link>
       </div>
@@ -245,12 +252,12 @@ export default function Sidebar() {
         {sections.map((section) => {
           const isOpen = openSections[section.label] !== false;
           return (
-            <div key={section.label} className="mb-2">
+            <div key={section.label} className="mb-3">
               {/* Section header */}
               {!collapsed && (
                 <button
                   onClick={() => toggleSection(section.label)}
-                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
                   <span>{section.label}</span>
                   <ChevronDown
@@ -260,7 +267,9 @@ export default function Sidebar() {
                 </button>
               )}
 
-              {/* Nav items */}
+              {/* Nav items. space-y keeps a gap between rows — without it an
+                  active pill and a hovered pill butt together into one block. */}
+              <div className="space-y-1 mt-0.5">
               {(isOpen || collapsed) && section.items.map((item) => {
                 const active = isActive(item.href);
                 const Icon = item.icon;
@@ -270,28 +279,28 @@ export default function Sidebar() {
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      'flex items-center gap-3 px-3 py-2 rounded-xl text-[13.5px] transition-all duration-100 relative group',
+                      'flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-[13.5px] transition-colors relative group',
                       collapsed && 'justify-center px-0 h-10',
                       active
-                        ? 'font-semibold text-indigo-600 bg-indigo-50/90 shadow-2xs'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'font-semibold text-[var(--ink-primary)] bg-[var(--sidebar-bg-active)]'
+                        : 'font-medium text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:bg-[var(--sidebar-bg-hover)]'
                     )}
                   >
                     <Icon
-                      size={18}
-                      strokeWidth={active ? 2.2 : 1.7}
+                      size={19}
+                      strokeWidth={1.75}
                       className={cn(
                         'shrink-0 transition-colors',
-                        active ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-700'
+                        active
+                          ? 'text-[var(--ink-primary)]'
+                          : 'text-[var(--ink-secondary)] group-hover:text-[var(--ink-primary)]'
                       )}
                     />
                     {!collapsed && <span className="truncate">{item.label}</span>}
-                    {item.pulse && !collapsed && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0 ml-1.5" />
-                    )}
                     {item.badge && !collapsed && (
                       <span
-                        className="ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 bg-red-600 text-white shadow-2xs tracking-wide"
+                        className="ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0 leading-none"
+                        style={{ background: 'var(--accent)', color: '#FFFFFF' }}
                       >
                         {item.badge}
                       </span>
@@ -307,6 +316,7 @@ export default function Sidebar() {
                   </Link>
                 );
               })}
+              </div>
             </div>
           );
         })}
@@ -314,19 +324,19 @@ export default function Sidebar() {
 
       {/* ── Footer / Actions ───────────────────── */}
       <div
-        className="p-3 border-t shrink-0 space-y-1"
-        style={{ borderColor: 'var(--sidebar-border, #E2E8F0)' }}
+        className="p-3 shrink-0 space-y-1"
+        style={{ borderColor: 'var(--sidebar-border, #E1E5EA)' }}
       >
         {/* Collapse Toggle */}
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="flex items-center justify-center w-full py-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+          className="flex items-center justify-center w-full py-2 rounded-xl text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? (
             <ChevronRight size={16} />
           ) : (
-            <span className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500">
+            <span className="flex items-center gap-1.5 text-[12px] font-medium text-slate-500 dark:text-slate-400">
               <ChevronLeft size={15} />
               Collapse
             </span>
@@ -337,7 +347,7 @@ export default function Sidebar() {
         {!collapsed && (
           <button
             onClick={() => router.push('/login')}
-            className="w-full text-center text-[12px] font-medium py-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer"
+            className="w-full text-center text-[12px] font-medium py-1.5 text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 rounded-lg transition-colors cursor-pointer"
           >
             Switch Portal
           </button>

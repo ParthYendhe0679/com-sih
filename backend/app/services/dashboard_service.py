@@ -86,17 +86,24 @@ class DashboardService:
                 pass
 
         assigned = await self.case_repo.count_for_investigator(police.id)
-        open_cases = (
-            await self.case_repo.count_cases(status=CaseStatus.OPEN)
-            + await self.case_repo.count_cases(status=CaseStatus.UNDER_INVESTIGATION)
-            + await self.case_repo.count_cases(status=CaseStatus.ACTIVE)
-        )
-        pending_firs = await self.fir_repo.count_for_police_queue()
+        # Each count used to be its own round trip to the database. Five of them
+        # ran back to back, and against a hosted Postgres that added up to about
+        # ten seconds every time the dashboard opened. Two GROUP BY queries
+        # return the same numbers.
+        status_counts = await self.case_repo.get_status_distribution()
+        priority_counts = await self.case_repo.get_priority_distribution()
 
-        high_priority = (
-            await self.case_repo.count_cases(priority=CasePriority.HIGH)
-            + await self.case_repo.count_cases(priority=CasePriority.CRITICAL)
+        open_cases = (
+            status_counts.get(CaseStatus.OPEN.value, 0)
+            + status_counts.get(CaseStatus.UNDER_INVESTIGATION.value, 0)
+            + status_counts.get(CaseStatus.ACTIVE.value, 0)
         )
+        high_priority = (
+            priority_counts.get(CasePriority.HIGH.value, 0)
+            + priority_counts.get(CasePriority.CRITICAL.value, 0)
+        )
+
+        pending_firs = await self.fir_repo.count_for_police_queue()
 
         recent_cases = await self.case_repo.list_for_investigator(police.id, offset=0, limit=5)
         recent_firs = await self.fir_repo.list_for_police_queue(offset=0, limit=5)

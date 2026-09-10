@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   ArrowUpDown, ArrowUp, ArrowDown, CheckSquare, Square
@@ -38,6 +38,14 @@ export default function DataTable<T extends object>({
   emptyMessage = 'No records found matching current criteria.',
   bulkActions,
 }: DataTableProps<T>) {
+  // The server renders this table before any data has been fetched, so it emits
+  // skeleton rows. By the time React hydrates, the client often already has the
+  // rows — the two trees disagree and hydration fails. Holding the skeleton for
+  // the first client paint makes both renders identical.
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  const showSkeleton = loading || !hydrated;
+
   const [currentPage, setCurrentPage] = useState(1);
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -174,7 +182,7 @@ export default function DataTable<T extends object>({
             </tr>
           </thead>
           <tbody>
-            {loading ? (
+            {showSkeleton ? (
               Array.from({ length: 8 }).map((_, i) => (
                 <tr key={i} className="animate-pulse">
                   <td className="w-10 text-center">
@@ -235,8 +243,16 @@ export default function DataTable<T extends object>({
         style={{ borderColor: 'var(--border)' }}
       >
         <span style={{ color: 'var(--ink-secondary)' }}>
-          Showing {sortedData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–
-          {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} total records
+          {/* Counts depend on fetched data, so they only settle after mount.
+              Rendering them during hydration produced a 0-vs-1 text mismatch. */}
+          {showSkeleton ? (
+            'Loading records…'
+          ) : (
+            <>
+              Showing {sortedData.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}–
+              {Math.min(currentPage * pageSize, sortedData.length)} of {sortedData.length} total records
+            </>
+          )}
         </span>
 
         <div className="flex items-center gap-1">
@@ -255,7 +271,9 @@ export default function DataTable<T extends object>({
             <ChevronLeft size={14} />
           </button>
           <span className="px-2 font-mono-id" style={{ color: 'var(--ink-primary)' }}>
-            Page {currentPage} of {totalPages}
+            {/* totalPages derives from fetched rows, so it differs between the
+                server render and the first client render. Hold it until mount. */}
+            Page {currentPage} of {showSkeleton ? '–' : totalPages}
           </span>
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}

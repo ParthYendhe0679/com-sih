@@ -212,6 +212,86 @@ class EntityExtractionService:
                 seen.add(norm)
                 results.append({"section": norm, "confidence": 95})
 
+        # BNS / BNSS / BSA sections. India replaced the IPC, CrPC and Evidence Act
+        # on 1 July 2024, so every FIR registered since then cites these instead.
+        # Section numbers here carry sub-clauses in brackets, e.g. "BNS 318(4)".
+        new_law_pattern = re.compile(
+            r"\b(?:"
+            r"(BNSS|BNS|BSA|Bharatiya\s+Nyaya\s+Sanhita|Bharatiya\s+Nagarik\s+Suraksha\s+Sanhita|"
+            r"Bharatiya\s+Sakshya\s+Adhiniyam)"
+            r"(?:,?\s*20\d{2})?\s*(?:Section|Sec\.?|u/s)?\s*([0-9]{1,3}(?:\s*\([0-9a-z]+\))?)"
+            r"|(?:Section|Sec\.?|u/s)\s*([0-9]{1,3}(?:\s*\([0-9a-z]+\))?)\s*(?:of\s+(?:the\s+)?)?"
+            r"(BNSS|BNS|BSA)"
+            r")\b",
+            re.IGNORECASE,
+        )
+        act_names = {
+            "BNS": "BNS",
+            "BHARATIYA NYAYA SANHITA": "BNS",
+            "BNSS": "BNSS",
+            "BHARATIYA NAGARIK SURAKSHA SANHITA": "BNSS",
+            "BSA": "BSA",
+            "BHARATIYA SAKSHYA ADHINIYAM": "BSA",
+        }
+        for m in new_law_pattern.finditer(text):
+            act_raw = (m.group(1) or m.group(4) or "").upper()
+            act_raw = re.sub(r"[\s,]+", " ", act_raw).strip()
+            act = act_names.get(act_raw)
+            sec_num = m.group(2) or m.group(3)
+            if not act or not sec_num:
+                continue
+            norm = f"{act} Section {re.sub(r'\\s+', '', sec_num)}"
+            if norm not in seen:
+                seen.add(norm)
+                results.append({"section": norm, "confidence": 98})
+
+        # Real FIRs list the offence sections as an act heading followed by a
+        # comma-separated list, e.g.
+        #     Bharatiya Nyaya Sanhita 2023: Sections 318(4), 61(2), 308(2)
+        #     Indian Penal Code: Sections 379, 420, 120-B
+        # The single-section patterns above never match that shape, so the
+        # offence sections were being dropped and only the header section
+        # ("Section 173 BNSS") survived. Parse the list form explicitly.
+        act_heading = re.compile(
+            r"(Bharatiya\s+Nyaya\s+Sanhita|Bharatiya\s+Nagarik\s+Suraksha\s+Sanhita|"
+            r"Bharatiya\s+Sakshya\s+Adhiniyam|Indian\s+Penal\s+Code|"
+            r"Information\s+Technology\s+Act|BNSS|BNS|BSA|IPC|IT\s*Act)"
+            r"(?:[,\s]*\d{4})?\s*:?\s*(?:Sections?|Secs?\.?|u/s)\s*([^\n]+)",
+            re.IGNORECASE,
+        )
+        heading_to_act = {
+            "BHARATIYA NYAYA SANHITA": "BNS",
+            "BNS": "BNS",
+            "BHARATIYA NAGARIK SURAKSHA SANHITA": "BNSS",
+            "BNSS": "BNSS",
+            "BHARATIYA SAKSHYA ADHINIYAM": "BSA",
+            "BSA": "BSA",
+            "INDIAN PENAL CODE": "IPC",
+            "IPC": "IPC",
+            "INFORMATION TECHNOLOGY ACT": "IT Act",
+            "IT ACT": "IT Act",
+        }
+        for m in act_heading.finditer(text):
+            key = re.sub(r"\s+", " ", m.group(1)).strip().upper()
+            act = heading_to_act.get(key)
+            if not act:
+                continue
+            # Take the section list up to the first descriptive word, so
+            # "384, 386 (Extortion), 420" keeps the numbers and drops prose.
+            # The bracket group is a statutory sub-clause - "(4)", "(2)", "(1a)" -
+            # never a description, so keep it short and numeric-led. Otherwise
+            # "420 (Cheating)" is read as one 15-character section and dropped.
+            for token in re.findall(
+                r"\d{1,4}\s*(?:\([0-9]{1,2}[a-z]?\))?(?:\s*-\s*[A-Z]\b|[A-Z]\b)?", m.group(2)
+            ):
+                sec_num = re.sub(r"\s+", "", token).strip("-")
+                if not sec_num or len(sec_num) > 12:
+                    continue
+                norm = f"{act} Section {sec_num.upper()}"
+                if norm not in seen:
+                    seen.add(norm)
+                    results.append({"section": norm, "confidence": 96})
+
         # General legal sections line scan e.g. "IPC Section 418 : Cheating"
         for line in text.split("\n"):
             line_clean = line.strip()
@@ -732,36 +812,44 @@ class EntityExtractionService:
 
         # 1. Category & Type
         cat = crime_category or "Financial / Cyber Fraud"
-        lines.append(f"• CRIME CLASSIFICATION: {cat}")
+        lines.append(f"• Type of crime: {cat}")
 
         # 2. Complainant
         complainant = next((p["name"] for p in entities.persons if p.get("role") == "COMPLAINANT"), None)
         if not complainant and entities.persons:
             complainant = entities.persons[0]["name"]
         if complainant:
-            comp_phone = entities.phones[0]["number"] if entities.phones else "Not Listed"
-            lines.append(f"• COMPLAINANT: {complainant} (Contact: {comp_phone})")
+            comp_phone = entities.phones[0]["number"] if entities.phones else "not given"
+            lines.append(f"• Complaint filed by: {complainant} (Phone: {comp_phone})")
 
         # 3. Accused / Suspects
         suspects = [p["name"] for p in entities.persons if p.get("role") == "SUSPECT"]
         if suspects:
-            lines.append(f"• ACCUSED / SUSPECTS: {', '.join(suspects)}")
+            lines.append(f"• Accused: {', '.join(suspects)}")
         elif len(entities.persons) > 1:
-            lines.append(f"• PERSON OF INTEREST: {entities.persons[1]['name']}")
+            lines.append(f"• Also named in the FIR: {entities.persons[1]['name']}")
 
         # 4. Financial Impact / Transactions
         if entities.transactions:
-            amounts = [t["amount"] for t in entities.transactions[:3]]
-            lines.append(f"• FINANCIAL IMPACT: Defrauded sum of {', '.join(amounts)}")
+            # Amounts are pulled straight out of FIR text, so they can carry
+            # line breaks and stray fragments. Clean them before display and
+            # drop anything with no digits left.
+            amounts = []
+            for t in entities.transactions[:3]:
+                raw = " ".join(str(t.get("amount", "")).split()).strip(" ,.;:-")
+                if any(ch.isdigit() for ch in raw) and raw not in amounts:
+                    amounts.append(raw)
+            if amounts:
+                lines.append(f"• Money involved: {', '.join(amounts)}")
 
         # 5. Legal Sections Cited
         if entities.legal_sections:
             secs = [s["section"] for s in entities.legal_sections[:4]]
-            lines.append(f"• LEGAL SECTIONS: {', '.join(secs)}")
+            lines.append(f"• Law sections: {', '.join(secs)}")
 
         # 6. Incident Locus / Jurisdiction
-        loc = incident_location or (entities.locations[0]["location"] if entities.locations else "Metropolitan Jurisdiction")
-        lines.append(f"• INCIDENT LOCUS: {loc}")
+        loc = incident_location or (entities.locations[0]["location"] if entities.locations else "not stated in the FIR")
+        lines.append(f"• Where it happened: {loc}")
 
         return "\n".join(lines)
 

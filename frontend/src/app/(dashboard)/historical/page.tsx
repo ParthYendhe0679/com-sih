@@ -17,6 +17,7 @@ export default function HistoricalIntelligencePage() {
   const [results, setResults] = useState<HistoricalCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCase, setSelectedCase] = useState<HistoricalCase | null>(null);
+  const [searched, setSearched] = useState(false);
 
   const handleSearch = useCallback(async (q: string) => {
     if (!q || !q.trim()) {
@@ -25,6 +26,7 @@ export default function HistoricalIntelligencePage() {
       return;
     }
     setLoading(true);
+    setSearched(true);
     try {
       // 1. Check if q matches a real case in the database
       const caseRes = await casesApi.listCases({ search: q, size: 5 });
@@ -32,28 +34,35 @@ export default function HistoricalIntelligencePage() {
         const topCase = caseRes.items[0];
         try {
           const simRes = await intelligenceApi.getSimilarCases(topCase.id, 5);
-          if (simRes.similar_cases && simRes.similar_cases.length > 0) {
-            const mapped: HistoricalCase[] = simRes.similar_cases.map((sc, i) => ({
+          if (simRes.matches && simRes.matches.length > 0) {
+            const mapped: HistoricalCase[] = simRes.matches.map((sc, i) => ({
               id: sc.case_id || `HIST-${i + 1}`,
-              title: sc.title || `Case Pattern #${i + 1}`,
-              year: 2024,
-              crime: (sc.crime_type as any) || 'Financial Fraud',
-              location: 'Maharashtra Central',
-              city: 'Mumbai',
-              status: 'Closed',
-              similarity: Math.round(sc.similarity_score * 100),
+              title: sc.title || `Case pattern #${i + 1}`,
+              year: sc.incident_date ? new Date(sc.incident_date).getFullYear() : new Date().getFullYear(),
+              crime: (sc.crime_category as any) || 'Unspecified',
+              location: sc.case_number || '',
+              city: '',
+              status: (sc.status as any) || 'Closed',
+              similarity: Math.round((sc.similarity_score || 0) * 100),
               relatedCaseId: topCase.id,
-              sharedEntities: sc.shared_entities || [],
+              sharedEntities: sc.matched_features || [],
               sharedLocations: [],
-              reason: sc.summary || `Pattern match with ${topCase.case_number}`,
+              reason: sc.explanation || `Pattern match with ${topCase.case_number}`,
             }));
             setResults(mapped);
             setSelectedCase(mapped[0]);
             setLoading(false);
             return;
           }
+          // The search ran and genuinely found nothing above the similarity
+          // threshold. Say so, rather than silently showing an empty screen.
+          setResults([]);
+          setSelectedCase(null);
+          setSearched(true);
+          setLoading(false);
+          return;
         } catch {
-          // Fall through to mock / text search if ML service not initialized yet
+          // Fall through to the text search below if the service is unavailable.
         }
       }
     } catch {
@@ -67,12 +76,23 @@ export default function HistoricalIntelligencePage() {
     });
   }, []);
 
+  // Terms that exist in this archive, so a click always returns something.
+  // Open on a real result rather than an empty screen — the officer should see
+  // what this page does before typing anything.
+  useEffect(() => {
+    if (!query && !searched) {
+      setQuery('Kidnapping');
+      handleSearch('Kidnapping');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const quickQueries = [
-    'Financial Fraud',
+    'Kidnapping',
     'Cybercrime',
-    'Money Laundering',
-    'Robbery',
-    'Identity Theft',
+    'Organized Crime',
+    'Burglary',
+    'Vehicle Theft',
   ];
 
   return (
@@ -81,18 +101,18 @@ export default function HistoricalIntelligencePage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
-              Historical Intelligence &amp; Pattern Matching
+            <h1 className="text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+              Past Cases
             </h1>
             <span
               className="text-[11px] font-mono-id px-2 py-0.5 rounded-full font-medium"
               style={{ background: 'var(--accent-muted)', color: 'var(--accent)' }}
             >
-              Archival Neural Index
+              Case archive
             </span>
           </div>
           <p className="text-[13px] text-[var(--ink-secondary)]">
-            Cross-case pattern matching, recurring MO correlation, and archival case similarity engine
+            Finds older cases carried out in a similar way to this one
           </p>
         </div>
       </div>
@@ -201,7 +221,7 @@ export default function HistoricalIntelligencePage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono-id font-bold text-[14px] text-[var(--accent)]">
+                        <span className="font-mono-id font-semibold text-[14px] text-[var(--accent)]">
                           {hc.id}
                         </span>
                         <span className="text-[11px] font-mono-id px-1.5 py-0.2 rounded bg-[var(--surface-2)] text-[var(--ink-secondary)]">
@@ -219,7 +239,7 @@ export default function HistoricalIntelligencePage() {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-[22px] font-bold font-mono-id text-[var(--accent)]">
+                      <div className="text-[22px] font-semibold font-mono-id text-[var(--accent)]">
                         {hc.similarity}%
                       </div>
                       <div className="text-[10px] uppercase font-semibold" style={{ color: 'var(--ink-tertiary)' }}>
@@ -250,13 +270,13 @@ export default function HistoricalIntelligencePage() {
                 <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-tertiary)' }}>
                   Historical Comparison
                 </span>
-                <span className="font-mono-id text-[12px] font-bold text-[var(--accent)]">
+                <span className="font-mono-id text-[12px] font-semibold text-[var(--accent)]">
                   {selectedCase.id}
                 </span>
               </div>
 
               <div>
-                <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                   {selectedCase.title}
                 </h3>
                 <p className="text-[12px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>

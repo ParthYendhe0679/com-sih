@@ -2,24 +2,24 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setRole, toggleTheme } from '@/store/slices/uiSlice';
 import type { UserRole } from '@/store/slices/uiSlice';
 import { toast } from 'sonner';
 import { ArrowRight, Sun, Moon, Eye, EyeOff, ShieldCheck, UserCircle2, Settings2, Loader2 } from 'lucide-react';
 import { authApi } from '@/lib/api/auth';
-import NetworkBackdrop from '@/components/auth/NetworkBackdrop';
 
 const demoCredentials: Record<UserRole, { email: string; password: string; label: string }> = {
-  admin: { email: 'admin@kritagas.gov.in', password: 'Admin@123456', label: 'Admin' },
+  admin: { email: 'admin@TRINETRA.gov.in', password: 'Admin@123456', label: 'Admin' },
   police: { email: 'inspector.sharma@police.gov.in', password: 'Police@123456', label: 'Police / Investigator' },
   citizen: { email: 'citizen.rahul@gmail.com', password: 'Citizen@123456', label: 'Citizen' },
 };
 
 const roleConfig: Record<UserRole, { icon: React.ComponentType<{ size?: number; className?: string }>; color: string; bg: string }> = {
-  admin: { icon: Settings2, color: '#D97706', bg: 'rgba(217, 119, 6, 0.1)' },
-  police: { icon: ShieldCheck, color: '#4F46E5', bg: 'rgba(79, 70, 229, 0.1)' },
-  citizen: { icon: UserCircle2, color: '#16A34A', bg: 'rgba(22, 163, 74, 0.1)' },
+  admin: { icon: Settings2, color: '#4B5563', bg: '#F3F4F6' },
+  police: { icon: ShieldCheck, color: '#4B5563', bg: '#F3F4F6' },
+  citizen: { icon: UserCircle2, color: '#4B5563', bg: '#F3F4F6' },
 };
 
 export default function LoginPage() {
@@ -59,9 +59,9 @@ export default function LoginPage() {
       );
       if (matchedRole) {
         if (typeof window !== 'undefined') {
-          localStorage.setItem('kritagas_token', `demo-token-${matchedRole}-${Date.now()}`);
-          localStorage.setItem('kritagas_role', matchedRole);
-          localStorage.setItem('kritagas_user', JSON.stringify({
+          localStorage.setItem('TRINETRA_token', `demo-token-${matchedRole}-${Date.now()}`);
+          localStorage.setItem('TRINETRA_role', matchedRole);
+          localStorage.setItem('TRINETRA_user', JSON.stringify({
             username: demoCredentials[matchedRole].label,
             role: matchedRole.toUpperCase(),
             email: demoCredentials[matchedRole].email,
@@ -96,11 +96,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={`relative min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-300 ${isDark ? 'bg-[#07080D] text-[#F3F4F6]' : 'bg-[#F4F5F9] text-[#0F172A]'}`}>
-      {/* Background: static wash + grid, then the drifting network graph */}
-      <div className="fixed inset-0 login-bg-pattern pointer-events-none" />
-      <div className="fixed inset-0 login-grid pointer-events-none" />
-      <NetworkBackdrop isDark={isDark} />
+    <div className={`relative min-h-screen flex flex-col items-center justify-center p-6 transition-colors duration-300 ${isDark ? 'bg-[#07080D] text-[#F9FAFB]' : 'bg-white text-[#111827]'}`}>
+      {/* One quiet layer only. The drifting node graph and the purple wash
+          fought the sign-in card for attention and made the logo look grubby. */}
+      <div className="fixed inset-0 login-grid pointer-events-none opacity-60" />
 
       {/* Theme Toggle */}
       <div className="absolute top-5 right-6 z-30">
@@ -127,37 +126,15 @@ export default function LoginPage() {
 
         {/* Logo & Branding */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-5">
-            <div className={`relative w-16 h-16 rounded-2xl p-3 shadow-2xl flex items-center justify-center ${
-              isDark
-                ? 'bg-gradient-to-b from-[#1C2033] to-[#0D0F1A] border border-white/15'
-                : 'bg-gradient-to-b from-[#FFFFFF] to-[#EEF2FF] border border-indigo-100 shadow-indigo-100/50'
-            }`}>
-              <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-                <circle cx="24" cy="24" r="21" stroke="url(#emblem-grad)" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.6" />
-                <polygon points="24,6 40,15 40,33 24,42 8,33 8,15" stroke="url(#emblem-grad)" strokeWidth="1.75" fill={isDark ? 'rgba(99, 102, 241, 0.08)' : 'rgba(99, 102, 241, 0.05)'} />
-                <path d="M24 14 L32 20 L32 28 L24 34 L16 28 L16 20 Z" fill="url(#core-grad)" opacity="0.95" />
-                <circle cx="24" cy="24" r="3.5" fill={isDark ? '#FFFFFF' : '#4F46E5'} />
-                <defs>
-                  <linearGradient id="emblem-grad" x1="8" y1="6" x2="40" y2="42" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#818CF8" />
-                    <stop offset="0.5" stopColor="#6366F1" />
-                    <stop offset="1" stopColor="#38BDF8" />
-                  </linearGradient>
-                  <linearGradient id="core-grad" x1="16" y1="14" x2="32" y2="34" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#6366F1" />
-                    <stop offset="1" stopColor="#4F46E5" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
 
-          <h1 className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${isDark ? 'text-white' : 'text-[#0F172A]'}`}>
-            KRITAGAS
+          <h1
+            className="font-display text-[30px] font-semibold leading-tight mt-1"
+            style={{ color: isDark ? '#F9FAFB' : 'var(--ink-primary)' }}
+          >
+            Sign in to TRINETRA
           </h1>
           <p className={`text-sm mt-2 font-medium tracking-wide ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-            Secure Intelligence & Investigation Platform
+            Criminal Network Intelligence &amp; Investigation Platform
           </p>
         </div>
 
@@ -277,7 +254,7 @@ export default function LoginPage() {
                   >
                     <Icon size={18} />
                   </div>
-                  <span className={`text-[12.5px] font-semibold ${isSelected ? 'text-indigo-500 font-bold' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <span className={`text-[12.5px] font-semibold ${isSelected ? 'text-indigo-500 font-semibold' : isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                     {cred.label.split(' / ')[0]}
                   </span>
                 </button>
@@ -288,7 +265,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className={`text-center text-xs mt-6 ${isDark ? 'text-gray-500' : 'text-gray-400'}`}>
-          KRITAGAS • Criminal Intelligence Platform • SIH 2026
+          TRINETRA • Criminal Intelligence Platform • SIH 2026
         </p>
       </div>
     </div>

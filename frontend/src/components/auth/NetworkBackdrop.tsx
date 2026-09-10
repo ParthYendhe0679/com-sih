@@ -1,7 +1,7 @@
 'use client';
 
 // ============================================================
-// KRITAGAS — Login Network Backdrop
+// TRINETRA — Login Network Backdrop
 // A slowly drifting constellation of nodes and link lines that
 // evokes a criminal-network graph without distracting from the
 // sign-in card. Motion is deliberately very slow (~8px/sec).

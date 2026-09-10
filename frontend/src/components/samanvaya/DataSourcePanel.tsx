@@ -117,7 +117,7 @@ export default function DataSourcePanel({
             ? 'Checking source availability…'
             : `${connectedCount} of ${sources.length} sources available for this case`
         }
-        accent="#0891B2"
+        accent="#0F766E"
         right={<ToolButton icon={RefreshCw} label="Recheck" onClick={onRefresh} disabled={loading || disabled} />}
       />
 
@@ -161,9 +161,9 @@ export default function DataSourcePanel({
                 </Badge>
               </div>
 
-              <div className="text-[12.5px] font-bold text-[var(--ink-primary)] mt-2.5">{s.name}</div>
+              <div className="text-[12.5px] font-semibold text-[var(--ink-primary)] mt-2.5">{s.name}</div>
               {s.recordCount > 0 && (
-                <div className="text-[16px] font-bold tabular-nums mt-0.5" style={{ color: meta.color }}>
+                <div className="text-[16px] font-semibold tabular-nums mt-0.5" style={{ color: meta.color }}>
                   {fmt(s.recordCount)}
                   <span className="text-[10px] font-semibold text-[var(--ink-tertiary)] ml-1 uppercase tracking-wide">
                     records
@@ -177,7 +177,7 @@ export default function DataSourcePanel({
                   {cdr ? (
                     <div className="space-y-2">
                       <div className="flex items-center gap-1.5 text-[11px] font-mono text-[var(--ink-primary)] min-w-0">
-                        <CheckCircle2 size={12} className="shrink-0 text-[#059669]" />
+                        <CheckCircle2 size={12} className="shrink-0 text-[#16A34A]" />
                         <span className="truncate">{cdr.fileName}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -211,8 +211,8 @@ export default function DataSourcePanel({
                       }}
                       className="rounded-lg border border-dashed px-3 py-3 text-center cursor-pointer transition-colors"
                       style={{
-                        borderColor: dragOver ? '#7C3AED' : 'var(--border-strong)',
-                        background: dragOver ? tint('#7C3AED', 0.08) : 'transparent',
+                        borderColor: dragOver ? '#5B4BC4' : 'var(--border-strong)',
+                        background: dragOver ? tint('#5B4BC4', 0.08) : 'transparent',
                       }}
                     >
                       {uploading ? (
@@ -264,9 +264,9 @@ export default function DataSourcePanel({
       {cdr && cdr.notes.length > 0 && (
         <div
           className="mt-4 rounded-xl border px-4 py-3"
-          style={{ background: tint('#EA580C', 0.06), borderColor: tint('#EA580C', 0.28) }}
+          style={{ background: tint('#D97706', 0.06), borderColor: tint('#D97706', 0.28) }}
         >
-          <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#EA580C]">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#D97706]">
             <AlertTriangle size={12} />
             Analysis caveats
           </div>

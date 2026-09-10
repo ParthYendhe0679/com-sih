@@ -197,7 +197,7 @@ export default function InvestigationTreeCanvas({ data }: { data: InvestigationT
         <EmptyState
           icon={Layers}
           title="No investigation tree yet"
-          message="The hierarchical tree is built from the agents' output. Run the SAMANVAYA analysis to decompose this case into suspects, locations, communications, evidence and leads."
+          message="The hierarchical tree is built from the analysis output. Run the aMANVAYA analysis to decompose this case into suspects, locations, communications, evidence and leads."
         />
       </Panel>
     );
@@ -395,7 +395,6 @@ function TreeNodeCard({
         minHeight: NODE_H,
         background: 'var(--surface-1)',
         borderColor: selected ? accent : tint(accent, 0.42),
-        borderLeft: `4px solid ${accent}`,
         boxShadow: selected ? `0 0 0 2px ${tint(accent, 0.4)}, var(--shadow-card-hover)` : 'var(--shadow-card)',
         opacity: dimmed ? 0.32 : 1,
       }}
@@ -413,7 +412,7 @@ function TreeNodeCard({
             <Icon size={13} />
           </span>
           <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-bold text-[var(--ink-primary)] leading-tight line-clamp-2">
+            <div className="text-[12px] font-semibold text-[var(--ink-primary)] leading-tight line-clamp-2">
               {node.name}
             </div>
             {node.subtitle && (
@@ -424,7 +423,7 @@ function TreeNodeCard({
           </div>
           {node.badge && (
             <span
-              className="shrink-0 px-1.5 py-0.5 rounded text-[8.5px] font-bold uppercase"
+              className="shrink-0 px-1.5 py-0.5 rounded text-[8.5px] font-semibold uppercase"
               style={{ background: tint(accent, 0.14), color: accent }}
             >
               {node.badge.length > 10 ? node.badge.slice(0, 10) : node.badge}
@@ -446,7 +445,7 @@ function TreeNodeCard({
             onToggle();
           }}
           aria-label={collapsed ? `Expand ${node.name}` : `Collapse ${node.name}`}
-          className="absolute left-1/2 -translate-x-1/2 -bottom-3 w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-bold cursor-pointer transition-transform hover:scale-110"
+          className="absolute left-1/2 -translate-x-1/2 -bottom-3 w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-semibold cursor-pointer transition-transform hover:scale-110"
           style={{
             background: collapsed ? accent : 'var(--surface-1)',
             borderColor: accent,
@@ -494,7 +493,7 @@ function NodeInspector({
           <Icon size={19} />
         </span>
         <div className="min-w-0">
-          <h4 className="text-[15px] font-bold text-[var(--ink-primary)] leading-snug">{node.name}</h4>
+          <h4 className="text-[15px] font-semibold text-[var(--ink-primary)] leading-snug">{node.name}</h4>
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             <Badge color={accent}>{node.subtitle || style.label}</Badge>
             {node.severity && <Badge color={SEVERITY_COLORS[node.severity]}>{node.severity}</Badge>}
@@ -536,7 +535,7 @@ function NodeInspector({
 
       {node.relations.length > 0 && (
         <div className="mt-4">
-          <div className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
+          <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
             <Link2 size={11} /> Relationships
           </div>
           <ul className="space-y-1.5">
@@ -546,7 +545,7 @@ function NodeInspector({
                 className="rounded-lg px-3 py-2 text-[11.5px]"
                 style={{ background: tint(accent, 0.06), border: `1px solid ${tint(accent, 0.2)}` }}
               >
-                <span className="font-bold uppercase tracking-wide text-[10px]" style={{ color: accent }}>
+                <span className="font-semibold uppercase tracking-wide text-[10px]" style={{ color: accent }}>
                   {r.label}
                 </span>
                 <span className="block text-[var(--ink-secondary)] mt-0.5 break-words">{r.target}</span>
@@ -558,7 +557,7 @@ function NodeInspector({
 
       {node.evidence.length > 0 && (
         <div className="mt-4">
-          <div className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
+          <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
             <FileCheck2 size={11} /> Evidence basis
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -577,7 +576,7 @@ function NodeInspector({
 
       {node.children.length > 0 && (
         <div className="mt-4">
-          <div className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
+          <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
             Contains ({node.children.length})
           </div>
           <div className="space-y-1 max-h-56 overflow-y-auto pr-1 custom-scrollbar">

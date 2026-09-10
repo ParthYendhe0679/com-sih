@@ -141,9 +141,9 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
       <Panel>
         <EmptyState
           icon={Share2}
-          accent="#4F46E5"
+          accent="#12376E"
           title="No investigation network yet"
-          message="Agent 3 builds the criminal network from resolved entities, stored relationships and any uploaded call records. Run the SAMANVAYA analysis to generate it."
+          message="Step 3 builds the link chart from resolved entities, stored relationships and any uploaded call records. Run the SAMANVAYA analysis to generate it."
         />
       </Panel>
     );
@@ -191,7 +191,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
               <Filter size={12} className="text-[var(--ink-tertiary)]" />
               <FilterChip
                 label={`All nodes (${nodes.length})`}
-                color="#4F46E5"
+                color="#12376E"
                 active={category === 'ALL'}
                 onClick={() => setCategory('ALL')}
               />
@@ -216,7 +216,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                 <Link2 size={12} className="text-[var(--ink-tertiary)]" />
                 <FilterChip
                   label={`All links (${edges.length})`}
-                  color="#0891B2"
+                  color="#0F766E"
                   active={relType === 'ALL'}
                   onClick={() => setRelType('ALL')}
                 />
@@ -226,7 +226,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                     <FilterChip
                       key={r}
                       label={`${r.replace(/_/g, ' ')} (${n})`}
-                      color="#0891B2"
+                      color="#0F766E"
                       active={relType === r}
                       onClick={() => setRelType(relType === r ? 'ALL' : r)}
                     />
@@ -275,7 +275,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                   const active = selectedEdge?.id === e.id;
                   const touched =
                     selectedNode && (e.source === selectedNode.id || e.target === selectedNode.id);
-                  const stroke = active || touched ? SEVERITY_COLORS[e.importance] || '#4F46E5' : 'var(--ink-tertiary)';
+                  const stroke = active || touched ? SEVERITY_COLORS[e.importance] || '#12376E' : 'var(--ink-tertiary)';
                   const mx = (a.x + b.x) / 2;
                   const my = (a.y + b.y) / 2;
 
@@ -305,7 +305,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                           className="pointer-events-none"
                           style={{
                             fontSize: 9.5,
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fill: stroke,
                             paintOrder: 'stroke',
                             stroke: 'var(--surface-2)',
@@ -353,7 +353,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                       <text
                         y={4}
                         textAnchor="middle"
-                        style={{ fontSize: isCase ? 12 : 10, fontWeight: 800, fill: '#FFFFFF', pointerEvents: 'none' }}
+                        style={{ fontSize: isCase ? 12 : 10, fontWeight: 600, fill: '#FFFFFF', pointerEvents: 'none' }}
                       >
                         {initials(n.name)}
                       </text>
@@ -362,7 +362,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                         textAnchor="middle"
                         style={{
                           fontSize: 10.5,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fill: 'var(--ink-primary)',
                           paintOrder: 'stroke',
                           stroke: 'var(--surface-2)',
@@ -378,7 +378,7 @@ export default function InvestigationNetwork({ data }: { data: SamanvayaGraphDat
                         textAnchor="middle"
                         style={{
                           fontSize: 8.5,
-                          fontWeight: 700,
+                          fontWeight: 600,
                           fill: s.color,
                           letterSpacing: 0.4,
                           paintOrder: 'stroke',
@@ -441,7 +441,7 @@ function FilterChip({
     <button
       onClick={onClick}
       aria-pressed={active}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border cursor-pointer transition-colors whitespace-nowrap"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border cursor-pointer transition-colors whitespace-nowrap"
       style={{
         background: active ? tint(color, 0.14) : 'transparent',
         borderColor: active ? color : 'var(--border-strong)',
@@ -468,7 +468,7 @@ function NetworkInspector({
   onSelectNode: (n: SamanvayaGraphNode) => void;
 }) {
   if (edge) {
-    const c = SEVERITY_COLORS[edge.importance] || '#4F46E5';
+    const c = SEVERITY_COLORS[edge.importance] || '#12376E';
     const src = nodes.find((n) => n.id === edge.source);
     const tgt = nodes.find((n) => n.id === edge.target);
     return (
@@ -483,7 +483,7 @@ function NetworkInspector({
                 className="w-full text-left rounded-lg px-3 py-2 cursor-pointer transition-colors hover:bg-[var(--surface-3)]"
                 style={{ background: 'var(--surface-2)' }}
               >
-                <div className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+                <div className="text-[9.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
                   {i === 0 ? 'From' : 'To'}
                 </div>
                 <div className="text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">{n.name}</div>
@@ -495,7 +495,7 @@ function NetworkInspector({
           <ConfidenceBar value={edge.confidence} color={c} label="Relationship confidence" />
         </div>
         <div className="mt-4">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] flex items-center gap-1.5 mb-2">
             <FileCheck2 size={11} /> Evidence basis
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -540,10 +540,10 @@ function NetworkInspector({
           <Icon size={19} />
         </span>
         <div className="min-w-0">
-          <h4 className="text-[15px] font-bold text-[var(--ink-primary)] leading-snug break-words">{node.name}</h4>
+          <h4 className="text-[15px] font-semibold text-[var(--ink-primary)] leading-snug break-words">{node.name}</h4>
           <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
             <Badge color={s.color}>{node.label || s.label}</Badge>
-            <Badge color={SEVERITY_COLORS[node.importance] || '#64748B'}>{node.importance}</Badge>
+            <Badge color={SEVERITY_COLORS[node.importance] || '#9CA3AF'}>{node.importance}</Badge>
           </div>
         </div>
       </div>
@@ -575,7 +575,7 @@ function NetworkInspector({
       )}
 
       <div className="mt-4">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
           Connections ({connections.length})
         </div>
         <div className="space-y-1 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
@@ -595,7 +595,7 @@ function NetworkInspector({
                     {other?.name || otherId}
                   </span>
                 </div>
-                <div className="text-[9.5px] font-bold uppercase tracking-wide pl-3.5" style={{ color: '#0891B2' }}>
+                <div className="text-[9.5px] font-semibold uppercase tracking-wide pl-3.5" style={{ color: '#0F766E' }}>
                   {e.source === node.id ? '→' : '←'} {e.relationshipType.replace(/_/g, ' ')}
                 </div>
               </button>

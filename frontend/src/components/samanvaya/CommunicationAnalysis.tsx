@@ -49,13 +49,13 @@ export default function CommunicationAnalysis({
           icon={Phone}
           title="No call records connected"
           message="Upload a call detail record export for this case to analyse call volumes, detect anomalous communication and place phone numbers into the investigation network."
-          accent="#7C3AED"
+          accent="#5B4BC4"
           action={
             onUploadRequest && (
               <button
                 onClick={onUploadRequest}
                 className="px-4 py-2 rounded-lg text-[12.5px] font-semibold text-white cursor-pointer transition-opacity hover:opacity-90"
-                style={{ background: '#7C3AED' }}
+                style={{ background: '#5B4BC4' }}
               >
                 Go to data sources
               </button>
@@ -76,20 +76,20 @@ export default function CommunicationAnalysis({
           icon={Phone}
           title="Communication analysis"
           subtitle={`${cdr.fileName} — ${cdr.windowStart || '?'} to ${cdr.windowEnd || '?'}`}
-          accent="#7C3AED"
+          accent="#5B4BC4"
           right={
             cdr.incidentReference ? (
-              <Badge color="#EA580C">Reference event {cdr.incidentReference}</Badge>
+              <Badge color="#D97706">Reference event {cdr.incidentReference}</Badge>
             ) : undefined
           }
         />
         <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <MetricTile label="Records scanned" value={cdr.parsedRecords} color="#2563EB" animate />
-          <MetricTile label="Relevant records" value={cdr.relevantRecords} color="#059669" animate />
-          <MetricTile label="Filtered out" value={cdr.filteredOut} color="#64748B" animate />
-          <MetricTile label="Distinct numbers" value={cdr.uniqueNumbers} color="#7C3AED" animate />
+          <MetricTile label="Relevant records" value={cdr.relevantRecords} color="#16A34A" animate />
+          <MetricTile label="Filtered out" value={cdr.filteredOut} color="#9CA3AF" animate />
+          <MetricTile label="Distinct numbers" value={cdr.uniqueNumbers} color="#5B4BC4" animate />
           <MetricTile label="Anomalies flagged" value={cdr.patterns.length} color="#DC2626" animate />
-          <MetricTile label="Rejected rows" value={cdr.rejectedRecords} color="#EA580C" animate
+          <MetricTile label="Rejected rows" value={cdr.rejectedRecords} color="#D97706" animate
             hint="Rows without a usable pair of numbers" />
         </div>
       </Panel>
@@ -120,7 +120,7 @@ export default function CommunicationAnalysis({
           {/* Daily volume sparkline */}
           {cdr.dailyVolume.length > 1 && (
             <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--border)' }}>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2.5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2.5">
                 Daily call volume
               </div>
               <div className="flex items-end gap-[3px] h-24" role="img" aria-label="Daily call volume chart">
@@ -164,7 +164,7 @@ export default function CommunicationAnalysis({
           ) : (
             <div className="mt-4 space-y-2 max-h-[420px] overflow-y-auto pr-1 custom-scrollbar">
               {cdr.patterns.map((p) => {
-                const c = SEVERITY_COLORS[p.severity] || '#0891B2';
+                const c = SEVERITY_COLORS[p.severity] || '#0F766E';
                 const isActive = active?.id === p.id;
                 return (
                   <button
@@ -177,7 +177,7 @@ export default function CommunicationAnalysis({
                     }}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12.5px] font-bold text-[var(--ink-primary)] truncate">{p.title}</span>
+                      <span className="text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">{p.title}</span>
                       <Badge color={c}>{p.severity}</Badge>
                     </div>
                     <div className="flex items-center gap-1.5 mt-1.5 text-[11.5px] font-mono text-[var(--ink-secondary)] min-w-0">
@@ -207,7 +207,7 @@ export default function CommunicationAnalysis({
             <Badge color={SEVERITY_COLORS[active.severity]} solid>
               {PATTERN_LABEL[active.patternType] || active.patternType}
             </Badge>
-            <h4 className="text-[15px] font-bold text-[var(--ink-primary)]">{active.title}</h4>
+            <h4 className="text-[15px] font-semibold text-[var(--ink-primary)]">{active.title}</h4>
             {active.window && (
               <span className="text-[11px] font-mono text-[var(--ink-tertiary)]">{active.window}</span>
             )}
@@ -222,7 +222,7 @@ export default function CommunicationAnalysis({
             <DotComparison
               label="Normal activity"
               value={active.baselineValue}
-              color="#64748B"
+              color="#9CA3AF"
               caption="baseline"
             />
             <DotComparison
@@ -248,7 +248,7 @@ export default function CommunicationAnalysis({
                 {e}
               </span>
             ))}
-            <Badge color="#EA580C">Requires investigator verification</Badge>
+            <Badge color="#D97706">Requires investigator verification</Badge>
           </div>
         </Panel>
       )}
@@ -271,14 +271,14 @@ function DotComparison({
   const count = Math.min(30, Math.max(0, Math.round(value)));
   return (
     <div className="rounded-xl border px-4 py-3.5" style={{ background: tint(color, 0.05), borderColor: tint(color, 0.26) }}>
-      <div className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">{label}</div>
+      <div className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">{label}</div>
       <div className="flex flex-wrap gap-1.5 mt-2.5 min-h-[16px]">
         {Array.from({ length: count }).map((_, i) => (
           <span key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
         ))}
         {count === 0 && <span className="text-[11px] text-[var(--ink-tertiary)]">none</span>}
       </div>
-      <div className="text-[15px] font-bold tabular-nums mt-2.5" style={{ color }}>
+      <div className="text-[15px] font-semibold tabular-nums mt-2.5" style={{ color }}>
         {fmt(Math.round(value * 100) / 100)}
         <span className="text-[10.5px] font-semibold text-[var(--ink-tertiary)] ml-1.5 uppercase tracking-wide">
           {caption}

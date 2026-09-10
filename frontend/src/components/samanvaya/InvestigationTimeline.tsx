@@ -13,12 +13,12 @@ import { Panel, SectionHeading, Badge, EmptyState, ConfidenceBar } from './primi
 import { typeStyle, tint } from './theme';
 
 const EVENT_COLOR: Record<string, string> = {
-  CASE: '#4338CA',
-  COMMUNICATION: '#7C3AED',
-  MOVEMENT: '#EA580C',
-  EVIDENCE: '#DB2777',
-  HISTORICAL: '#9333EA',
-  ANALYSIS: '#059669',
+  CASE: '#12376E',
+  COMMUNICATION: '#5B4BC4',
+  MOVEMENT: '#D97706',
+  EVIDENCE: '#DC2626',
+  HISTORICAL: '#5B4BC4',
+  ANALYSIS: '#16A34A',
 };
 
 export default function InvestigationTimeline({ events }: { events: TimelineEvent[] }) {
@@ -48,18 +48,18 @@ export default function InvestigationTimeline({ events }: { events: TimelineEven
         icon={Clock}
         title="Chronological timeline"
         subtitle={`${events.length} correlated event${events.length === 1 ? '' : 's'}`}
-        accent="#0891B2"
+        accent="#0F766E"
         right={
           <div className="flex flex-wrap items-center gap-1.5">
             <Filter size={13} className="text-[var(--ink-tertiary)]" />
             {['ALL', ...types].map((t) => {
               const active = filter === t;
-              const c = t === 'ALL' ? '#4F46E5' : EVENT_COLOR[t] || '#64748B';
+              const c = t === 'ALL' ? '#12376E' : EVENT_COLOR[t] || '#9CA3AF';
               return (
                 <button
                   key={t}
                   onClick={() => setFilter(t)}
-                  className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide border cursor-pointer transition-colors"
+                  className="px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border cursor-pointer transition-colors"
                   style={{
                     background: active ? tint(c, 0.14) : 'transparent',
                     borderColor: active ? c : 'var(--border-strong)',
@@ -96,12 +96,12 @@ export default function InvestigationTimeline({ events }: { events: TimelineEven
                 style={{ background: tint(c, 0.045), borderColor: tint(c, 0.26) }}
               >
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[12px] font-bold font-mono" style={{ color: c }}>
+                  <span className="text-[12px] font-semibold font-mono" style={{ color: c }}>
                     {e.time}
                   </span>
                   <Badge color={c}>{e.eventType}</Badge>
                 </div>
-                <h4 className="text-[13.5px] font-bold text-[var(--ink-primary)] mt-1.5 leading-snug">{e.title}</h4>
+                <h4 className="text-[13.5px] font-semibold text-[var(--ink-primary)] mt-1.5 leading-snug">{e.title}</h4>
                 {e.description && (
                   <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1 leading-relaxed">{e.description}</p>
                 )}

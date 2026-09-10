@@ -76,14 +76,14 @@ export default function OfficialDossier({
 
   const exportText = useCallback(() => {
     if (!dossier) return;
-    download(`${dossier.caseNumber}_SAMANVAYA_dossier.txt`, dossier.reportText, 'text/plain;charset=utf-8');
+    download(`${dossier.caseNumber}_TRINETRA_report.txt`, dossier.reportText, 'text/plain;charset=utf-8');
     toast.success('Dossier downloaded as a text file.');
   }, [dossier]);
 
   const exportJson = useCallback(() => {
     if (!dossier) return;
     download(
-      `${dossier.caseNumber}_SAMANVAYA_investigation_data.json`,
+      `${dossier.caseNumber}_TRINETRA_case_data.json`,
       JSON.stringify(dossier, null, 2),
       'application/json'
     );
@@ -96,7 +96,7 @@ export default function OfficialDossier({
         <EmptyState
           icon={FileText}
           title="No dossier compiled"
-          message="The official dossier is produced by Agent 5 after all five agents complete. Run the SAMANVAYA investigation to generate it."
+          message="The final report is produced by Step 5 after all five steps complete. Run the SAMANVAYA investigation to generate it."
         />
       </Panel>
     );
@@ -121,14 +121,14 @@ export default function OfficialDossier({
 
       <div id="samanvaya-dossier" className="space-y-5">
         {/* ── Masthead ─────────────────────────────────── */}
-        <Panel accent="#4338CA">
+        <Panel accent="#12376E">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ink-tertiary)]">
-                KRITAGAS · Criminal Intelligence Platform
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ink-tertiary)]">
+                TRINETRA · Criminal Intelligence Platform
               </div>
-              <h2 className="text-[24px] font-bold tracking-tight text-[var(--ink-primary)] mt-1 leading-tight">
-                SAMANVAYA Investigation Intelligence Report
+              <h2 className="text-[24px] font-semibold tracking-tight text-[var(--ink-primary)] mt-1 leading-tight">
+                TRINETRA Investigation Report
               </h2>
               <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1">
                 Multi-agent synthesis · five specialised agents · one connected investigation
@@ -153,7 +153,7 @@ export default function OfficialDossier({
               ['Analysis time', `${(dossier.executionDurationMs / 1000).toFixed(1)}s`, true],
             ].map(([label, value, mono]) => (
               <div key={String(label)} className="rounded-lg px-3 py-2.5" style={{ background: 'var(--surface-2)' }}>
-                <dt className="text-[9.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">{label}</dt>
+                <dt className="text-[9.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">{label}</dt>
                 <dd
                   className={`text-[12px] font-semibold text-[var(--ink-primary)] mt-1 break-words ${mono ? 'font-mono' : ''}`}
                 >
@@ -166,9 +166,9 @@ export default function OfficialDossier({
           {dossier.blockchainHash && (
             <div
               className="mt-3 rounded-lg px-3.5 py-2.5 flex flex-wrap items-center gap-2"
-              style={{ background: tint('#4338CA', 0.07), border: `1px solid ${tint('#4338CA', 0.24)}` }}
+              style={{ background: tint('#12376E', 0.07), border: `1px solid ${tint('#12376E', 0.24)}` }}
             >
-              <ShieldCheck size={14} style={{ color: '#4338CA' }} />
+              <ShieldCheck size={14} style={{ color: '#12376E' }} />
               <span className="text-[11px] font-semibold text-[var(--ink-secondary)]">Audit ledger seal</span>
               <code className="text-[11px] font-mono text-[var(--ink-primary)] break-all">{dossier.blockchainHash}</code>
             </div>
@@ -224,7 +224,7 @@ export default function OfficialDossier({
                       <Icon size={16} />
                     </span>
                     <div className="min-w-0">
-                      <div className="text-[13px] font-bold text-[var(--ink-primary)]">
+                      <div className="text-[13px] font-semibold text-[var(--ink-primary)]">
                         Agent {a.agentNumber} — {a.name}
                       </div>
                       <div className="text-[10.5px] font-mono text-[var(--ink-tertiary)]">{meta.sanskritName}</div>
@@ -232,7 +232,7 @@ export default function OfficialDossier({
                     <div className="ml-auto flex flex-wrap gap-2">
                       <Badge color={meta.color}>{fmt(a.recordsSearched)} scanned</Badge>
                       <Badge color={meta.color}>{fmt(a.relevantFound)} relevant</Badge>
-                      <Badge color="#64748B">{a.executionTimeMs.toFixed(0)} ms</Badge>
+                      <Badge color="#9CA3AF">{a.executionTimeMs.toFixed(0)} ms</Badge>
                     </div>
                   </div>
                   {a.highlights.length > 0 && (
@@ -256,23 +256,23 @@ export default function OfficialDossier({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b" style={{ borderColor: 'var(--border-strong)' }}>
-                <th className="py-2 pr-3 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] w-[110px]">
+                <th className="py-2 pr-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] w-[110px]">
                   Grade
                 </th>
-                <th className="py-2 pr-3 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+                <th className="py-2 pr-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
                   Finding
                 </th>
-                <th className="py-2 pr-3 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] w-[120px]">
+                <th className="py-2 pr-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] w-[120px]">
                   Confidence
                 </th>
-                <th className="py-2 text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] w-[180px]">
+                <th className="py-2 text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] w-[180px]">
                   Source
                 </th>
               </tr>
             </thead>
             <tbody>
               {dossier.findings.map((f, i) => {
-                const c = CLASSIFICATION_COLORS[f.classification] || '#64748B';
+                const c = CLASSIFICATION_COLORS[f.classification] || '#9CA3AF';
                 return (
                   <tr key={i} className="border-b align-top" style={{ borderColor: 'var(--border)' }}>
                     <td className="py-2.5 pr-3">
@@ -288,7 +288,7 @@ export default function OfficialDossier({
                     </td>
                     <td className="py-2.5 pr-3">
                       <ConfidenceBar value={f.confidence} color={c} compact />
-                      <span className="text-[10.5px] font-bold tabular-nums" style={{ color: c }}>
+                      <span className="text-[10.5px] font-semibold tabular-nums" style={{ color: c }}>
                         {Math.round(f.confidence * 100)}%
                       </span>
                     </td>
@@ -310,7 +310,7 @@ export default function OfficialDossier({
               </p>
               <div className="space-y-2">
                 {dossier.communications.patterns.map((p) => {
-                  const c = SEVERITY_COLORS[p.severity] || '#CA8A04';
+                  const c = SEVERITY_COLORS[p.severity] || '#D97706';
                   return (
                     <div
                       key={p.id}
@@ -321,12 +321,12 @@ export default function OfficialDossier({
                         <Badge color={c} solid>
                           {p.severity}
                         </Badge>
-                        <span className="text-[12.5px] font-bold text-[var(--ink-primary)]">{p.title}</span>
+                        <span className="text-[12.5px] font-semibold text-[var(--ink-primary)]">{p.title}</span>
                         <span className="text-[11px] font-mono text-[var(--ink-secondary)]">
                           {p.partyA}
                           {p.partyB ? ` → ${p.partyB}` : ''}
                         </span>
-                        <span className="ml-auto text-[11px] font-bold tabular-nums" style={{ color: c }}>
+                        <span className="ml-auto text-[11px] font-semibold tabular-nums" style={{ color: c }}>
                           {Math.round(p.riskScore * 100)}% anomaly strength
                         </span>
                       </div>
@@ -346,9 +346,9 @@ export default function OfficialDossier({
         {/* ── 6. Network ───────────────────────────────── */}
         <DossierSection number={6} title="Investigation network">
           <div className="flex flex-wrap gap-2.5 mb-3">
-            <Badge color="#7C3AED">{dossier.graph.nodes.length} nodes</Badge>
+            <Badge color="#5B4BC4">{dossier.graph.nodes.length} nodes</Badge>
             <Badge color="#2563EB">{dossier.graph.edges.length} relationships</Badge>
-            <Badge color="#059669">{dossier.graph.clusters.length} clusters</Badge>
+            <Badge color="#16A34A">{dossier.graph.clusters.length} clusters</Badge>
           </div>
           <div className="space-y-1">
             {dossier.graph.edges.slice(0, 14).map((e) => (
@@ -358,7 +358,7 @@ export default function OfficialDossier({
                 style={{ background: 'var(--surface-2)' }}
               >
                 <span className="text-[var(--ink-primary)] truncate max-w-[220px]">{e.source}</span>
-                <span className="font-bold text-[10px] uppercase" style={{ color: '#7C3AED' }}>
+                <span className="font-semibold text-[10px] uppercase" style={{ color: '#5B4BC4' }}>
                   ─ {e.relationshipType} →
                 </span>
                 <span className="text-[var(--ink-primary)] truncate max-w-[220px]">{e.target}</span>
@@ -386,13 +386,13 @@ export default function OfficialDossier({
                   style={{ background: 'var(--surface-2)' }}
                 >
                   <span
-                    className="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-                    style={{ background: '#EA580C' }}
+                    className="w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-semibold text-white shrink-0"
+                    style={{ background: '#D97706' }}
                   >
                     {p.sequence}
                   </span>
                   <span className="text-[12.5px] font-semibold text-[var(--ink-primary)]">{p.name}</span>
-                  <Badge color="#EA580C">{p.pointType.replace(/_/g, ' ')}</Badge>
+                  <Badge color="#D97706">{p.pointType.replace(/_/g, ' ')}</Badge>
                   <span className="text-[10.5px] font-mono text-[var(--ink-tertiary)] ml-auto">
                     {p.latitude.toFixed(4)}, {p.longitude.toFixed(4)}
                   </span>
@@ -412,7 +412,7 @@ export default function OfficialDossier({
             {dossier.timeline.map((e) => (
               <li key={e.id} className="flex flex-wrap gap-2 text-[12px] px-3 py-2 rounded-lg"
                 style={{ background: 'var(--surface-2)' }}>
-                <span className="font-mono font-bold text-[var(--ink-primary)] w-[150px] shrink-0">{e.time}</span>
+                <span className="font-mono font-semibold text-[var(--ink-primary)] w-[150px] shrink-0">{e.time}</span>
                 <span className="text-[var(--ink-primary)] font-semibold">{e.title}</span>
                 <span className="text-[var(--ink-tertiary)] text-[11px] w-full pl-[158px]">{e.description}</span>
               </li>
@@ -424,7 +424,7 @@ export default function OfficialDossier({
         <DossierSection number={9} title="Key investigative leads">
           <ol className="space-y-2">
             {dossier.investigativeLeads.map((l, i) => {
-              const c = SEVERITY_COLORS[l.urgency] || '#0891B2';
+              const c = SEVERITY_COLORS[l.urgency] || '#0F766E';
               return (
                 <li
                   key={i}
@@ -435,7 +435,7 @@ export default function OfficialDossier({
                     <Badge color={c} solid>
                       {l.urgency}
                     </Badge>
-                    <span className="text-[12.5px] font-bold text-[var(--ink-primary)]">{l.lead}</span>
+                    <span className="text-[12.5px] font-semibold text-[var(--ink-primary)]">{l.lead}</span>
                   </div>
                   <p className="text-[12px] text-[var(--ink-secondary)] mt-1.5 leading-relaxed">
                     <strong className="font-semibold">Action:</strong> {l.recommendedAction}
@@ -453,7 +453,7 @@ export default function OfficialDossier({
         <DossierSection number={10} title="Evidence gaps and risk indicators">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
                 Outstanding evidence
               </div>
               <ul className="space-y-1.5">
@@ -466,13 +466,13 @@ export default function OfficialDossier({
               </ul>
             </div>
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-2">
                 Risk indicators
               </div>
               <ul className="space-y-1.5">
                 {dossier.riskIndicators.map((r, i) => (
                   <li key={i} className="text-[12px] px-3 py-2 rounded-lg" style={{ background: 'var(--surface-2)' }}>
-                    <Badge color={SEVERITY_COLORS[r.severity] || '#CA8A04'}>{r.severity}</Badge>
+                    <Badge color={SEVERITY_COLORS[r.severity] || '#D97706'}>{r.severity}</Badge>
                     <span className="text-[var(--ink-primary)] font-semibold ml-2">{r.indicator}</span>
                     <div className="text-[var(--ink-secondary)] mt-0.5 leading-relaxed">{r.rationale}</div>
                   </li>
@@ -485,9 +485,9 @@ export default function OfficialDossier({
         {/* ── 11. Limitations ──────────────────────────── */}
         <section
           className="rounded-2xl border px-5 py-4"
-          style={{ background: tint('#EA580C', 0.06), borderColor: tint('#EA580C', 0.3) }}
+          style={{ background: tint('#D97706', 0.06), borderColor: tint('#D97706', 0.3) }}
         >
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-[#EA580C]">
+          <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-[#D97706]">
             <ShieldCheck size={14} />
             Section 11 · AI limitations and investigator review
           </div>
@@ -529,12 +529,12 @@ function DossierSection({
     >
       <div className="flex items-center gap-2.5 pb-3 mb-4 border-b" style={{ borderColor: 'var(--border)' }}>
         <span
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-bold text-white shrink-0"
-          style={{ background: '#4338CA' }}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-[12px] font-semibold text-white shrink-0"
+          style={{ background: '#12376E' }}
         >
           {number}
         </span>
-        <h3 className="text-[15px] font-bold tracking-tight text-[var(--ink-primary)]">{title}</h3>
+        <h3 className="text-[15px] font-semibold tracking-tight text-[var(--ink-primary)]">{title}</h3>
       </div>
       {children}
     </section>

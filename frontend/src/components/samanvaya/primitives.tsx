@@ -41,7 +41,7 @@ export function SectionHeading({
   icon: Icon,
   title,
   subtitle,
-  accent = '#4F46E5',
+  accent = 'var(--accent)',
   right,
 }: {
   icon?: LucideIcon;
@@ -62,7 +62,7 @@ export function SectionHeading({
           </span>
         )}
         <div className="min-w-0">
-          <h3 className="text-[15px] font-bold tracking-tight text-[var(--ink-primary)]">{title}</h3>
+          <h3 className="text-[15px] font-semibold tracking-tight text-[var(--ink-primary)]">{title}</h3>
           {subtitle && (
             <p className="text-[12px] text-[var(--ink-secondary)] mt-0.5 leading-snug">{subtitle}</p>
           )}
@@ -79,7 +79,7 @@ export function MetricTile({
   value,
   unit,
   hint,
-  color = '#4F46E5',
+  color = '#12376E',
   animate = false,
 }: {
   label: string;
@@ -99,7 +99,7 @@ export function MetricTile({
     >
       <div className="flex items-baseline gap-1">
         <span
-          className="text-[22px] leading-none font-bold tabular-nums tracking-tight"
+          className="text-[22px] leading-none font-semibold tabular-nums tracking-tight"
           style={{ color }}
         >
           {numeric !== null ? shown.toLocaleString('en-IN') : value}
@@ -143,7 +143,7 @@ function useCountUp(target: number | null, enabled: boolean) {
 // ── Badge ────────────────────────────────────────────────────
 export function Badge({
   children,
-  color = '#4F46E5',
+  color = '#12376E',
   solid = false,
   className = '',
 }: {
@@ -154,7 +154,7 @@ export function Badge({
 }) {
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide whitespace-nowrap ${className}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide whitespace-nowrap ${className}`}
       style={
         solid
           ? { background: color, color: '#FFFFFF' }
@@ -169,7 +169,7 @@ export function Badge({
 // ── Confidence bar ───────────────────────────────────────────
 export function ConfidenceBar({
   value,
-  color = '#4F46E5',
+  color = '#12376E',
   label = 'Confidence',
   compact = false,
 }: {
@@ -208,7 +208,7 @@ export function EmptyState({
   title,
   message,
   action,
-  accent = '#4F46E5',
+  accent = 'var(--accent)',
 }: {
   icon: LucideIcon;
   title: string;
@@ -227,7 +227,7 @@ export function EmptyState({
       >
         <Icon size={24} />
       </span>
-      <h4 className="text-[14px] font-bold text-[var(--ink-primary)]">{title}</h4>
+      <h4 className="text-[14px] font-semibold text-[var(--ink-primary)]">{title}</h4>
       <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1.5 max-w-md mx-auto leading-relaxed">
         {message}
       </p>
@@ -254,7 +254,7 @@ export function ErrorState({
       className="rounded-2xl border px-5 py-4"
       style={{ borderColor: 'rgba(220, 38, 38, 0.35)', background: 'rgba(220, 38, 38, 0.06)' }}
     >
-      <h4 className="text-[13px] font-bold text-[#DC2626] uppercase tracking-wide">{title}</h4>
+      <h4 className="text-[13px] font-semibold text-[#DC2626] uppercase tracking-wide">{title}</h4>
       <p className="text-[12.5px] text-[var(--ink-secondary)] mt-1.5 leading-relaxed">{message}</p>
       <div className="flex items-center gap-2 mt-3">
         {onRetry && (
@@ -292,7 +292,7 @@ export function BarRow({
   sublabel,
   value,
   max,
-  color = '#4F46E5',
+  color = '#12376E',
   suffix,
   highlight = false,
 }: {
@@ -321,7 +321,7 @@ export function BarRow({
           }}
         />
       </div>
-      <div className="w-[70px] shrink-0 text-right text-[12px] font-bold tabular-nums" style={{ color }}>
+      <div className="w-[70px] shrink-0 text-right text-[12px] font-semibold tabular-nums" style={{ color }}>
         {value.toLocaleString('en-IN')}
         {suffix && <span className="text-[10px] font-medium text-[var(--ink-tertiary)] ml-0.5">{suffix}</span>}
       </div>

@@ -15,12 +15,12 @@ import { tint } from './theme';
 
 const POINT_STYLE: Record<string, { color: string; label: string }> = {
   CRIME_SCENE: { color: '#DC2626', label: 'Crime scene' },
-  LAST_SEEN: { color: '#EA580C', label: 'Last seen' },
-  SUSPECT_RESIDENCE: { color: '#7C3AED', label: 'Suspect residence' },
+  LAST_SEEN: { color: '#D97706', label: 'Last seen' },
+  SUSPECT_RESIDENCE: { color: '#5B4BC4', label: 'Suspect residence' },
   VEHICLE_SIGHTING: { color: '#16A34A', label: 'Vehicle sighting' },
-  EVIDENCE_RECOVERY: { color: '#DB2777', label: 'Evidence recovery' },
-  FINANCIAL_NODE: { color: '#CA8A04', label: 'Financial node' },
-  POSSIBLE_HIDEOUT: { color: '#0891B2', label: 'Possible hideout' },
+  EVIDENCE_RECOVERY: { color: '#DC2626', label: 'Evidence recovery' },
+  FINANCIAL_NODE: { color: '#D97706', label: 'Financial node' },
+  POSSIBLE_HIDEOUT: { color: '#0F766E', label: 'Possible hideout' },
   LOCATION: { color: '#2563EB', label: 'Location' },
 };
 
@@ -97,14 +97,14 @@ export default function IntelligenceMap({
               [a.latitude, a.longitude],
               [b.latitude, b.longitude],
             ],
-            { color: '#0F172A', weight: 6, opacity: 0.85, dashArray: ls.dash }
+            { color: '#111827', weight: 6, opacity: 0.85, dashArray: ls.dash }
           ).addTo(group);
           L.polyline(
             [
               [a.latitude, a.longitude],
               [b.latitude, b.longitude],
             ],
-            { color: '#38BDF8', weight: 2.5, opacity: 0.95, dashArray: ls.dash }
+            { color: '#2563EB', weight: 2.5, opacity: 0.95, dashArray: ls.dash }
           )
             .bindTooltip(`${link.label} — ${ls.label}`, { sticky: true })
             .addTo(group);
@@ -167,7 +167,7 @@ export default function IntelligenceMap({
       <Panel>
         <EmptyState
           icon={MapPin}
-          accent="#EA580C"
+          accent="#D97706"
           title="No verified coordinates for this case"
           message={
             unmappedCount > 0
@@ -194,7 +194,7 @@ export default function IntelligenceMap({
               icon={MapPin}
               title="Geographic intelligence"
               subtitle={`${points.length} verified location${points.length === 1 ? '' : 's'}${unmappedCount ? ` · ${unmappedCount} unmapped` : ''}`}
-              accent="#EA580C"
+              accent="#D97706"
             />
             <div className="flex items-center gap-2">
               <ToolButton
@@ -228,7 +228,7 @@ export default function IntelligenceMap({
               return (
                 <span key={k} className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold text-[var(--ink-secondary)]">
                   <svg width="22" height="6" aria-hidden>
-                    <line x1="0" y1="3" x2="22" y2="3" stroke="#0F172A" strokeWidth="3" strokeDasharray={ls.dash} />
+                    <line x1="0" y1="3" x2="22" y2="3" stroke="#111827" strokeWidth="3" strokeDasharray={ls.dash} />
                   </svg>
                   {ls.label}
                 </span>
@@ -241,7 +241,7 @@ export default function IntelligenceMap({
       {/* Waypoint list / detail */}
       <div className="xl:col-span-4 space-y-4">
         <Panel>
-          <SectionHeading icon={Layers} title="Waypoints" subtitle="Click to inspect" accent="#EA580C" />
+          <SectionHeading icon={Layers} title="Waypoints" subtitle="Click to inspect" accent="#D97706" />
           <div className="mt-3 space-y-2 max-h-[380px] overflow-y-auto pr-1 custom-scrollbar">
             {points.map((p) => {
               const s = styleFor(p.pointType);
@@ -260,7 +260,7 @@ export default function IntelligenceMap({
                   }}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[12.5px] font-bold text-[var(--ink-primary)] truncate">{p.name}</span>
+                    <span className="text-[12.5px] font-semibold text-[var(--ink-primary)] truncate">{p.name}</span>
                     <Badge color={s.color}>{p.sequence ?? '·'}</Badge>
                   </div>
                   <div className="text-[11px] font-semibold mt-0.5" style={{ color: s.color }}>
@@ -277,7 +277,7 @@ export default function IntelligenceMap({
 
         {selected && (
           <Panel accent={styleFor(selected.pointType).color}>
-            <h4 className="text-[14px] font-bold text-[var(--ink-primary)]">{selected.name}</h4>
+            <h4 className="text-[14px] font-semibold text-[var(--ink-primary)]">{selected.name}</h4>
             <Badge color={styleFor(selected.pointType).color} className="mt-1.5">
               {styleFor(selected.pointType).label}
             </Badge>
@@ -287,7 +287,7 @@ export default function IntelligenceMap({
             )}
             {selected.relatedEntities.filter(Boolean).length > 0 && (
               <div className="mt-3">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] mb-1.5">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] mb-1.5">
                   Connected entities
                 </div>
                 <div className="flex flex-wrap gap-1.5">

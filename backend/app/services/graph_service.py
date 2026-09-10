@@ -16,6 +16,7 @@ from app.ai_ml.models.ai_models import Entity
 from app.core.cache import CacheKeys, CacheTTL
 from app.core.exceptions import NotFoundException, PermissionDeniedException
 from app.core.logging import get_logger
+from app.services.samanvaya_service import safe_confidence
 from app.core.neo4j.client import Neo4jClient, neo4j_client
 from app.integrations.graph.graph_interface import GraphService as AbstractGraphService
 from app.models.case import Case
@@ -392,7 +393,7 @@ class Neo4jGraphService(AbstractGraphService):
                             label=label,
                             type=node_type,
                             data=node_data,
-                            confidence=float(node_data.get("confidence", 1.0)),
+                            confidence=safe_confidence(node_data.get("confidence"), 1.0),
                             source=node_data.get("source"),
                         )
                     )
@@ -422,7 +423,7 @@ class Neo4jGraphService(AbstractGraphService):
                             source=src,
                             target=tgt,
                             relationship=rel_type,
-                            confidence=float(rel_data.get("confidence", 1.0)),
+                            confidence=safe_confidence(rel_data.get("confidence"), 1.0),
                             evidence_basis=rel_data.get("evidence_basis") or ["Case Intelligence Link"],
                             case_ids=[str(case_id)],
                             properties=rel_data,

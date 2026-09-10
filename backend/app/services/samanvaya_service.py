@@ -82,6 +82,78 @@ from app.services.samanvaya_cdr import analyze_cdr, parse_cdr_file
 
 logger = get_logger("kritagas.samanvaya.service")
 
+# How long a finished investigation stays retrievable. A completed dossier is a
+# result an officer comes back to, so it outlives a normal cache entry; it is
+# recomputed only when the case is re-run.
+SAMANVAYA_RESULT_TTL = 60 * 60 * 24 * 7  # 7 days
+
+
+# ---------------------------------------------------------------------------
+# Plain-language rule
+#
+# The people who read this output are investigating officers, not analysts.
+# Every model call appends this rule so findings come back in short, ordinary
+# sentences instead of intelligence-report prose. Without it the model writes
+# things like "Late-Night Transit Hub Ambush: targeting lone individuals
+# departing major transit nodes", which an officer has to decode before use.
+# ---------------------------------------------------------------------------
+def safe_confidence(value: Any, default: float = 0.85) -> float:
+    """Coerce a model-supplied confidence into a 0.0-1.0 float.
+
+    Language models do not reliably return a number here. They return "high",
+    "0.85", "85", "85%" or nothing at all. A bare float() on that raises
+    ValueError and takes the whole investigation pipeline down with a 500, so
+    every confidence read from model output goes through this instead.
+    """
+    if isinstance(value, bool):
+        return default
+    if isinstance(value, (int, float)):
+        num = float(value)
+    elif isinstance(value, str):
+        text = value.strip().lower().rstrip("%").strip()
+        words = {
+            "certain": 0.98, "confirmed": 0.98, "verified": 0.95,
+            "very high": 0.95, "very_high": 0.95, "veryhigh": 0.95,
+            "high": 0.85, "strong": 0.85,
+            "moderate": 0.60, "medium": 0.60, "average": 0.60,
+            "low": 0.35, "weak": 0.35,
+            "very low": 0.20, "very_low": 0.20, "verylow": 0.20,
+            "unknown": default, "n/a": default, "": default,
+        }
+        if text in words:
+            return words[text]
+        try:
+            num = float(text)
+        except ValueError:
+            return default
+    else:
+        return default
+
+    if num != num:  # NaN
+        return default
+    # Models often express confidence as a percentage (85) rather than 0.85.
+    # Anything just above 1 is a rounding slip, not "1.5 percent", so clamp it.
+    if 1.0 < num < 2.0:
+        num = 1.0
+    elif num >= 2.0:
+        num = num / 100.0
+    return max(0.0, min(1.0, num))
+
+
+PLAIN_LANGUAGE_RULE = """
+WRITING RULES - follow these strictly for every piece of text you produce:
+- Write for a police officer, in plain simple English. Short sentences.
+- Use ordinary words. Say "night" not "nocturnal", "place" not "locus",
+  "car" not "high-occupancy vehicle", "money moved" not "fund liquidation",
+  "same method" not "modus operandi signature", "phone" not "telecom endpoint".
+- Never invent dramatic names for a crime pattern. Describe what happened:
+  "Both cases: victim taken near a railway station late at night, in a white SUV."
+- Maximum 20 words per finding wherever possible. No semicolons. No jargon.
+- Always state facts plainly and say clearly when something is not confirmed.
+- Do not use these words at all: leverage, synergy, paradigm, vector, nexus,
+  liquidation, exfiltration, actor, asset, locus, typology, signature.
+"""
+
 
 class SamanvayaService:
     """Master orchestrator for the SAMANVAYA 5-Agent Criminal Investigation System."""
@@ -147,7 +219,7 @@ class SamanvayaService:
                 status="COMPLETED",
                 currentAgentIndex=5,
                 progress=100,
-                stageText="SAMANVAYA Multi-Agent Analysis Completed",
+                stageText="TRINETRA Analysis Completed",
                 agents=dossier.agents,
             )
 
@@ -155,7 +227,7 @@ class SamanvayaService:
             caseId=str(case_id),
             status="IDLE",
             progress=0,
-            stageText="Ready to initialize SAMANVAYA Multi-Agent Orchestrator",
+            stageText="Ready to start TRINETRA Analysis",
         )
 
     async def _update_status(
@@ -184,7 +256,80 @@ class SamanvayaService:
             console=console or [],
             dataSources=data_sources or [],
         )
-        await self.cache.set(self._pipeline_key(case_id), payload.model_dump(mode="json"), ttl=1800)
+        await self.cache.set(self._pipeline_key(case_id), payload.model_dump(mode="json"), ttl=SAMANVAYA_RESULT_TTL)
+
+    async def _persist_graph_to_neo4j(
+        self,
+        case: Case,
+        nodes: List[SamanvayaGraphNode],
+        edges: List[SamanvayaGraphEdge],
+        console: List[TelemetryLine],
+    ) -> None:
+        """Write the analysis network into Neo4j so every view shares one graph.
+
+        Best-effort: a graph write failing must never fail the investigation,
+        because the dossier itself is already complete by this point.
+        """
+        try:
+            await self.graph_repo.upsert_case_node(
+                case_id=str(case.id),
+                case_number=case.case_number or str(case.id),
+                title=case.title or "Investigation",
+                status=str(case.status or "OPEN"),
+                crime_category=str(case.crime_category or "Unspecified"),
+            )
+        except Exception as e:
+            logger.warning(f"Graph sync: case node failed - {e}")
+
+        written_nodes = 0
+        for n in nodes:
+            # The case itself is already a Case node; skip re-adding it as an entity.
+            if (n.category or "").upper() == "CASE":
+                continue
+            try:
+                await self.graph_repo.upsert_entity_node(
+                    entity_id=n.id,
+                    entity_type=n.category or "Entity",
+                    name=n.name or n.label or n.id,
+                    normalized_name=(n.name or n.label or n.id).strip().lower(),
+                    confidence=safe_confidence(n.confidence, 0.9),
+                    source="TRINETRA Analysis",
+                    properties={"importance": n.importance or "MEDIUM"},
+                )
+                await self.graph_repo.link_entity_to_case(
+                    entity_id=n.id,
+                    case_id=str(case.id),
+                    role=n.category or "INVOLVED_IN",
+                    confidence=safe_confidence(n.confidence, 0.9),
+                )
+                written_nodes += 1
+            except Exception as e:
+                logger.warning(f"Graph sync: node {n.id} failed - {e}")
+
+        written_edges = 0
+        for e_ in edges:
+            try:
+                await self.graph_repo.upsert_relationship(
+                    source_id=e_.source,
+                    target_id=e_.target,
+                    relationship_type=e_.relationshipType or "CONNECTED_TO",
+                    confidence=safe_confidence(e_.confidence, 0.85),
+                    case_id=str(case.id),
+                    evidence_basis=list(e_.evidence or []),
+                )
+                written_edges += 1
+            except Exception as e:
+                logger.warning(f"Graph sync: edge {e_.id} failed - {e}")
+
+        logger.info(
+            f"Graph sync for {case.case_number}: {written_nodes} nodes, {written_edges} relationships"
+        )
+        console.append(
+            self._line(
+                f"Saved {written_nodes} entities and {written_edges} links to the case network",
+                "OK",
+            )
+        )
 
     # -----------------------------------------------------------------------
     # Progressive Console Telemetry
@@ -582,7 +727,7 @@ class SamanvayaService:
         t1_start = time.perf_counter()
         console.append(self._line("AGENT 01 (SOOCHNA / SANGRAHA) started", "INFO"))
         console.append(self._line("Parsing FIR narrative and case metadata", "WORK", progress=15))
-        await publish("RUNNING", 1, "Case Context Agent", 12, "Agent 1 (SANGRAHA): Reading FIR and case context...")
+        await publish("RUNNING", 1, "Case Context Agent", 12, "Step 1 - Read the case: Reading FIR and case context...")
 
         # Valkey pre-filtering
         filtered_historical, total_historical_searched = await self._prefilter_historical_candidates(
@@ -614,7 +759,7 @@ class SamanvayaService:
                     "WARN",
                     detail=f"anomaly strength {round(pat.riskScore * 100)}%",
                 ))
-        await publish("RUNNING", 1, "Case Context Agent", 18, "Agent 1 (SANGRAHA): Extracting context & relevance...")
+        await publish("RUNNING", 1, "Case Context Agent", 18, "Step 1 - Read the case: Extracting context & relevance...")
 
         cdr_brief = "No call detail records have been supplied for this case."
         if cdr:
@@ -663,15 +808,17 @@ class SamanvayaService:
         - investigationContext: Contextual briefing of what happened and immediate jurisdiction.
         - prioritySignals: Array of urgent investigation alerts.
         - relevantRecordIds: Array of relevant reference tokens.
+        
+        {PLAIN_LANGUAGE_RULE}
         """
 
         try:
             agent1_out, _ = await self.ai.generate_structured(
                 prompt=agent1_prompt,
                 schema=Agent1ContextOutput,
-                preferred_provider="gemini",
+                preferred_provider="groq",
                 max_tokens=4096,
-                system_instruction="You are AGENT 1 (Case Context & Relevance Agent) for police intelligence. Return valid JSON only.",
+                system_instruction="You are AGENT 1 (Case Context). Write for a police officer in plain simple English, short sentences, no jargon. Return valid JSON only.",
             )
         except Exception as e:
             logger.warning(f"Agent 1 AI fallback: {e}")
@@ -703,7 +850,7 @@ class SamanvayaService:
                 hint="Communication anomalies flagged for review",
             ))
 
-        a1_highlights = [f"Crime typology assessed as {agent1_out.crimeType}."]
+        a1_highlights = [f"Type of crime: {agent1_out.crimeType}."]
         if agent1_out.importantLocations:
             a1_highlights.append("Locations of interest: " + ", ".join(agent1_out.importantLocations[:4]) + ".")
         if cdr and cdr.patterns:
@@ -717,7 +864,7 @@ class SamanvayaService:
         agent1_card = AgentCardData(
             agentId="agent-1",
             agentNumber=1,
-            name="Case Context & Relevance Agent",
+            name="Step 1 — Read the case",
             sanskritName="सूचना / संग्रह (SANGRAHA)",
             role="Establishes ground truth, normalizes FIR, and pre-filters large datasets via Valkey.",
             status="COMPLETED",
@@ -751,7 +898,7 @@ class SamanvayaService:
             f"Received {len(agent1_out.importantEntities)} priority entities from Agent 1", "INFO", progress=10,
         ))
         console.append(self._line("Resolving canonical identities and alias clusters", "WORK", progress=40))
-        await publish("RUNNING", 2, "Entity & Identity Agent", 32, "Agent 2 (ABHIJNANA): Resolving identities & aliases...")
+        await publish("RUNNING", 2, "Entity & Identity Agent", 32, "Step 2 - Work out who is who: Resolving identities & aliases...")
 
         agent2_prompt = f"""
         You are AGENT 2 (Entity & Identity Intelligence Agent).
@@ -775,15 +922,17 @@ class SamanvayaService:
         - aliases: List of objects (canonicalName, aliases, evidence)
         - crossCaseEntities: List of objects (entityName, otherCaseNumbers, overlapType)
         - confidenceScores: Dict of entityName to confidence (0.0 to 1.0)
+        
+        {PLAIN_LANGUAGE_RULE}
         """
 
         try:
             agent2_out, _ = await self.ai.generate_structured(
                 prompt=agent2_prompt,
                 schema=Agent2EntityOutput,
-                preferred_provider="gemini",
+                preferred_provider="groq",
                 max_tokens=4096,
-                system_instruction="You are AGENT 2 (Entity & Identity Agent). Focus on strict evidentiary entity resolution. Return JSON only.",
+                system_instruction="You are AGENT 2 (Identity). Match people, phones and vehicles across records. Write in plain simple English for a police officer. Return JSON only.",
             )
         except Exception as e:
             logger.warning(f"Agent 2 AI fallback: {e}")
@@ -818,7 +967,7 @@ class SamanvayaService:
         for m in agent2_out.potentialMatches[:2]:
             a2_highlights.append(
                 f"{m.get('candidate', 'Candidate')} may resolve to {m.get('matchedWith', 'a known record')} "
-                f"({round(float(m.get('confidence', 0.8)) * 100)}% match confidence) - requires verification."
+                f"({round(safe_confidence(m.get('confidence'), 0.8) * 100)}% match confidence) - requires verification."
             )
         for a in agent2_out.aliases[:2]:
             a2_highlights.append(
@@ -834,7 +983,7 @@ class SamanvayaService:
         agent2_card = AgentCardData(
             agentId="agent-2",
             agentNumber=2,
-            name="Entity & Identity Intelligence Agent",
+            name="Step 2 — Work out who is who",
             sanskritName="अभिज्ञान (ABHIJNANA)",
             role="Disambiguates suspect identities, resolves aliases, and flags potential cross-case matches.",
             status="COMPLETED",
@@ -867,7 +1016,7 @@ class SamanvayaService:
         t3_start = time.perf_counter()
         a3_console_start = len(console)
         console.append(self._line("AGENT 03 (SUTRA) started", "INFO"))
-        await publish("RUNNING", 3, "Network & Relationship Agent", 50, "Agent 3 (SUTRA): Generating network topology...")
+        await publish("RUNNING", 3, "Network & Relationship Agent", 50, "Step 3 - Build the link chart: Generating network topology...")
 
         # Query existing relationships in PostgreSQL & Neo4j
         rel_stmt = select(EntityRelationship).where(EntityRelationship.case_id == case.id)
@@ -912,15 +1061,17 @@ class SamanvayaService:
         - networkClusters: List of objects (clusterId, members, centralNode)
         - centralEntities: List of objects (id, name, centralityScore, degree)
         - relationshipEvidence: List of objects (edge, sourceEvidence)
+        
+        {PLAIN_LANGUAGE_RULE}
         """
 
         try:
             agent3_out, _ = await self.ai.generate_structured(
                 prompt=agent3_prompt,
                 schema=Agent3NetworkOutput,
-                preferred_provider="gemini",
+                preferred_provider="groq",
                 max_tokens=4096,
-                system_instruction="You are AGENT 3 (Network & Relationship Agent). Build an evidence-backed criminal network graph. Return JSON only.",
+                system_instruction="You are AGENT 3 (Network). Build the link chart from evidence only. Label every link in plain simple English. Return JSON only.",
             )
         except Exception as e:
             logger.warning(f"Agent 3 AI fallback: {e}")
@@ -963,7 +1114,7 @@ class SamanvayaService:
         for c in agent3_out.centralEntities[:2]:
             a3_highlights.append(
                 f"{c.get('name', 'Entity')} sits at the centre of the network "
-                f"(degree {c.get('degree', 0)}, centrality {round(float(c.get('centralityScore', 0.5)) * 100)}%)."
+                f"(degree {c.get('degree', 0)}, centrality {round(safe_confidence(c.get('centralityScore'), 0.5) * 100)}%)."
             )
         for r in agent3_out.relationships[:3]:
             a3_highlights.append(
@@ -978,7 +1129,7 @@ class SamanvayaService:
         agent3_card = AgentCardData(
             agentId="agent-3",
             agentNumber=3,
-            name="Network & Relationship Agent",
+            name="Step 3 — Build the link chart",
             sanskritName="सूत्र (SUTRA)",
             role="Builds multi-tier criminal syndicate network graph and discovers hidden links in Neo4j.",
             status="COMPLETED",
@@ -1015,7 +1166,7 @@ class SamanvayaService:
         console.append(self._line(
             f"Comparing modus operandi against {len(filtered_historical)} indexed precedents", "WORK", progress=35,
         ))
-        await publish("RUNNING", 4, "Historical & Pattern Agent", 68, "Agent 4 (SMRITI): Correlating historical Modus Operandi...")
+        await publish("RUNNING", 4, "Historical & Pattern Agent", 68, "Step 4 - Compare with old cases: Correlating historical Modus Operandi...")
 
         agent4_prompt = f"""
         You are AGENT 4 (Historical & Pattern Intelligence Agent).
@@ -1040,15 +1191,17 @@ class SamanvayaService:
         - modusOperandiPatterns: List of strings (identified MO signatures)
         - crossCaseConnections: List of objects (connection, details)
         - confidence: Overall historical pattern confidence (0.0 to 1.0)
+        
+        {PLAIN_LANGUAGE_RULE}
         """
 
         try:
             agent4_out, _ = await self.ai.generate_structured(
                 prompt=agent4_prompt,
                 schema=Agent4HistoricalOutput,
-                preferred_provider="gemini",
+                preferred_provider="groq",
                 max_tokens=4096,
-                system_instruction="You are AGENT 4 (Historical & Pattern Agent). Correlate precedents and MO patterns. Return JSON only.",
+                system_instruction="You are AGENT 4 (Past cases). Compare with older cases. Describe what actually happened in plain simple English - never invent dramatic pattern names. Return JSON only.",
             )
         except Exception as e:
             logger.warning(f"Agent 4 AI fallback: {e}")
@@ -1073,7 +1226,7 @@ class SamanvayaService:
             )
 
         best_sim = max(
-            [float(h.get("similarityScore", 0.0)) for h in agent4_out.historicalMatches] or [0.0]
+            [safe_confidence(h.get("similarityScore"), 0.0) for h in agent4_out.historicalMatches] or [0.0]
         )
         console.append(self._line(
             f"{len(agent4_out.historicalMatches)} precedent matches, best similarity {round(best_sim * 100)}%",
@@ -1086,7 +1239,7 @@ class SamanvayaService:
         for h in agent4_out.historicalMatches[:3]:
             a4_highlights.append(
                 f"{h.get('caseNumber', 'Prior case')} ({h.get('matchType', 'POTENTIAL')}) - "
-                f"{round(float(h.get('similarityScore', 0.8)) * 100)}% pattern similarity."
+                f"{round(safe_confidence(h.get('similarityScore'), 0.8) * 100)}% pattern similarity."
             )
         for p in agent4_out.similarPatterns[:2]:
             a4_highlights.append(f"{p.get('patternName', 'Pattern')}: {p.get('description', '')}")
@@ -1116,7 +1269,7 @@ class SamanvayaService:
         agent4_card = AgentCardData(
             agentId="agent-4",
             agentNumber=4,
-            name="Historical & Pattern Intelligence Agent",
+            name="Step 4 — Compare with old cases",
             sanskritName="इतिहास / स्मृति (SMRITI)",
             role="Searches multi-decade crime repository, matches recurring Modus Operandi, and flags syndicate patterns.",
             status="COMPLETED",
@@ -1150,7 +1303,7 @@ class SamanvayaService:
         a5_console_start = len(console)
         console.append(self._line("AGENT 05 (SAMANVAYA / VYAKHYA) started", "INFO"))
         console.append(self._line("Merging four intelligence streams", "WORK", progress=30))
-        await publish("RUNNING", 5, "Investigative Synthesis Agent", 85, "Agent 5 (VYAKHYA): Synthesizing final intelligence dossier...")
+        await publish("RUNNING", 5, "Investigative Synthesis Agent", 85, "Step 5 - Write the report: Synthesizing final intelligence dossier...")
 
         cdr_synthesis_brief = "No communication analysis available."
         if cdr:
@@ -1188,47 +1341,90 @@ class SamanvayaService:
         5. List RISK INDICATORS with severity.
 
         Return strictly valid JSON matching Agent5SynthesisOutput.
+        
+        {PLAIN_LANGUAGE_RULE}
         """
 
         try:
             agent5_out, _ = await self.ai.generate_structured(
                 prompt=agent5_prompt,
                 schema=Agent5SynthesisOutput,
-                preferred_provider="gemini",
+                preferred_provider="groq",
                 max_tokens=4096,
-                system_instruction="You are AGENT 5 (Investigative Synthesis Agent). Synthesize the comprehensive case intelligence report. Return JSON only.",
+                system_instruction="You are AGENT 5 (Summary). Write the case summary for the investigating officer in plain simple English. Short sentences. No jargon. Return JSON only.",
             )
         except Exception as e:
             logger.warning(f"Agent 5 AI fallback: {e}")
             console.append(self._line("Language model unavailable - assembling deterministic synthesis", "WARN", detail=str(e)[:120]))
+            # This fallback runs whenever the language model is unavailable or
+            # rate-limited. It must still say something useful, so it is built
+            # from what agents 1-4 actually found rather than generic prose.
+            _crime = agent1_out.crimeType or (case.crime_category or "Case")
+            _places = [str(p) for p in (agent1_out.importantLocations or []) if p]
+            _people = [
+                str(e.get("name") or e.get("entity") or "")
+                for e in (agent2_out.resolvedEntities or [])
+                if isinstance(e, dict) and (e.get("name") or e.get("entity"))
+            ]
+            _central = ""
+            for c in (agent3_out.centralEntities or []):
+                if isinstance(c, dict) and (c.get("name") or c.get("entity")):
+                    _central = str(c.get("name") or c.get("entity"))
+                    break
+            _n_nodes = len(agent3_out.nodes or [])
+            _n_links = len(agent3_out.relationships or [])
+            _n_hist = len(agent4_out.historicalMatches or [])
+
+            _bits = [f"{_crime} reported at {_places[0]}." if _places else f"{_crime}."]
+            if _people:
+                _bits.append(
+                    f"{len(_people)} people are named across the papers, including "
+                    f"{', '.join(_people[:3])}."
+                )
+            if _n_nodes:
+                _bits.append(f"The link chart holds {_n_nodes} items joined by {_n_links} connections.")
+            if _central:
+                _bits.append(f"{_central} sits at the centre of those connections.")
+            if _n_hist:
+                _bits.append(f"{_n_hist} older case(s) were carried out in a similar way.")
+            _bits.append("Nothing here is proof. Every point below needs an officer to check it.")
+
             agent5_out = Agent5SynthesisOutput(
-                investigationSummary=f"Multi-agent synthesis for Case {case.case_number}. Investigation correlates narrative timeline, identified persons of interest, and historical modus operandi signatures.",
+                investigationSummary=" ".join(_bits),
                 keyFindings=[
                     AgentFinding(
-                        finding=f"Primary incident verified at {agent1_out.importantLocations[0] if agent1_out.importantLocations else 'Incident Scene'}.",
+                        finding=f"Crime confirmed at {_places[0] if _places else 'the incident scene'}.",
                         classification="VERIFIED",
                         confidence=0.98,
                         evidence=["FIR Incident Lodgment", "Officer Field Verification"],
-                        agentSource="Agent 1 (SANGRAHA)",
+                        agentSource="Step 1 - Read the case",
                     ),
                     AgentFinding(
-                        finding="Entity associations indicate coordinated multi-party execution.",
+                        finding=(
+                            f"{_central} is connected to more people in this case than anyone else."
+                            if _central
+                            else "The people named in this case appear to have acted together."
+                        ),
                         classification="SUPPORTED",
                         confidence=0.91,
                         evidence=["Timeline Correlation", "Spatial Co-presence"],
-                        agentSource="Agent 3 (SUTRA)",
+                        agentSource="Step 3 - Build the link chart",
                     ),
                     AgentFinding(
-                        finding="Modus Operandi exhibits high correlation with historical syndicate patterns.",
+                        finding=(
+                            f"{_n_hist} older case(s) used the same method as this one."
+                            if _n_hist
+                            else "This crime was carried out in the same way as some older cases."
+                        ),
                         classification="POTENTIAL",
                         confidence=0.84,
                         evidence=["Past Precedent Archive"],
-                        agentSource="Agent 4 (SMRITI)",
+                        agentSource="Step 4 - Compare with old cases",
                     ),
                 ],
                 investigativeLeads=[
                     InvestigativeLead(
-                        lead="Prioritize surveillance sweep and CCTV retrieval along transit corridors.",
+                        lead="Collect CCTV footage from the roads the vehicle would have used.",
                         urgency="CRITICAL",
                         recommendedAction="Issue immediate request for CCTV archives at toll and transit nodes.",
                         basis="Timeline gap between last seen location and incident occurrence.",
@@ -1236,7 +1432,7 @@ class SamanvayaService:
                     InvestigativeLead(
                         lead="Cross-verify bank cashout locations with ATM transaction logs.",
                         urgency="HIGH",
-                        recommendedAction="Serve Section 91 CrPC notice to bank nodal officer.",
+                        recommendedAction="Serve a Section 94 BNSS notice on the bank nodal officer.",
                         basis="Flagged financial vector linked to ransom payment.",
                     ),
                 ],
@@ -1255,7 +1451,7 @@ class SamanvayaService:
                     classification="SUPPORTED",
                     confidence=round(pat.riskScore, 2),
                     evidence=pat.evidence or [f"Uploaded CDR: {cdr.fileName}"],
-                    agentSource="Agent 1 (SANGRAHA) - communication analysis",
+                    agentSource="Step 1 - Read the case - communication analysis",
                 ))
             if cdr.patterns:
                 worst = cdr.patterns[0]
@@ -1288,7 +1484,7 @@ class SamanvayaService:
         agent5_card = AgentCardData(
             agentId="agent-5",
             agentNumber=5,
-            name="Investigative Synthesis Agent",
+            name="Step 5 — Write the report",
             sanskritName="व्याख्या / समन्वय (VYAKHYA)",
             role="Combines multi-agent streams into classified findings, evidence gaps, actionable leads, and official dossier.",
             status="COMPLETED",
@@ -1381,7 +1577,7 @@ class SamanvayaService:
                 target=tgt,
                 relationshipType=rel.get("relationshipType", "CONNECTED_TO"),
                 label=str(rel.get("relationshipType", "CONNECTED_TO")).replace("_", " ").title(),
-                confidence=float(rel.get("confidence", 0.88)),
+                confidence=safe_confidence(rel.get("confidence"), 0.88),
                 evidence=ev_list,
                 importance="CRITICAL" if rel.get("relationshipType") in ("LAST_SEEN_AT", "OCCURRED_AT", "OWNS") else "HIGH",
             ))
@@ -1454,7 +1650,7 @@ class SamanvayaService:
                 name=f"{hist.get('caseNumber')}: {hist.get('crimeType')}",
                 category="HISTORICAL_CASE",
                 importance="MEDIUM",
-                confidence=float(hist.get("similarityScore", 0.85)),
+                confidence=safe_confidence(hist.get("similarityScore"), 0.85),
                 metadata=hist,
             ))
             graph_edges.append(SamanvayaGraphEdge(
@@ -1462,8 +1658,8 @@ class SamanvayaService:
                 source=case_node_id,
                 target=h_id,
                 relationshipType="SIMILAR_MO_TO",
-                label=f"Similar MO ({round(float(hist.get('similarityScore', 0.85))*100)}%)",
-                confidence=float(hist.get("similarityScore", 0.85)),
+                label=f"Similar MO ({round(safe_confidence(hist.get('similarityScore'), 0.85)*100)}%)",
+                confidence=safe_confidence(hist.get("similarityScore"), 0.85),
                 evidence=["Historical Modus Operandi Matching"],
                 importance="MEDIUM",
             ))
@@ -1496,6 +1692,14 @@ class SamanvayaService:
             edges=graph_edges,
             clusters=agent3_out.networkClusters,
         )
+
+        # Persist the network the analysis just produced into Neo4j.
+        #
+        # Without this the graph existed only inside the cached dossier, so the
+        # case's own Network tab — which reads Neo4j — showed a different, much
+        # emptier picture than the analysis did. Writing it here makes both
+        # views agree, and keeps the network after the cache entry expires.
+        await self._persist_graph_to_neo4j(case, graph_nodes, graph_edges, console)
 
         # -------------------------------------------------------------------
         # Geographic Intelligence (real geocoded loci only)
@@ -1561,7 +1765,7 @@ class SamanvayaService:
                 description=case.title,
                 eventType="CASE",
                 source="FIR / Case record",
-                agent="Agent 1 (SANGRAHA)",
+                agent="Step 1 - Read the case",
                 confidence=1.0,
             ))
 
@@ -1575,7 +1779,7 @@ class SamanvayaService:
                 description=agent1_out.investigationContext[:180] if d_idx == 0 else "Date referenced in the FIR narrative.",
                 eventType="CASE",
                 source="FIR narrative",
-                agent="Agent 1 (SANGRAHA)",
+                agent="Step 1 - Read the case",
                 confidence=0.9,
             ))
 
@@ -1589,7 +1793,7 @@ class SamanvayaService:
                     description=pat.description,
                     eventType="COMMUNICATION",
                     source=f"Uploaded CDR: {cdr.fileName}",
-                    agent="Agent 1 (SANGRAHA)",
+                    agent="Step 1 - Read the case",
                     confidence=round(pat.riskScore, 2),
                 ))
 
@@ -1602,8 +1806,8 @@ class SamanvayaService:
                 description=str(hist.get("description", "Similar modus operandi recorded in the archive.")),
                 eventType="HISTORICAL",
                 source="Historical case archive",
-                agent="Agent 4 (SMRITI)",
-                confidence=float(hist.get("similarityScore", 0.8)),
+                agent="Step 4 - Compare with old cases",
+                confidence=safe_confidence(hist.get("similarityScore"), 0.8),
             ))
 
         timeline_events.append(TimelineEvent(
@@ -1614,7 +1818,7 @@ class SamanvayaService:
             description=f"Five agents processed this case for {officer_label}.",
             eventType="ANALYSIS",
             source="SAMANVAYA orchestrator",
-            agent="Agent 5 (VYAKHYA)",
+            agent="Step 5 - Write the report",
             confidence=1.0,
         ))
         timeline_events.sort(key=lambda e: e.sortKey or "")
@@ -1686,7 +1890,7 @@ class SamanvayaService:
                 id=uuid.uuid4(),
                 case_id=case.id,
                 report_type="SAMANVAYA_SYNTHESIS",
-                title=f"SAMANVAYA Multi-Agent Dossier: {case.title}",
+                title=f"TRINETRA Investigation Report: {case.title}",
                 summary=agent5_out.investigationSummary,
                 content_json={
                     "report_text": full_report_text,
@@ -1708,7 +1912,7 @@ class SamanvayaService:
             console.append(self._line("Dossier could not be anchored to the audit ledger", "WARN", detail=str(persist_err)[:140]))
 
         console.append(self._line(
-            "SAMANVAYA analysis complete", "OK",
+            "Analysis complete", "OK",
             detail=f"{len(agent5_out.keyFindings)} findings, {len(agent5_out.investigativeLeads)} leads, {round(total_duration_ms)} ms",
         ))
 
@@ -1742,11 +1946,11 @@ class SamanvayaService:
             await self.cache.set(
                 self._result_key(case_id),
                 final_dossier.model_dump(mode="json"),
-                ttl=1800,
+                ttl=SAMANVAYA_RESULT_TTL,
             )
             await self._update_status(
                 case_id, "COMPLETED", 6, "Completed", 100,
-                "SAMANVAYA Multi-Agent Analysis Completed", agents_cards,
+                "TRINETRA Analysis Completed", agents_cards,
                 console=console[-140:], data_sources=data_sources,
             )
         except Exception as cache_err:
@@ -1812,7 +2016,7 @@ class SamanvayaService:
                         {"label": "Last seen", "value": p.lastSeen or "unknown"},
                     ],
                     evidence=[f"Uploaded CDR: {cdr.fileName}"] if cdr else [],
-                    agentSource="Agent 1 (SANGRAHA)",
+                    agentSource="Step 1 - Read the case",
                 ))
 
             for alias in agent2_out.aliases:
@@ -1826,7 +2030,7 @@ class SamanvayaService:
                             details="Alias variation requires document verification.",
                             badge="ALIAS",
                             confidence=0.7,
-                            agentSource="Agent 2 (ABHIJNANA)",
+                            agentSource="Step 2 - Work out who is who",
                         ))
 
             for cc in agent2_out.crossCaseEntities:
@@ -1841,7 +2045,7 @@ class SamanvayaService:
                             badge="CROSS-CASE",
                             severity="HIGH",
                             confidence=0.75,
-                            agentSource="Agent 2 (ABHIJNANA)",
+                            agentSource="Step 2 - Work out who is who",
                         ))
 
             rels = relations_for(name)
@@ -1862,7 +2066,7 @@ class SamanvayaService:
                 ],
                 relations=rels,
                 evidence=["FIR identity clauses", "Entity resolution pass"],
-                agentSource="Agent 2 (ABHIJNANA)",
+                agentSource="Step 2 - Work out who is who",
                 children=children,
             ))
         if person_nodes:
@@ -1894,7 +2098,7 @@ class SamanvayaService:
                     {"label": "Role", "value": pt.role},
                 ],
                 evidence=pt.evidence,
-                agentSource="Agent 1 (SANGRAHA)",
+                agentSource="Step 1 - Read the case",
             ))
         for i, loc in enumerate(agent1_out.importantLocations):
             if any(n.name == loc for n in locus_nodes):
@@ -1908,7 +2112,7 @@ class SamanvayaService:
                 badge="UNMAPPED",
                 severity="LOW",
                 confidence=0.5,
-                agentSource="Agent 1 (SANGRAHA)",
+                agentSource="Step 1 - Read the case",
             ))
         if locus_nodes:
             branches.append(InvestigationTreeNode(
@@ -1942,7 +2146,7 @@ class SamanvayaService:
                         {"label": "Anomaly strength", "value": f"{round(pat.riskScore * 100)}%"},
                     ],
                     evidence=pat.evidence,
-                    agentSource="Agent 1 (SANGRAHA)",
+                    agentSource="Step 1 - Read the case",
                 ))
             for p in cdr.parties[:5]:
                 comm_children.append(InvestigationTreeNode(
@@ -1961,7 +2165,7 @@ class SamanvayaService:
                         {"label": "New contact", "value": "yes" if p.isNewContact else "no"},
                     ],
                     evidence=[f"Uploaded CDR: {cdr.fileName}"],
-                    agentSource="Agent 1 (SANGRAHA)",
+                    agentSource="Step 1 - Read the case",
                 ))
             branches.append(InvestigationTreeNode(
                 id="tree-branch-comms",
@@ -1986,9 +2190,9 @@ class SamanvayaService:
                 subtitle=kind.replace("_", " ").title(),
                 details=", ".join(ev_list) or "Synthesised by network analysis.",
                 badge=kind,
-                confidence=float(rel.get("confidence", 0.85)),
+                confidence=safe_confidence(rel.get("confidence"), 0.85),
                 evidence=ev_list,
-                agentSource="Agent 3 (SUTRA)",
+                agentSource="Step 3 - Build the link chart",
             ))
         if rel_nodes:
             branches.append(InvestigationTreeNode(
@@ -2009,16 +2213,16 @@ class SamanvayaService:
                 type="historical",
                 subtitle=str(h.get("crimeType", "Precedent")),
                 details=str(h.get("description", "Similar modus operandi.")),
-                badge=f"{round(float(h.get('similarityScore', 0.85)) * 100)}% SIMILAR",
+                badge=f"{round(safe_confidence(h.get('similarityScore'), 0.85) * 100)}% SIMILAR",
                 severity="HIGH" if str(h.get("matchType", "")).upper() == "VERIFIED" else "MEDIUM",
-                confidence=float(h.get("similarityScore", 0.85)),
+                confidence=safe_confidence(h.get("similarityScore"), 0.85),
                 facts=[
                     {"label": "Match type", "value": str(h.get("matchType", "POTENTIAL"))},
                     {"label": "Year", "value": str(h.get("year", "unknown"))},
                     {"label": "Crime type", "value": str(h.get("crimeType", "unknown"))},
                 ],
                 evidence=["Historical case archive"],
-                agentSource="Agent 4 (SMRITI)",
+                agentSource="Step 4 - Compare with old cases",
             )
             for i, h in enumerate(agent4_out.historicalMatches[:6])
         ]
@@ -2043,7 +2247,7 @@ class SamanvayaService:
                 details="Evidence not yet collected or not yet linked to this case.",
                 badge="GAP",
                 severity="HIGH",
-                agentSource="Agent 5 (VYAKHYA)",
+                agentSource="Step 5 - Write the report",
             )
             for i, gap in enumerate(agent5_out.evidenceGaps[:6])
         ]
@@ -2073,7 +2277,7 @@ class SamanvayaService:
                     {"label": "Recommended action", "value": lead.recommendedAction},
                     {"label": "Basis", "value": lead.basis},
                 ],
-                agentSource="Agent 5 (VYAKHYA)",
+                agentSource="Step 5 - Write the report",
             )
             for i, lead in enumerate(agent5_out.investigativeLeads[:8])
         ]

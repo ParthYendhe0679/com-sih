@@ -18,6 +18,7 @@ from app.ai_ml.models.ai_models import Entity
 from app.core.cache import CacheKeys
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
+from app.services.samanvaya_service import safe_confidence
 from app.core.neo4j.client import Neo4jClient, neo4j_client
 from app.models.case import Case
 from app.models.data_architecture import CaseEntityContext, EntityRelationship
@@ -313,7 +314,7 @@ class MapIntelligenceService:
                         latitude=float(lat),  # type: ignore
                         longitude=float(lng),  # type: ignore
                         importance=ext_loc.get("importance") or self._determine_node_importance(loc_type),
-                        confidence=float(ext_loc.get("confidence", 90)) / 100.0,
+                        confidence=safe_confidence(ext_loc.get("confidence"), 0.90),
                         geocoded=True,
                         metadata={"raw": ext_loc.get("raw")},
                     ))
@@ -323,7 +324,7 @@ class MapIntelligenceService:
                         name=loc_title,
                         type=loc_type,
                         importance=ext_loc.get("importance") or "MEDIUM",
-                        confidence=float(ext_loc.get("confidence", 85)) / 100.0,
+                        confidence=safe_confidence(ext_loc.get("confidence"), 0.85),
                         reason="Location identified but coordinates unavailable",
                     ))
 

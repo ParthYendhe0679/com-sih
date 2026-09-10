@@ -127,25 +127,25 @@ export const caseRoutesData: CaseMapRoute[] = [];
 
 // Visual classification configuration
 const NODE_TYPE_CONFIG: Record<string, { color: string; bg: string; border: string; label: string; icon: string }> = {
-  KIDNAPPING_LOCATION: { color: '#DC2626', bg: '#FEE2E2', border: '#B91C1C', label: 'Kidnapping Location', icon: 'shield-alert' },
-  CRIME_LOCATION: { color: '#DC2626', bg: '#FEE2E2', border: '#B91C1C', label: 'Crime Scene', icon: 'flame' },
-  CRIME_SCENE: { color: '#DC2626', bg: '#FEE2E2', border: '#B91C1C', label: 'Crime Scene', icon: 'flame' },
-  BODY_RECOVERY_LOCATION: { color: '#991B1B', bg: '#FEE2E2', border: '#7F1D1D', label: 'Body Recovery', icon: 'flame' },
-  LAST_SEEN_LOCATION: { color: '#4F46E5', bg: '#EEF2FF', border: '#4338CA', label: 'Last Seen Location', icon: 'clock' },
-  SUSPECT_RESIDENCE: { color: '#EA580C', bg: '#FFEDD5', border: '#C2410C', label: 'Suspect Residence', icon: 'crosshair' },
-  VICTIM_HOME: { color: '#0D9488', bg: '#CCFBF1', border: '#0F766E', label: 'Victim Home', icon: 'home' },
-  VEHICLE_LOCATION: { color: '#059669', bg: '#D1FAE5', border: '#047857', label: 'Vehicle Spotted', icon: 'car' },
-  RANSOM_DROP_LOCATION: { color: '#D97706', bg: '#FEF3C7', border: '#B45309', label: 'Ransom Drop', icon: 'navigation' },
-  ATM: { color: '#7C3AED', bg: '#EDE9FE', border: '#6D28D9', label: 'ATM Location', icon: 'credit-card' },
-  BANK: { color: '#7C3AED', bg: '#EDE9FE', border: '#6D28D9', label: 'Bank Branch', icon: 'landmark' },
-  TRANSACTION_LOCATION: { color: '#6366F1', bg: '#EEF2FF', border: '#4F46E5', label: 'Transaction Locus', icon: 'credit-card' },
-  EVIDENCE_LOCATION: { color: '#DB2777', bg: '#FCE7F3', border: '#BE185D', label: 'Evidence Found', icon: 'file-search' },
-  WEAPON_RECOVERY_LOCATION: { color: '#E11D48', bg: '#FFE4E6', border: '#BE123C', label: 'Weapon Recovery', icon: 'shield-alert' },
-  CCTV_LOCATION: { color: '#0284C7', bg: '#E0F2FE', border: '#0369A1', label: 'CCTV Camera', icon: 'camera' },
-  POLICE_STATION: { color: '#475569', bg: '#F1F5F9', border: '#334155', label: 'Police Station', icon: 'shield' },
-  COMPANY: { color: '#64748B', bg: '#F8FAFC', border: '#475569', label: 'Company / Business', icon: 'building' },
-  PROPERTY: { color: '#64748B', bg: '#F8FAFC', border: '#475569', label: 'Real Estate Asset', icon: 'building' },
-  LOCATION: { color: '#2563EB', bg: '#DBEAFE', border: '#1D4ED8', label: 'Investigation Location', icon: 'map-pin' },
+  KIDNAPPING_LOCATION: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Kidnapping Location', icon: 'shield-alert' },
+  CRIME_LOCATION: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Crime Scene', icon: 'flame' },
+  CRIME_SCENE: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Crime Scene', icon: 'flame' },
+  BODY_RECOVERY_LOCATION: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Body Recovery', icon: 'flame' },
+  LAST_SEEN_LOCATION: { color: '#12376E', bg: '#EAF0F9', border: '#12376E', label: 'Last Seen Location', icon: 'clock' },
+  SUSPECT_RESIDENCE: { color: '#D97706', bg: '#FDF3E3', border: '#D97706', label: 'Suspect Residence', icon: 'crosshair' },
+  VICTIM_HOME: { color: '#0F766E', bg: '#E4F2F0', border: '#0F766E', label: 'Victim Home', icon: 'home' },
+  VEHICLE_LOCATION: { color: '#16A34A', bg: '#E7F5EC', border: '#16A34A', label: 'Vehicle Spotted', icon: 'car' },
+  RANSOM_DROP_LOCATION: { color: '#D97706', bg: '#FDF3E3', border: '#D97706', label: 'Ransom Drop', icon: 'navigation' },
+  ATM: { color: '#5B4BC4', bg: '#EFEDFA', border: '#5B4BC4', label: 'ATM Location', icon: 'credit-card' },
+  BANK: { color: '#5B4BC4', bg: '#EFEDFA', border: '#5B4BC4', label: 'Bank Branch', icon: 'landmark' },
+  TRANSACTION_LOCATION: { color: '#12376E', bg: '#EAF0F9', border: '#12376E', label: 'Transaction Locus', icon: 'credit-card' },
+  EVIDENCE_LOCATION: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Evidence Found', icon: 'file-search' },
+  WEAPON_RECOVERY_LOCATION: { color: '#DC2626', bg: '#FDECEC', border: '#DC2626', label: 'Weapon Recovery', icon: 'shield-alert' },
+  CCTV_LOCATION: { color: '#2563EB', bg: '#EAF0F9', border: '#2563EB', label: 'CCTV Camera', icon: 'camera' },
+  POLICE_STATION: { color: '#4B5563', bg: '#F9FAFB', border: '#4B5563', label: 'Police Station', icon: 'shield' },
+  COMPANY: { color: '#9CA3AF', bg: '#F9FAFB', border: '#4B5563', label: 'Company / Business', icon: 'building' },
+  PROPERTY: { color: '#9CA3AF', bg: '#F9FAFB', border: '#4B5563', label: 'Real Estate Asset', icon: 'building' },
+  LOCATION: { color: '#2563EB', bg: '#EAF0F9', border: '#2563EB', label: 'Investigation Location', icon: 'map-pin' },
 };
 
 export interface CaseLeafletMapProps {
@@ -319,9 +319,9 @@ export default function CaseLeafletMap({
         if (!isMounted || !mapContainerRef.current) return;
 
         // Default to Mumbai center
-        const defaultCenter: [number, number] = activeNodes.length > 0
-          ? [activeNodes[0].latitude, activeNodes[0].longitude]
-          : [19.0760, 72.8777];
+        // Opens on Mumbai; the marker effect calls fitBounds once the case's
+        // own locations are on the map.
+        const defaultCenter: [number, number] = [19.0760, 72.8777];
 
         const map = L.map(mapContainerRef.current, {
           center: defaultCenter,
@@ -332,7 +332,7 @@ export default function CaseLeafletMap({
         // OpenStreetMap high-definition tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
           maxZoom: 19,
-          attribution: '&copy; OpenStreetMap contributors | KRITAGAS Intelligence',
+          attribution: '&copy; OpenStreetMap contributors | TRINETRA Intelligence',
         }).addTo(map);
 
         mapInstanceRef.current = map;
@@ -364,7 +364,11 @@ export default function CaseLeafletMap({
       markersRef.current = [];
       polylinesRef.current = [];
     };
-  }, [activeNodes]);
+    // Intentionally empty: the map instance is created once and reused. Adding
+    // activeNodes here destroyed and recreated the map after markers had been
+    // attached to the previous instance, leaving an empty map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Render Markers on Map
   useEffect(() => {
@@ -419,7 +423,7 @@ export default function CaseLeafletMap({
                 ${idx + 1}
               </div>
               <div style="
-                background: #0F172A;
+                background: #111827;
                 color: #FFFFFF;
                 font-size: 10px;
                 font-weight: 700;
@@ -458,17 +462,17 @@ export default function CaseLeafletMap({
               <span style="font-size: 9.5px; font-weight: 800; background: ${conf.bg}; color: ${conf.color}; padding: 2px 6px; border-radius: 4px; border: 1px solid ${conf.border};">
                 ${node.label.toUpperCase()}
               </span>
-              <span style="font-size: 10px; font-weight: 700; color: #64748B;">
+              <span style="font-size: 10px; font-weight: 700; color: #9CA3AF;">
                 CONF: ${Math.round(node.confidence * 100)}%
               </span>
             </div>
-            <div style="font-weight: 800; font-size: 14px; color: #0F172A; margin-bottom: 2px;">
+            <div style="font-weight: 800; font-size: 14px; color: #111827; margin-bottom: 2px;">
               ${node.name}
             </div>
-            <div style="color: #64748B; font-size: 11px; margin-bottom: 6px;">
+            <div style="color: #9CA3AF; font-size: 11px; margin-bottom: 6px;">
               ${node.address || node.city}
             </div>
-            <div style="background: #0F172A; color: #F8FAFC; padding: 4px 8px; border-radius: 6px; font-size: 10.5px; font-family: monospace;">
+            <div style="background: #111827; color: #F9FAFB; padding: 4px 8px; border-radius: 6px; font-size: 10.5px; font-family: monospace;">
               LAT: ${node.latitude.toFixed(4)} | LNG: ${node.longitude.toFixed(4)}
             </div>
           </div>
@@ -528,7 +532,7 @@ export default function CaseLeafletMap({
         ];
 
         // Line styling: DARK, HIGH-CONTRAST, PROFESSIONAL (Charcoal / Deep Navy)
-        const lineColor = isSelected ? '#020617' : '#0F172A'; // Deep dark navy
+        const lineColor = isSelected ? '#020617' : '#111827'; // Deep dark navy
         const lineWeight = rel.importance === 'CRITICAL' ? 5.5 : isSelected ? 4.5 : 3.5;
         const lineOpacity = isSelected ? 1.0 : 0.88;
 
@@ -548,13 +552,13 @@ export default function CaseLeafletMap({
 
         const labelHtml = `
           <div style="
-            background: #0F172A;
-            color: #F8FAFC;
+            background: #111827;
+            color: #F9FAFB;
             font-size: 9.5px;
             font-weight: 800;
             padding: 2px 7px;
             border-radius: 4px;
-            border: 1px solid #334155;
+            border: 1px solid #4B5563;
             box-shadow: 0 2px 6px rgba(0,0,0,0.5);
             white-space: nowrap;
             cursor: pointer;
@@ -575,20 +579,20 @@ export default function CaseLeafletMap({
 
         const edgeDetailsPopup = `
           <div style="font-family: Inter, sans-serif; font-size: 12px; line-height: 1.4; min-width: 210px;">
-            <div style="font-size: 9.5px; font-weight: 800; color: #38BDF8; margin-bottom: 2px; text-transform: uppercase;">
+            <div style="font-size: 9.5px; font-weight: 800; color: #2563EB; margin-bottom: 2px; text-transform: uppercase;">
               RELATIONSHIP DOSSIER
             </div>
-            <div style="font-weight: 800; font-size: 13.5px; color: #0F172A; margin-bottom: 4px;">
+            <div style="font-weight: 800; font-size: 13.5px; color: #111827; margin-bottom: 4px;">
               ${rel.label} (${rel.type})
             </div>
-            <div style="background: #F1F5F9; padding: 6px; border-radius: 6px; margin-bottom: 6px; font-size: 11px;">
+            <div style="background: #F9FAFB; padding: 6px; border-radius: 6px; margin-bottom: 6px; font-size: 11px;">
               <div><strong>FROM:</strong> ${rel.sourceName || src.name}</div>
               <div><strong>TO:</strong> ${rel.targetName || tgt.name}</div>
             </div>
-            <div style="font-size: 11px; color: #475569;">
+            <div style="font-size: 11px; color: #4B5563;">
               <strong>BASIS:</strong> ${rel.evidenceBasis.join(', ') || 'FIR Statement'}
             </div>
-            <div style="font-size: 11px; color: #059669; font-weight: 700; margin-top: 3px;">
+            <div style="font-size: 11px; color: #16A34A; font-weight: 700; margin-top: 3px;">
               CONFIDENCE: ${Math.round(rel.confidence * 100)}%
             </div>
           </div>
@@ -665,12 +669,12 @@ export default function CaseLeafletMap({
 
         {/* Center: Priority Filter Controls (Section 13) */}
         <div className="flex items-center gap-1 bg-[var(--surface-2)] p-1 rounded-xl border" style={{ borderColor: 'var(--border)' }}>
-          <span className="text-[10.5px] font-bold uppercase tracking-wider px-2 text-[var(--ink-tertiary)]">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider px-2 text-[var(--ink-tertiary)]">
             Priority:
           </span>
           <button
             onClick={() => setPriorityFilter('CRITICAL_HIGH')}
-            className={`px-3 py-1 rounded-lg text-[11.5px] font-bold transition-all ${
+            className={`px-3 py-1 rounded-lg text-[11.5px] font-semibold transition-all ${
               priorityFilter === 'CRITICAL_HIGH'
                 ? 'bg-red-600 text-white shadow-sm'
                 : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]'
@@ -680,7 +684,7 @@ export default function CaseLeafletMap({
           </button>
           <button
             onClick={() => setPriorityFilter('MEDIUM')}
-            className={`px-3 py-1 rounded-lg text-[11.5px] font-bold transition-all ${
+            className={`px-3 py-1 rounded-lg text-[11.5px] font-semibold transition-all ${
               priorityFilter === 'MEDIUM'
                 ? 'bg-[var(--accent)] text-white shadow-sm'
                 : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]'
@@ -690,7 +694,7 @@ export default function CaseLeafletMap({
           </button>
           <button
             onClick={() => setPriorityFilter('ALL')}
-            className={`px-3 py-1 rounded-lg text-[11.5px] font-bold transition-all ${
+            className={`px-3 py-1 rounded-lg text-[11.5px] font-semibold transition-all ${
               priorityFilter === 'ALL'
                 ? 'bg-slate-800 text-white shadow-sm'
                 : 'text-[var(--ink-secondary)] hover:text-[var(--ink-primary)]'
@@ -704,10 +708,10 @@ export default function CaseLeafletMap({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setConnectPoints(!connectPoints)}
-            className="px-3 py-1.5 rounded-xl text-[12px] font-bold border flex items-center gap-2 transition-all shadow-sm"
+            className="px-3 py-1.5 rounded-xl text-[12px] font-semibold border flex items-center gap-2 transition-all shadow-sm"
             style={{
-              background: connectPoints ? '#0F172A' : 'var(--surface-2)',
-              borderColor: connectPoints ? '#0F172A' : 'var(--border)',
+              background: connectPoints ? '#111827' : 'var(--surface-2)',
+              borderColor: connectPoints ? '#111827' : 'var(--border)',
               color: connectPoints ? '#FFFFFF' : 'var(--ink-secondary)',
             }}
             title="Toggle high-contrast investigation relationship lines"
@@ -720,7 +724,7 @@ export default function CaseLeafletMap({
             onClick={fetchMapIntelligence}
             disabled={loading}
             className="p-2 rounded-xl border hover:bg-[var(--surface-2)] transition-colors text-[var(--ink-secondary)]"
-            title="Refresh Map Intelligence from Neo4j"
+            title="Refresh the case map"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           </button>
@@ -753,7 +757,7 @@ export default function CaseLeafletMap({
       <div className="flex flex-wrap items-center justify-between px-3 py-1.5 border-b z-10 text-[11px]"
         style={{ background: 'var(--surface-0)', borderColor: 'var(--border)' }}>
         <div className="flex items-center gap-2">
-          <span className="text-[10.5px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+          <span className="text-[10.5px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
             Filter Loci:
           </span>
           <button
@@ -809,8 +813,8 @@ export default function CaseLeafletMap({
           <span>•</span>
           <span>EDGES: <strong>{filteredRelationships.length}</strong></span>
           {intelligence?.cached && (
-            <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-1.5 py-0.5 rounded font-bold">
-              VALKEY CACHED
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-1.5 py-0.5 rounded font-semibold">
+              READY
             </span>
           )}
         </div>
@@ -830,7 +834,7 @@ export default function CaseLeafletMap({
               setInspectorMode('unmapped');
               setShowUnmappedDrawer(true);
             }}
-            className="text-[11.5px] font-bold text-amber-900 dark:text-amber-100 underline hover:no-underline"
+            className="text-[11.5px] font-semibold text-amber-900 dark:text-amber-100 underline hover:no-underline"
           >
             View Unmapped Entities &rarr;
           </button>
@@ -843,8 +847,8 @@ export default function CaseLeafletMap({
         {loading && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 dark:bg-black/70 backdrop-blur-xs">
             <div className="w-9 h-9 border-3 border-[var(--accent)] border-t-transparent rounded-full animate-spin mb-3" />
-            <span className="text-[13px] font-bold text-[var(--ink-primary)]">Loading Case Map Intelligence...</span>
-            <span className="text-[11.5px] text-[var(--ink-tertiary)] mt-1">Fetching Neo4j Investigation Topology &amp; Coordinates</span>
+            <span className="text-[13px] font-semibold text-[var(--ink-primary)]">Loading Case Map Intelligence...</span>
+            <span className="text-[11.5px] text-[var(--ink-tertiary)] mt-1">Loading case locations</span>
           </div>
         )}
 
@@ -852,7 +856,7 @@ export default function CaseLeafletMap({
         {!loading && activeNodes.length === 0 && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-6 text-center bg-[var(--surface-0)]">
             <Compass size={48} className="text-slate-300 mb-3" />
-            <h3 className="text-base font-bold text-[var(--ink-primary)]">No Geographic Intelligence Available</h3>
+            <h3 className="text-base font-semibold text-[var(--ink-primary)]">No Geographic Intelligence Available</h3>
             <p className="text-[13px] text-[var(--ink-secondary)] max-w-md mt-1 mb-4 leading-relaxed">
               No geographical coordinates or loci are currently registered for this case. Upload an FIR document to extract investigation waypoints automatically.
             </p>
@@ -871,7 +875,7 @@ export default function CaseLeafletMap({
               style={{ borderColor: 'var(--border)' }}>
               <button
                 onClick={() => setInspectorMode('node')}
-                className={`flex-1 py-1.5 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   inspectorMode === 'node' ? 'bg-white dark:bg-black/50 text-[var(--accent)] shadow-sm' : 'text-[var(--ink-secondary)]'
                 }`}
               >
@@ -880,7 +884,7 @@ export default function CaseLeafletMap({
               </button>
               <button
                 onClick={() => setInspectorMode('relationship')}
-                className={`flex-1 py-1.5 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
                   inspectorMode === 'relationship' ? 'bg-white dark:bg-black/50 text-[var(--accent)] shadow-sm' : 'text-[var(--ink-secondary)]'
                 }`}
               >
@@ -890,7 +894,7 @@ export default function CaseLeafletMap({
               {intelligence?.unmappedLocations && intelligence.unmappedLocations.length > 0 && (
                 <button
                   onClick={() => setInspectorMode('unmapped')}
-                  className={`flex-1 py-1.5 rounded-lg font-bold flex items-center justify-center gap-1.5 transition-all ${
+                  className={`flex-1 py-1.5 rounded-lg font-semibold flex items-center justify-center gap-1.5 transition-all ${
                     inspectorMode === 'unmapped' ? 'bg-white dark:bg-black/50 text-amber-600 shadow-sm' : 'text-[var(--ink-secondary)]'
                   }`}
                 >
@@ -911,16 +915,16 @@ export default function CaseLeafletMap({
                       borderColor: (NODE_TYPE_CONFIG[selectedNode.type] || NODE_TYPE_CONFIG.LOCATION).border,
                     }}>
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10.5px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md text-white"
+                      <span className="text-[10.5px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md text-white"
                         style={{ background: (NODE_TYPE_CONFIG[selectedNode.type] || NODE_TYPE_CONFIG.LOCATION).color }}>
                         {selectedNode.label}
                       </span>
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white dark:bg-black/40"
+                      <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-white dark:bg-black/40"
                         style={{ color: (NODE_TYPE_CONFIG[selectedNode.type] || NODE_TYPE_CONFIG.LOCATION).color }}>
                         PRIORITY: {selectedNode.importance}
                       </span>
                     </div>
-                    <h3 className="text-[17px] font-bold text-slate-900 dark:text-white">
+                    <h3 className="text-[17px] font-semibold text-slate-900 dark:text-white">
                       {selectedNode.name}
                     </h3>
                     <p className="text-[12px] text-slate-600 dark:text-slate-300 mt-1">
@@ -931,14 +935,14 @@ export default function CaseLeafletMap({
                   {/* Geocoordinates Card */}
                   <div className="grid grid-cols-2 gap-2 text-[12px]">
                     <div className="p-2.5 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
-                      <span className="text-[10px] text-[var(--ink-tertiary)] block font-bold uppercase">Latitude</span>
-                      <span className="font-mono-id font-bold text-[13px] text-slate-900 dark:text-white">
+                      <span className="text-[10px] text-[var(--ink-tertiary)] block font-semibold uppercase">Latitude</span>
+                      <span className="font-mono-id font-semibold text-[13px] text-slate-900 dark:text-white">
                         {selectedNode.latitude.toFixed(6)}° N
                       </span>
                     </div>
                     <div className="p-2.5 rounded-xl border bg-[var(--surface-0)]" style={{ borderColor: 'var(--border)' }}>
-                      <span className="text-[10px] text-[var(--ink-tertiary)] block font-bold uppercase">Longitude</span>
-                      <span className="font-mono-id font-bold text-[13px] text-slate-900 dark:text-white">
+                      <span className="text-[10px] text-[var(--ink-tertiary)] block font-semibold uppercase">Longitude</span>
+                      <span className="font-mono-id font-semibold text-[13px] text-slate-900 dark:text-white">
                         {selectedNode.longitude.toFixed(6)}° E
                       </span>
                     </div>
@@ -947,28 +951,28 @@ export default function CaseLeafletMap({
                   {/* Verification Telemetry */}
                   <div className="p-3 rounded-xl border bg-[var(--surface-0)] space-y-1.5 text-[12px]" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex justify-between">
-                      <span className="text-[var(--ink-tertiary)]">Geocoding Validation:</span>
-                      <span className="font-bold text-emerald-600 flex items-center gap-1">
-                        <CheckCircle2 size={12} /> Indian Metro Registry
+                      <span className="text-[var(--ink-tertiary)]">Address match:</span>
+                      <span className="font-semibold text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 size={12} /> Verified
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-[var(--ink-tertiary)]">Spatial Confidence:</span>
-                      <span className="font-bold text-[var(--ink-primary)]">
+                      <span className="text-[var(--ink-tertiary)]">Location confidence:</span>
+                      <span className="font-semibold text-[var(--ink-primary)]">
                         {Math.round(selectedNode.confidence * 100)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[var(--ink-tertiary)]">Jurisdiction:</span>
-                      <span className="font-bold text-[var(--ink-primary)]">
+                      <span className="font-semibold text-[var(--ink-primary)]">
                         {selectedNode.city} Metropolitan
                       </span>
                     </div>
                   </div>
 
-                  {/* Connected Neo4j Relationships */}
+                  {/* Connected relationships */}
                   <div>
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1.5 text-[var(--ink-tertiary)]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wider block mb-1.5 text-[var(--ink-tertiary)]">
                       Active Graph Relationships ({filteredRelationships.filter((r) => r.source === selectedNode.id || r.target === selectedNode.id).length})
                     </span>
                     <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
@@ -988,14 +992,14 @@ export default function CaseLeafletMap({
                               style={{ borderColor: 'var(--border)' }}
                             >
                               <div className="flex items-center gap-1.5">
-                                <span className="text-[9.5px] font-bold bg-[#0F172A] text-white px-1.5 py-0.5 rounded">
+                                <span className="text-[9.5px] font-semibold bg-[#111827] text-white px-1.5 py-0.5 rounded">
                                   {rel.type}
                                 </span>
                                 <span className="font-medium text-[var(--ink-primary)] truncate max-w-[170px]">
                                   {isSource ? `→ ${otherName}` : `← ${otherName}`}
                                 </span>
                               </div>
-                              <span className="text-[10px] font-mono-id text-emerald-600 font-bold">
+                              <span className="text-[10px] font-mono-id text-emerald-600 font-semibold">
                                 {Math.round(rel.confidence * 100)}%
                               </span>
                             </div>
@@ -1006,7 +1010,7 @@ export default function CaseLeafletMap({
 
                   {/* All Case Landmarks Quick-Jump */}
                   <div>
-                    <span className="text-[10.5px] font-bold uppercase tracking-wider block mb-1.5 text-[var(--ink-tertiary)]">
+                    <span className="text-[10.5px] font-semibold uppercase tracking-wider block mb-1.5 text-[var(--ink-tertiary)]">
                       All Case Investigation Loci ({filteredNodes.length})
                     </span>
                     <div className="space-y-1 max-h-36 overflow-y-auto pr-1">
@@ -1025,12 +1029,12 @@ export default function CaseLeafletMap({
                           style={{ borderColor: selectedNode.id === n.id ? 'var(--accent)' : 'var(--border)' }}
                         >
                           <div className="flex items-center gap-2 truncate">
-                            <span className="w-4 h-4 rounded-full bg-[#0F172A] text-white font-mono-id text-[9px] flex items-center justify-center shrink-0">
+                            <span className="w-4 h-4 rounded-full bg-[#111827] text-white font-mono-id text-[9px] flex items-center justify-center shrink-0">
                               {idx + 1}
                             </span>
                             <span className="truncate text-[var(--ink-primary)]">{n.name}</span>
                           </div>
-                          <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded"
+                          <span className="text-[9.5px] font-semibold px-1.5 py-0.5 rounded"
                             style={{
                               background: (NODE_TYPE_CONFIG[n.type] || NODE_TYPE_CONFIG.LOCATION).bg,
                               color: (NODE_TYPE_CONFIG[n.type] || NODE_TYPE_CONFIG.LOCATION).color,
@@ -1045,7 +1049,7 @@ export default function CaseLeafletMap({
               ) : (
                 <div className="p-8 text-center space-y-2">
                   <MapPin size={32} className="mx-auto text-[var(--ink-tertiary)] opacity-40 mb-2" />
-                  <h4 className="font-bold text-[14px] text-[var(--ink-primary)]">No Locus Selected</h4>
+                  <h4 className="font-semibold text-[14px] text-[var(--ink-primary)]">No Locus Selected</h4>
                   <p className="text-[12px] text-[var(--ink-secondary)]">Click any numbered marker on the case map to inspect its investigation telemetry.</p>
                 </div>
               )
@@ -1055,11 +1059,11 @@ export default function CaseLeafletMap({
             {inspectorMode === 'relationship' && (
               selectedRelationship ? (
                 <div className="space-y-4">
-                  <div className="p-3.5 rounded-2xl border bg-[#0F172A] text-white border-slate-700">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-sky-400 block mb-1">
+                  <div className="p-3.5 rounded-2xl border bg-[#111827] text-white border-slate-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-sky-400 block mb-1">
                       DARK GRAPH RELATIONSHIP
                     </span>
-                    <h3 className="text-[17px] font-extrabold text-white">
+                    <h3 className="text-[17px] font-semibold text-white">
                       {selectedRelationship.label}
                     </h3>
                     <div className="font-mono text-[11px] text-slate-300 mt-1">
@@ -1069,30 +1073,30 @@ export default function CaseLeafletMap({
 
                   <div className="p-3 rounded-xl border bg-[var(--surface-0)] space-y-2 text-[12px]" style={{ borderColor: 'var(--border)' }}>
                     <div>
-                      <span className="text-[10px] font-bold uppercase text-[var(--ink-tertiary)] block">From Entity</span>
-                      <span className="font-bold text-[var(--ink-primary)] text-[13px]">{selectedRelationship.sourceName || selectedRelationship.source}</span>
+                      <span className="text-[10px] font-semibold uppercase text-[var(--ink-tertiary)] block">From Entity</span>
+                      <span className="font-semibold text-[var(--ink-primary)] text-[13px]">{selectedRelationship.sourceName || selectedRelationship.source}</span>
                     </div>
                     <div className="border-t pt-2" style={{ borderColor: 'var(--border)' }}>
-                      <span className="text-[10px] font-bold uppercase text-[var(--ink-tertiary)] block">To Locus</span>
-                      <span className="font-bold text-[var(--ink-primary)] text-[13px]">{selectedRelationship.targetName || selectedRelationship.target}</span>
+                      <span className="text-[10px] font-semibold uppercase text-[var(--ink-tertiary)] block">To Locus</span>
+                      <span className="font-semibold text-[var(--ink-primary)] text-[13px]">{selectedRelationship.targetName || selectedRelationship.target}</span>
                     </div>
                   </div>
 
                   <div className="p-3 rounded-xl border bg-[var(--surface-0)] space-y-1.5 text-[12px]" style={{ borderColor: 'var(--border)' }}>
                     <div className="flex justify-between">
                       <span className="text-[var(--ink-tertiary)]">Evidence Basis:</span>
-                      <span className="font-bold text-[var(--ink-primary)]">{selectedRelationship.evidenceBasis.join(', ') || 'Official FIR Dossier'}</span>
+                      <span className="font-semibold text-[var(--ink-primary)]">{selectedRelationship.evidenceBasis.join(', ') || 'Official FIR Dossier'}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[var(--ink-tertiary)]">Graph Confidence:</span>
-                      <span className="font-bold text-emerald-600 font-mono-id">
+                      <span className="font-semibold text-emerald-600 font-mono-id">
                         {Math.round(selectedRelationship.confidence * 100)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[var(--ink-tertiary)]">Visual Line Style:</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100">
-                        Dark Navy (#0F172A)
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                        Dark Navy (#111827)
                       </span>
                     </div>
                   </div>
@@ -1100,7 +1104,7 @@ export default function CaseLeafletMap({
               ) : (
                 <div className="p-8 text-center space-y-2">
                   <RouteIcon size={32} className="mx-auto text-[var(--ink-tertiary)] opacity-40 mb-2" />
-                  <h4 className="font-bold text-[14px] text-[var(--ink-primary)]">No Edge Selected</h4>
+                  <h4 className="font-semibold text-[14px] text-[var(--ink-primary)]">No Edge Selected</h4>
                   <p className="text-[12px] text-[var(--ink-secondary)]">Click any dark relationship line on the map to inspect its evidentiary basis.</p>
                 </div>
               )
@@ -1110,11 +1114,11 @@ export default function CaseLeafletMap({
             {inspectorMode === 'unmapped' && (
               <div className="space-y-3">
                 <div className="p-3 rounded-2xl border bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-[12px]">
-                  <h4 className="font-bold text-amber-900 dark:text-amber-100 text-[13px] mb-1">
+                  <h4 className="font-semibold text-amber-900 dark:text-amber-100 text-[13px] mb-1">
                     Locations Identified Without Coordinates
                   </h4>
                   <p className="text-amber-800 dark:text-amber-200 leading-relaxed text-[11.5px]">
-                    In strict adherence to investigation integrity, KRITAGAS does NOT create fake or randomized coordinates. These locations were extracted from the FIR but remain unplotted until physical coordinates are corroborated.
+                    In strict adherence to investigation integrity, TRINETRA does NOT create fake or randomized coordinates. These locations were extracted from the FIR but remain unplotted until physical coordinates are corroborated.
                   </p>
                 </div>
 
@@ -1122,8 +1126,8 @@ export default function CaseLeafletMap({
                   {intelligence?.unmappedLocations.map((u) => (
                     <div key={u.id} className="p-3 rounded-xl border bg-[var(--surface-0)] text-[12px]" style={{ borderColor: 'var(--border)' }}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="font-bold text-[var(--ink-primary)] text-[13px]">{u.name}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                        <span className="font-semibold text-[var(--ink-primary)] text-[13px]">{u.name}</span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
                           {u.type}
                         </span>
                       </div>
@@ -1167,12 +1171,12 @@ export default function CaseLeafletMap({
         style={{ background: 'var(--surface-1)', borderColor: 'var(--border)', color: 'var(--ink-tertiary)' }}>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1 text-[var(--accent)] font-semibold">
-            <Activity size={12} /> KRITAGAS Geographic Graph Engine
+            <Activity size={12} /> TRINETRA Geographic Graph Engine
           </span>
           <span>•</span>
-          <span>Neo4j Spatial Knowledge Mesh</span>
+          <span>Case location map</span>
           <span>•</span>
-          <span>High-Contrast Dark Graph Lines (#0F172A)</span>
+          <span>High-Contrast Dark Graph Lines (#111827)</span>
           <span>•</span>
           <span>Zero Synthetic Coordinates</span>
         </div>

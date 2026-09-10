@@ -22,7 +22,7 @@ const mockRoles = [
   },
   {
     name: 'Police Investigator',
-    color: '#4F46E5',
+    color: '#12376E',
     users: 0,
     permissions: ['Case Management', 'Network Graph', 'Evidence Hub', 'FIR Intelligence', 'Live Feed', 'Historical Intelligence'],
   },
@@ -72,7 +72,7 @@ function AdminContent() {
       {/* Header */}
       <div>
         <div className="flex items-center gap-3 mb-1">
-          <h1 className="text-[28px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+          <h1 className="text-[28px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
             System Administration
           </h1>
           <span className="text-[12px] font-semibold px-3 py-1 rounded-full"
@@ -95,7 +95,7 @@ function AdminContent() {
                 label: 'Total Users',
                 value: adminStats ? String(adminStats.total_users) : '0',
                 sub: adminStats ? `${adminStats.total_police_officers} officers` : '0 officers',
-                color: '#4F46E5',
+                color: '#12376E',
                 bg: 'rgba(79,70,229,0.08)'
               },
               {
@@ -116,12 +116,12 @@ function AdminContent() {
                 label: 'System Uptime',
                 value: '99.97%',
                 sub: 'Operational & Audited',
-                color: '#0891B2',
+                color: '#0F766E',
                 bg: 'rgba(8,145,178,0.08)'
               },
             ].map((m) => (
               <div key={m.label} className="p-5 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-                <div className="text-[30px] font-bold font-mono-id" style={{ color: m.color }}>{m.value}</div>
+                <div className="text-[30px] font-semibold font-mono-id" style={{ color: m.color }}>{m.value}</div>
                 <div className="text-[13.5px] font-semibold mt-1" style={{ color: 'var(--ink-primary)' }}>{m.label}</div>
                 <div className="text-[12px] mt-0.5" style={{ color: 'var(--ink-tertiary)' }}>{m.sub}</div>
               </div>
@@ -131,7 +131,7 @@ function AdminContent() {
           {/* Recent activity + system health */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-              <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Recent System Activity</h3>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--ink-primary)' }}>Recent System Activity</h3>
               <div className="space-y-3">
                 {securityEvents.slice(0, 5).map((ev, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl"
@@ -151,13 +151,13 @@ function AdminContent() {
               </div>
             </div>
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-              <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>System Health</h3>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--ink-primary)' }}>System Health</h3>
               <div className="space-y-4">
                 {[
                   { label: 'Ingestion Pipeline', value: '42,190 rec/s', status: 'Healthy', color: '#16A34A' },
                   { label: 'Graph Engine', value: '1M nodes capacity', status: 'Healthy', color: '#16A34A' },
                   { label: 'Cryptographic Seals', value: '100% verified', status: 'Healthy', color: '#16A34A' },
-                  { label: 'Blockchain Ledger', value: 'Block #892341', status: 'Synced', color: '#16A34A' },
+                  { label: 'Blockchain Ledger', value: 'Block #DC2626', status: 'Synced', color: '#16A34A' },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center justify-between p-3.5 rounded-xl border"
                     style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
@@ -178,7 +178,7 @@ function AdminContent() {
       {activeTab === 'users' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
-            <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h2 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Authorized Personnel ({mockUsers.length})
             </h2>
             <button
@@ -213,7 +213,7 @@ function AdminContent() {
                     <tr key={u.id}>
                       <td>
                         <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-[11px] font-semibold text-white shrink-0"
                             style={{ background: u.status === 'Active' ? 'var(--accent)' : 'var(--ink-tertiary)' }}>
                             {u.name.slice(0, 2).toUpperCase()}
                           </div>
@@ -252,7 +252,7 @@ function AdminContent() {
       {/* ── Role Management ───────────────────────────────────── */}
       {activeTab === 'roles' && (
         <div className="space-y-5 animate-fade-in">
-          <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>Role-Based Access Control</h2>
+          <h2 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Role-Based Access Control</h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {mockRoles.map((role) => (
               <div key={role.name} className="p-6 rounded-2xl border"
@@ -263,7 +263,7 @@ function AdminContent() {
                       style={{ background: `${role.color}14`, color: role.color }}>
                       <Shield size={18} />
                     </div>
-                    <h3 className="text-[15px] font-bold" style={{ color: 'var(--ink-primary)' }}>{role.name}</h3>
+                    <h3 className="text-[15px] font-semibold" style={{ color: 'var(--ink-primary)' }}>{role.name}</h3>
                   </div>
                   <span className="font-mono-id text-[11px] px-2 py-1 rounded-lg"
                     style={{ background: `${role.color}12`, color: role.color }}>
@@ -288,7 +288,7 @@ function AdminContent() {
       {activeTab === 'audit' && (
         <div className="space-y-4 animate-fade-in">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>Immutable Audit Trail</h2>
+            <h2 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Immutable Audit Trail</h2>
             <div className="relative">
               <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--ink-tertiary)' }} />
               <input
@@ -336,10 +336,10 @@ function AdminContent() {
       {/* ── Security ─────────────────────────────────────────── */}
       {activeTab === 'security' && (
         <div className="space-y-4 animate-fade-in">
-          <h2 className="text-[18px] font-bold" style={{ color: 'var(--ink-primary)' }}>Security & Threat Monitoring</h2>
+          <h2 className="text-[18px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Security & Threat Monitoring</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-              <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Events (Today)</h3>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Events (Today)</h3>
               <div className="space-y-2.5">
                 {securityEvents.length === 0 ? (
                   <div className="py-8 text-center text-[var(--ink-tertiary)] text-[13px]">
@@ -368,7 +368,7 @@ function AdminContent() {
               </div>
             </div>
             <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-              <h3 className="text-[16px] font-bold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Summary</h3>
+              <h3 className="text-[16px] font-semibold mb-4" style={{ color: 'var(--ink-primary)' }}>Security Summary</h3>
               <div className="space-y-4">
                 {[
                   { label: 'Login Attempts (24h)', value: '0', safe: true },
@@ -380,7 +380,7 @@ function AdminContent() {
                   <div key={stat.label} className="flex items-center justify-between p-3.5 rounded-xl"
                     style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
                     <span className="text-[13px]" style={{ color: 'var(--ink-secondary)' }}>{stat.label}</span>
-                    <span className="font-mono-id font-bold text-[16px]" style={{ color: stat.safe ? 'var(--success)' : '#DC2626' }}>
+                    <span className="font-mono-id font-semibold text-[16px]" style={{ color: stat.safe ? 'var(--success)' : '#DC2626' }}>
                       {stat.value}
                     </span>
                   </div>

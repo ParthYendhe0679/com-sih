@@ -16,7 +16,7 @@ export default function TimelineContextualPage() {
         const res = await casesApi.listCases({ size: 20 });
         const items = res.items || [];
         setCases(items);
-        const saved = typeof window !== 'undefined' ? localStorage.getItem('kritagas_active_case') : null;
+        const saved = typeof window !== 'undefined' ? localStorage.getItem('TRINETRA_active_case') : null;
         const savedCase = saved ? items.find(c => c.id === saved || c.case_number === saved) : undefined;
         if (savedCase) {
           router.replace(`/cases/${savedCase.id}?tab=timeline`);
@@ -50,7 +50,7 @@ export default function TimelineContextualPage() {
         <div className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center text-[var(--accent)] bg-[var(--accent-muted)]">
           <Clock size={28} />
         </div>
-        <h2 className="text-[20px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+        <h2 className="text-[20px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
           Case Investigation Timeline
         </h2>
         <p className="text-[13px] text-[var(--ink-secondary)] max-w-lg mx-auto">
@@ -59,7 +59,7 @@ export default function TimelineContextualPage() {
       </div>
 
       <div className="space-y-3">
-        <h3 className="text-[13px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+        <h3 className="text-[13px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
           Select Investigation Case ({cases.length})
         </h3>
         {cases.length === 0 ? (
@@ -73,14 +73,14 @@ export default function TimelineContextualPage() {
               <button
                 key={c.id}
                 onClick={() => {
-                  localStorage.setItem('kritagas_active_case', c.id);
+                  localStorage.setItem('TRINETRA_active_case', c.id);
                   router.push(`/cases/${c.id}?tab=timeline`);
                 }}
                 className="p-4 rounded-xl border text-left flex items-center justify-between hover:border-[var(--accent)] transition-all glass-panel cursor-pointer"
                 style={{ borderColor: 'var(--border)' }}
               >
                 <div>
-                  <div className="font-mono-id font-bold text-[12.5px] text-[var(--accent)]">{c.case_number}</div>
+                  <div className="font-mono-id font-semibold text-[12.5px] text-[var(--accent)]">{c.case_number}</div>
                   <div className="font-semibold text-[13.5px] mt-0.5 line-clamp-1" style={{ color: 'var(--ink-primary)' }}>{c.title}</div>
                   <div className="text-[11.5px] text-[var(--ink-tertiary)] mt-0.5">{c.crime_category} • {c.status}</div>
                 </div>

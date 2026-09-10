@@ -80,7 +80,7 @@ export default function InvestigationReplayPage() {
       >
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[18px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[18px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               Investigation Replay Engine
             </h1>
             <span
@@ -149,7 +149,7 @@ export default function InvestigationReplayPage() {
           </button>
           <button
             onClick={() => setPlaybackSpeed(playbackSpeed === 1 ? 2 : 1)}
-            className="px-2.5 py-1.5 rounded-lg border text-[11px] font-mono-id font-bold hover:bg-[var(--surface-2)] text-[var(--accent)]"
+            className="px-2.5 py-1.5 rounded-lg border text-[11px] font-mono-id font-semibold hover:bg-[var(--surface-2)] text-[var(--accent)]"
             style={{ borderColor: 'var(--border)' }}
           >
             {playbackSpeed}x Speed
@@ -166,7 +166,7 @@ export default function InvestigationReplayPage() {
             <Clock size={24} />
           </div>
           <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               No Investigation Milestones Available
             </h3>
             <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -183,7 +183,7 @@ export default function InvestigationReplayPage() {
           >
             <div className="flex items-center justify-between text-[11px] font-mono-id">
               <span style={{ color: 'var(--ink-tertiary)' }}>Earliest Milestone</span>
-              <span className="font-bold text-[var(--accent)] text-[12px]">
+              <span className="font-semibold text-[var(--accent)] text-[12px]">
                 {currentEvent ? currentEvent.timestamp.replace('T', ' ') : '—'} IST
               </span>
               <span style={{ color: 'var(--ink-tertiary)' }}>Latest Checkpoint</span>
@@ -218,10 +218,10 @@ export default function InvestigationReplayPage() {
           </div>
 
           <div className="space-y-2">
-            <span className="text-[12px] font-mono-id font-bold text-[var(--accent)]">
+            <span className="text-[12px] font-mono-id font-semibold text-[var(--accent)]">
               {currentEvent.timestamp.replace('T', ' ')} IST
             </span>
-            <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               {currentEvent.title}
             </h3>
             <p className="text-[13px] leading-relaxed" style={{ color: 'var(--ink-secondary)' }}>
@@ -241,7 +241,7 @@ export default function InvestigationReplayPage() {
           style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
         >
           <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#3B82F6]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#2563EB]">
               <Network size={13} /> 2. Network Node Highlight
             </span>
             <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)]">
@@ -252,12 +252,12 @@ export default function InvestigationReplayPage() {
           {matchedNode ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                <span className="font-mono-id font-semibold text-[13px] text-[var(--accent)]">
                   {matchedNode.id}
                 </span>
                 <span className="badge badge-medium">{matchedNode.type}</span>
               </div>
-              <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 {matchedNode.label}
               </h3>
               <div className="p-2.5 rounded-lg border text-[12px] bg-[var(--surface-2)]" style={{ borderColor: 'var(--border)' }}>
@@ -281,7 +281,7 @@ export default function InvestigationReplayPage() {
           style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
         >
           <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#F59E0B]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#D97706]">
               <MapPin size={13} /> 3. Geolocated Hotspot Focus
             </span>
             <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)]">
@@ -292,12 +292,12 @@ export default function InvestigationReplayPage() {
           {matchedLocation ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                <span className="font-mono-id font-semibold text-[13px] text-[var(--accent)]">
                   {matchedLocation.id}
                 </span>
                 <span className="badge badge-low">{matchedLocation.type}</span>
               </div>
-              <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 {matchedLocation.name}
               </h3>
               <p className="text-[12px]" style={{ color: 'var(--ink-secondary)' }}>
@@ -324,7 +324,7 @@ export default function InvestigationReplayPage() {
           style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
         >
           <div className="flex items-center justify-between border-b pb-2" style={{ borderColor: 'var(--border)' }}>
-            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#10B981]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider flex items-center gap-1.5 text-[#16A34A]">
               <Package size={13} /> 4. Evidentiary Ingestion Reveal
             </span>
             <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)]">
@@ -335,12 +335,12 @@ export default function InvestigationReplayPage() {
           {matchedEvidence ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                <span className="font-mono-id font-semibold text-[13px] text-[var(--accent)]">
                   {matchedEvidence.id}
                 </span>
                 <span className="badge badge-active">{matchedEvidence.status}</span>
               </div>
-              <h3 className="text-[16px] font-bold truncate" style={{ color: 'var(--ink-primary)' }}>
+              <h3 className="text-[16px] font-semibold truncate" style={{ color: 'var(--ink-primary)' }}>
                 {matchedEvidence.title}
               </h3>
               <p className="text-[12px] line-clamp-2" style={{ color: 'var(--ink-secondary)' }}>

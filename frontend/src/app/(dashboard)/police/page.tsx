@@ -91,7 +91,7 @@ export default function PolicePortalPage() {
 
       const res = await firsApi.uploadOfflineFir(formData);
       setUploadResult(res);
-      toast.success(`FIR ${res.fir.fir_number} scanned and ingested into KRITAGAS intelligence index.`);
+      toast.success(`FIR ${res.fir.fir_number} scanned and ingested into TRINETRA intelligence index.`);
       fetchQueue();
     } catch (err: any) {
       toast.error(err.message || 'Failed to upload and ingest document.');
@@ -106,7 +106,7 @@ export default function PolicePortalPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               Police Intake &amp; Case Verification Console
             </h1>
             <span
@@ -152,7 +152,7 @@ export default function PolicePortalPage() {
           {/* Complaints List (5 cols) */}
           <div className="lg:col-span-5 space-y-2">
             <div className="flex items-center justify-between pb-1">
-              <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)]">
+              <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)]">
                 Incoming Complaints
               </span>
               <button
@@ -195,7 +195,7 @@ export default function PolicePortalPage() {
                     }}
                   >
                     <div className="flex items-center justify-between">
-                      <span className="font-mono-id font-bold text-[13px] text-[var(--accent)]">
+                      <span className="font-mono-id font-semibold text-[13px] text-[var(--accent)]">
                         {comp.fir_number}
                       </span>
                       <span className="badge badge-review text-[10px]">
@@ -225,10 +225,10 @@ export default function PolicePortalPage() {
               >
                 <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: 'var(--border)' }}>
                   <div>
-                    <span className="font-mono-id font-bold text-[14px] text-[var(--accent)]">
+                    <span className="font-mono-id font-semibold text-[14px] text-[var(--accent)]">
                       {selectedComplaint.fir_number}
                     </span>
-                    <h3 className="text-[17px] font-bold mt-0.5" style={{ color: 'var(--ink-primary)' }}>
+                    <h3 className="text-[17px] font-semibold mt-0.5" style={{ color: 'var(--ink-primary)' }}>
                       {selectedComplaint.title}
                     </h3>
                   </div>
@@ -314,7 +314,7 @@ export default function PolicePortalPage() {
         <div className="max-w-2xl mx-auto p-6 rounded-2xl border space-y-6 glass-panel"
           style={{ borderColor: 'var(--border)' }}>
           <div className="border-b pb-3" style={{ borderColor: 'var(--border)' }}>
-            <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Scan &amp; Ingest Physical FIR Document
             </h3>
             <p className="text-[12.5px] text-[var(--ink-secondary)]">
@@ -384,7 +384,7 @@ export default function PolicePortalPage() {
             {uploadResult && (
               <div className="p-4 rounded-xl border bg-[var(--surface-1)] space-y-2" style={{ borderColor: 'var(--border)' }}>
                 <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-bold text-[var(--success)] flex items-center gap-1">
+                  <span className="text-[12px] font-semibold text-[var(--success)] flex items-center gap-1">
                     <Check size={14} /> Ingested as {uploadResult.fir.fir_number}
                   </span>
                   <span className="font-mono-id text-[11px] text-[var(--ink-tertiary)]">
@@ -400,7 +400,7 @@ export default function PolicePortalPage() {
             <button
               onClick={handleRealUpload}
               disabled={uploading || !selectedFile}
-              className="w-full py-2.5 rounded-xl text-[13px] font-bold text-white shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+              className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white shadow-sm flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
               style={{ background: 'var(--accent)' }}
             >
               {uploading ? (

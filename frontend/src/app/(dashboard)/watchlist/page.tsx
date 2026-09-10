@@ -66,12 +66,12 @@ export default function WatchlistPage() {
 
   const getEntityIcon = (type: string) => {
     switch (type) {
-      case 'Person': return <User size={15} className="text-[#3B82F6]" />;
-      case 'Vehicle': return <Car size={15} className="text-[#10B981]" />;
-      case 'Phone': return <Phone size={15} className="text-[#F59E0B]" />;
-      case 'Location': return <MapPin size={15} className="text-[#EC4899]" />;
-      case 'Organization': return <Building2 size={15} className="text-[#8B5CF6]" />;
-      case 'Case': return <FolderOpen size={15} className="text-[#5B5BD6]" />;
+      case 'Person': return <User size={15} className="text-[#2563EB]" />;
+      case 'Vehicle': return <Car size={15} className="text-[#16A34A]" />;
+      case 'Phone': return <Phone size={15} className="text-[#D97706]" />;
+      case 'Location': return <MapPin size={15} className="text-[#DC2626]" />;
+      case 'Organization': return <Building2 size={15} className="text-[#5B4BC4]" />;
+      case 'Case': return <FolderOpen size={15} className="text-[#12376E]" />;
       default: return <BookmarkCheck size={15} />;
     }
   };
@@ -82,7 +82,7 @@ export default function WatchlistPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+            <h1 className="text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
               Target Surveillance Watchlist
             </h1>
             <span
@@ -117,7 +117,7 @@ export default function WatchlistPage() {
             <Shield size={24} />
           </div>
           <div className="max-w-md mx-auto space-y-1">
-            <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               No Surveillance Targets Registered
             </h3>
             <p className="text-[13px] text-[var(--ink-secondary)]">
@@ -163,7 +163,7 @@ export default function WatchlistPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     {item.entityName}
                   </h3>
                   <div className="text-[11px] font-mono-id font-semibold text-[var(--accent)] mt-0.5">
@@ -223,7 +223,7 @@ export default function WatchlistPage() {
             className="w-[460px] max-w-full rounded-xl border shadow-2xl p-5 space-y-4 animate-slide-in-up"
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border-strong)' }}
           >
-            <h3 className="text-[16px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+            <h3 className="text-[16px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
               Add Target to Surveillance Watchlist
             </h3>
 

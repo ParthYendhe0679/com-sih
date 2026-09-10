@@ -136,7 +136,7 @@ class CaseSimilarityEngine:
             if cand.id == source.id:
                 continue
             sim = self.compare_cases(source, cand)
-            if sim.similarity_score >= 0.40:
+            if sim.similarity_score >= 0.28:
                 results.append(sim)
 
         results.sort(key=lambda x: x.similarity_score, reverse=True)

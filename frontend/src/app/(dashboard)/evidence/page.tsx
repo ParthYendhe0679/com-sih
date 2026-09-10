@@ -35,11 +35,11 @@ const chainOfCustody: { time: string; date: string; action: string; officer: str
 
 function getCategoryIcon(cat: string) {
   switch (cat) {
-    case 'DNA': return <Dna size={16} className="text-[#EC4899]" />;
-    case 'Fingerprint': return <Fingerprint size={16} className="text-[#3B82F6]" />;
-    case 'Ballistics': return <Crosshair size={16} className="text-[#EF4444]" />;
-    case 'Toxicology': return <FlaskConical size={16} className="text-[#8B5CF6]" />;
-    case 'Digital Forensics': return <Binary size={16} className="text-[#10B981]" />;
+    case 'DNA': return <Dna size={16} className="text-[#DC2626]" />;
+    case 'Fingerprint': return <Fingerprint size={16} className="text-[#2563EB]" />;
+    case 'Ballistics': return <Crosshair size={16} className="text-[#DC2626]" />;
+    case 'Toxicology': return <FlaskConical size={16} className="text-[#5B4BC4]" />;
+    case 'Digital Forensics': return <Binary size={16} className="text-[#16A34A]" />;
     default: return <FlaskConical size={16} />;
   }
 }
@@ -192,7 +192,7 @@ function EvidenceHubContent() {
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-[28px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>Evidence Hub</h1>
+        <h1 className="text-[28px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>Evidence Hub</h1>
         <p className="text-[14px] mt-1" style={{ color: 'var(--ink-secondary)' }}>
           Comprehensive evidence intelligence — correlation, forensics, contradictions, and integrity verification
         </p>
@@ -236,7 +236,7 @@ function EvidenceHubContent() {
       {activeTab === 'correlation' && (
         <div className="space-y-5 animate-fade-in">
           <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-            <h3 className="text-[17px] font-bold mb-5" style={{ color: 'var(--ink-primary)' }}>Evidence Correlation Map</h3>
+            <h3 className="text-[17px] font-semibold mb-5" style={{ color: 'var(--ink-primary)' }}>Evidence Correlation Map</h3>
             {correlationLinks.length === 0 ? (
               <div className="py-12 text-center text-[var(--ink-tertiary)] text-[13.5px]">
                 No cross-evidence correlations recorded. Links will appear when multi-source entities match.
@@ -246,14 +246,14 @@ function EvidenceHubContent() {
                 {correlationLinks.map((link, i) => (
                   <div key={i} className="flex items-center gap-4 p-4 rounded-xl border"
                     style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-                    <span className="font-mono-id font-bold text-[13px] min-w-[140px]" style={{ color: link.color }}>{link.source}</span>
+                    <span className="font-mono-id font-semibold text-[13px] min-w-[140px]" style={{ color: link.color }}>{link.source}</span>
                     <div className="flex items-center gap-2 flex-1">
                       <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
                       <span className="text-[12px] px-3 py-1 rounded-full font-medium whitespace-nowrap"
                         style={{ background: `${link.color}14`, color: link.color }}>{link.relation}</span>
                       <div className="flex-1 h-0.5 rounded-full" style={{ background: `${link.color}40` }} />
                     </div>
-                    <span className="font-mono-id font-bold text-[13px] min-w-[120px] text-right" style={{ color: link.color }}>{link.target}</span>
+                    <span className="font-mono-id font-semibold text-[13px] min-w-[120px] text-right" style={{ color: link.color }}>{link.target}</span>
                   </div>
                 ))}
               </div>
@@ -290,7 +290,7 @@ function EvidenceHubContent() {
                     <div className="flex justify-between"><span>Record ID</span><span className="font-mono-id" style={{ color: 'var(--accent)' }}>{record.id}</span></div>
                     <div className="flex justify-between"><span>Case</span><span className="font-mono-id">{record.caseId}</span></div>
                     <div className="flex justify-between"><span>Match</span>
-                      <span className="font-bold font-mono-id" style={{ color: record.matchPercentage > 85 ? 'var(--success)' : 'var(--warning)' }}>
+                      <span className="font-semibold font-mono-id" style={{ color: record.matchPercentage > 85 ? 'var(--success)' : 'var(--warning)' }}>
                         {record.matchPercentage}%
                       </span>
                     </div>
@@ -318,7 +318,7 @@ function EvidenceHubContent() {
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <AlertTriangle size={16} style={{ color: c.status === 'Open' ? '#DC2626' : 'var(--ink-tertiary)' }} />
-                    <span className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>{c.type}</span>
+                    <span className="font-semibold text-[14px]" style={{ color: 'var(--ink-primary)' }}>{c.type}</span>
                     <span className="font-mono-id text-[11px]" style={{ color: 'var(--ink-tertiary)' }}>{c.id}</span>
                   </div>
                   <span className={`badge ${c.status === 'Open' ? 'badge-critical' : c.status === 'Resolved' ? 'badge-active' : 'badge-low'}`}>{c.status}</span>
@@ -357,7 +357,7 @@ function EvidenceHubContent() {
                 <Database size={20} />
               </div>
               <div>
-                <h3 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>Blockchain Evidence Integrity</h3>
+                <h3 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>Blockchain Evidence Integrity</h3>
                 <p className="text-[13px]" style={{ color: 'var(--ink-secondary)' }}>Immutable cryptographic verification registry</p>
               </div>
             </div>
@@ -375,7 +375,7 @@ function EvidenceHubContent() {
                     style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
                     <Icon size={18} style={{ color: 'var(--accent)', margin: '0 auto 8px' }} />
                     <div className="text-[12px]" style={{ color: 'var(--ink-tertiary)' }}>{item.label}</div>
-                    <div className="font-mono-id font-bold text-[13px] mt-1" style={{ color: 'var(--ink-primary)' }}>{item.value}</div>
+                    <div className="font-mono-id font-semibold text-[13px] mt-1" style={{ color: 'var(--ink-primary)' }}>{item.value}</div>
                   </div>
                 );
               })}
@@ -384,7 +384,7 @@ function EvidenceHubContent() {
               style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
               <ShieldCheck size={20} style={{ color: 'var(--accent)' }} />
               <div>
-                <div className="font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>Cryptographic Ledger Online</div>
+                <div className="font-semibold text-[14px]" style={{ color: 'var(--ink-primary)' }}>Cryptographic Ledger Online</div>
                 <div className="text-[12.5px]" style={{ color: 'var(--ink-secondary)' }}>Evidence objects are cryptographically signed with SHA-256 upon ingestion.</div>
               </div>
             </div>
@@ -392,7 +392,7 @@ function EvidenceHubContent() {
 
           {/* Chain of Custody */}
           <div className="p-6 rounded-2xl border" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
-            <h3 className="text-[17px] font-bold mb-5" style={{ color: 'var(--ink-primary)' }}>Chain of Custody</h3>
+            <h3 className="text-[17px] font-semibold mb-5" style={{ color: 'var(--ink-primary)' }}>Chain of Custody</h3>
             {chainOfCustody.length === 0 ? (
               <div className="py-8 text-center text-[var(--ink-tertiary)] text-[13px]">
                 No chain of custody log entries available.
@@ -414,7 +414,7 @@ function EvidenceHubContent() {
                       </div>
                       <div className="pb-6 flex-1">
                         <div className="flex items-center gap-2 mb-0.5">
-                          <span className="font-mono-id text-[12px] font-bold" style={{ color: 'var(--ink-tertiary)' }}>{step.time} • {step.date}</span>
+                          <span className="font-mono-id text-[12px] font-semibold" style={{ color: 'var(--ink-tertiary)' }}>{step.time} • {step.date}</span>
                         </div>
                         <div className="text-[14px] font-semibold" style={{ color: 'var(--ink-primary)' }}>{step.action}</div>
                         <div className="text-[12.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>{step.officer}</div>

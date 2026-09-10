@@ -27,9 +27,9 @@ interface AnalyticsHotspotMapProps {
 
 const severityConfig: Record<string, { color: string; label: string; bg: string }> = {
   Critical: { color: '#DC2626', label: 'High Crime Density', bg: 'rgba(220, 38, 38, 0.15)' },
-  High: { color: '#EF4444', label: 'High Crime Density', bg: 'rgba(239, 68, 68, 0.15)' },
-  Medium: { color: '#F59E0B', label: 'Medium Crime Density', bg: 'rgba(245, 158, 11, 0.15)' },
-  Low: { color: '#10B981', label: 'Low Crime Density', bg: 'rgba(16, 185, 129, 0.15)' },
+  High: { color: '#DC2626', label: 'High Crime Density', bg: 'rgba(239, 68, 68, 0.15)' },
+  Medium: { color: '#D97706', label: 'Medium Crime Density', bg: 'rgba(245, 158, 11, 0.15)' },
+  Low: { color: '#16A34A', label: 'Low Crime Density', bg: 'rgba(16, 185, 129, 0.15)' },
 };
 
 export default function AnalyticsHotspotMap({
@@ -167,7 +167,7 @@ export default function AnalyticsHotspotMap({
           marker.bindPopup(`
             <div style="font-family: Inter, sans-serif; min-width: 170px; padding: 4px;">
               <div style="font-size: 13.5px; font-weight: 700; color: #111827;">${hs.area}</div>
-              <div style="font-size: 11.5px; color: #6B7280; margin-bottom: 6px;">${hs.city}, ${hs.state}</div>
+              <div style="font-size: 11.5px; color: #9CA3AF; margin-bottom: 6px;">${hs.city}, ${hs.state}</div>
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
                 <span style="font-size: 11px; color: #4B5563;">Primary Crime:</span>
                 <span style="font-size: 11.5px; font-weight: 600; color: #111827;">${hs.primaryCrime}</span>
@@ -176,7 +176,7 @@ export default function AnalyticsHotspotMap({
                 <span style="font-size: 11px; color: #4B5563;">FIR Count:</span>
                 <span style="font-size: 12px; font-weight: 800; color: ${conf.color};">${hs.crimeCount} incidents</span>
               </div>
-              <div style="font-size: 10.5px; color: #9CA3AF; text-align: right; border-top: 1px solid #E5E7EB; padding-top: 4px; margin-top: 4px;">
+              <div style="font-size: 10.5px; color: #9CA3AF; text-align: right; border-top: 1px solid #E1E5EA; padding-top: 4px; margin-top: 4px;">
                 Click to inspect area details
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function AnalyticsHotspotMap({
         <div className="px-3.5 py-1.5 rounded-xl border backdrop-blur-md shadow-sm flex items-center gap-2"
           style={{ background: 'rgba(255,255,255,0.92)', borderColor: 'var(--border)', color: '#111827' }}>
           <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-[12.5px] font-bold">
+          <span className="text-[12.5px] font-semibold">
             Live Hotspot Spatial Density
           </span>
           <span className="text-[11px] font-medium text-gray-500">
@@ -272,7 +272,7 @@ export default function AnalyticsHotspotMap({
       {/* Bottom Floating Legend */}
       <div className="absolute bottom-4 left-4 right-4 sm:right-auto z-[500] flex flex-wrap items-center gap-2.5 px-4 py-2.5 rounded-xl border backdrop-blur-md shadow-md"
         style={{ background: 'rgba(255,255,255,0.94)', borderColor: 'var(--border)' }}>
-        <span className="text-[12px] font-bold text-gray-800 mr-1">Density Scale:</span>
+        <span className="text-[12px] font-semibold text-gray-800 mr-1">Density Scale:</span>
         <div className="flex items-center gap-1.5 text-[11.5px] font-semibold text-gray-700">
           <span className="w-3 h-3 rounded-full bg-red-600 shadow-sm" />
           <span>🔴 High Density (&gt;80 FIRs)</span>

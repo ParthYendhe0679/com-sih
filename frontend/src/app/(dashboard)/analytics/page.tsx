@@ -58,7 +58,7 @@ const initialKpiCards: AnalyticsKPICard[] = [
     change: '0%',
     direction: 'up',
     subtext: 'Synchronizing...',
-    dotColor: '#EF4444',
+    dotColor: '#DC2626',
     badgeColor: 'rgba(239, 68, 68, 0.12)',
     badgeText: '#DC2626',
   },
@@ -69,7 +69,7 @@ const initialKpiCards: AnalyticsKPICard[] = [
     change: '0%',
     direction: 'up',
     subtext: 'Synchronizing...',
-    dotColor: '#F59E0B',
+    dotColor: '#D97706',
     badgeColor: 'rgba(245, 158, 11, 0.12)',
     badgeText: '#D97706',
   },
@@ -80,9 +80,9 @@ const initialKpiCards: AnalyticsKPICard[] = [
     change: '0%',
     direction: 'up',
     subtext: 'Synchronizing...',
-    dotColor: '#8B5CF6',
+    dotColor: '#5B4BC4',
     badgeColor: 'rgba(139, 92, 246, 0.12)',
-    badgeText: '#7C3AED',
+    badgeText: '#5B4BC4',
   },
   {
     id: 'kpi-vehicle',
@@ -91,7 +91,7 @@ const initialKpiCards: AnalyticsKPICard[] = [
     change: '0%',
     direction: 'down',
     subtext: 'Synchronizing...',
-    dotColor: '#10B981',
+    dotColor: '#16A34A',
     badgeColor: 'rgba(16, 185, 129, 0.12)',
     badgeText: '#16A34A',
   },
@@ -104,7 +104,7 @@ const initialKpiCards: AnalyticsKPICard[] = [
     subtext: 'Synchronizing...',
     dotColor: '#D97706',
     badgeColor: 'rgba(217, 119, 6, 0.12)',
-    badgeText: '#B45309',
+    badgeText: '#D97706',
   },
 ];
 
@@ -213,7 +213,7 @@ function AnalyticsContent() {
       {/* ── Page Header ─────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
         <div>
-          <h1 className="text-[28px] sm:text-[32px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+          <h1 className="text-[28px] sm:text-[32px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
             Analytics Hub
           </h1>
           <p className="text-[14px] sm:text-[15px] mt-1 text-[var(--ink-secondary)]">
@@ -242,7 +242,7 @@ function AnalyticsContent() {
           <button
             onClick={() => loadData(true)}
             disabled={isRefreshing}
-            title="Force refresh analytics from live database and update Valkey cache"
+            title="Refresh analytics from the live case database"
             className="flex items-center justify-center p-2.5 rounded-xl border text-[var(--ink-secondary)] hover:text-[var(--ink-primary)] hover:bg-[var(--surface-2)] transition-all cursor-pointer disabled:opacity-50 shadow-sm"
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
@@ -294,7 +294,7 @@ function AnalyticsContent() {
             </div>
 
             {/* Main KPI Number (26-28px font-mono-id, bold) */}
-            <div className="text-[26px] sm:text-[28px] font-bold font-mono-id tracking-tight my-1" style={{ color: 'var(--ink-primary)' }}>
+            <div className="text-[26px] sm:text-[28px] font-semibold font-mono-id tracking-tight my-1" style={{ color: 'var(--ink-primary)' }}>
               {kpi.count}
             </div>
 
@@ -328,7 +328,7 @@ function AnalyticsContent() {
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                 <div>
-                  <h3 className="text-[18px] sm:text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                     Monthly FIR Volume Trends
                   </h3>
                   <p className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -378,36 +378,36 @@ function AnalyticsContent() {
                         type="monotone"
                         dataKey="fraud"
                         name="Fraud"
-                        stroke="#4F46E5"
+                        stroke="#12376E"
                         strokeWidth={2.5}
-                        dot={{ r: 3.5, fill: '#4F46E5' }}
+                        dot={{ r: 3.5, fill: '#12376E' }}
                         activeDot={{ r: 6 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="robbery"
                         name="Robbery"
-                        stroke="#EF4444"
+                        stroke="#DC2626"
                         strokeWidth={2.5}
-                        dot={{ r: 3.5, fill: '#EF4444' }}
+                        dot={{ r: 3.5, fill: '#DC2626' }}
                         activeDot={{ r: 6 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="cybercrime"
                         name="Cybercrime"
-                        stroke="#10B981"
+                        stroke="#16A34A"
                         strokeWidth={2.5}
-                        dot={{ r: 3.5, fill: '#10B981' }}
+                        dot={{ r: 3.5, fill: '#16A34A' }}
                         activeDot={{ r: 6 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="kidnapping"
                         name="Kidnapping"
-                        stroke="#EC4899"
+                        stroke="#DC2626"
                         strokeWidth={2}
-                        dot={{ r: 3, fill: '#EC4899' }}
+                        dot={{ r: 3, fill: '#DC2626' }}
                         activeDot={{ r: 5 }}
                       />
                     </LineChart>
@@ -422,7 +422,7 @@ function AnalyticsContent() {
               style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
             >
               <div>
-                <h3 className="text-[18px] sm:text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                   Crime Type Distribution
                 </h3>
                 <p className="text-[13px] mt-0.5 mb-3" style={{ color: 'var(--ink-secondary)' }}>
@@ -463,7 +463,7 @@ function AnalyticsContent() {
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-[20px] font-bold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
+                        <span className="text-[20px] font-semibold font-mono-id" style={{ color: 'var(--ink-primary)' }}>
                           {totalFIRs > 0 ? totalFIRs.toLocaleString() : '0'}
                         </span>
                         <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>
@@ -507,7 +507,7 @@ function AnalyticsContent() {
             <div className="p-6 rounded-2xl border shadow-sm" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h4 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     Peak Incident Hours
                   </h4>
                   <p className="text-[12.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -548,7 +548,7 @@ function AnalyticsContent() {
             <div className="p-6 rounded-2xl border shadow-sm" style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="text-[17px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+                  <h4 className="text-[17px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                     City-wise FIR Volumes
                   </h4>
                   <p className="text-[12.5px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -577,7 +577,7 @@ function AnalyticsContent() {
                           fontSize: '13px',
                         }}
                       />
-                      <Bar dataKey="count" name="FIR Count" fill="#F59E0B" radius={[0, 6, 6, 0]} />
+                      <Bar dataKey="count" name="FIR Count" fill="#D97706" radius={[0, 6, 6, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -598,7 +598,7 @@ function AnalyticsContent() {
             style={{ background: 'var(--surface-1)', borderColor: 'var(--border)' }}
           >
             <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-1.5 text-[13.5px] font-bold" style={{ color: 'var(--ink-primary)' }}>
+              <div className="flex items-center gap-1.5 text-[13.5px] font-semibold" style={{ color: 'var(--ink-primary)' }}>
                 <Filter size={15} className="text-[var(--accent)]" />
                 <span>Geographic Scope:</span>
               </div>
@@ -645,7 +645,7 @@ function AnalyticsContent() {
 
             {/* Quick Summary Pill */}
             <div className="text-[12.5px] font-semibold text-[var(--ink-secondary)]">
-              Showing <span className="font-mono-id text-[var(--accent)] font-bold">{filteredHotspots.length}</span> verified hotspot clusters
+              Showing <span className="font-mono-id text-[var(--accent)] font-semibold">{filteredHotspots.length}</span> verified hotspot clusters
             </div>
           </div>
 
@@ -669,7 +669,7 @@ function AnalyticsContent() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-[18px] sm:text-[20px] font-bold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] sm:text-[20px] font-semibold tracking-tight" style={{ color: 'var(--ink-primary)' }}>
                     Top Hotspot Areas
                   </h3>
                   <p className="text-[13px] mt-0.5" style={{ color: 'var(--ink-secondary)' }}>
@@ -721,7 +721,7 @@ function AnalyticsContent() {
                               <span
                                 className="w-2.5 h-2.5 rounded-full shrink-0"
                                 style={{
-                                  background: isHigh ? '#EF4444' : isMed ? '#F59E0B' : '#10B981',
+                                  background: isHigh ? '#DC2626' : isMed ? '#D97706' : '#16A34A',
                                 }}
                               />
                               <span>{hs.area}</span>
@@ -730,7 +730,7 @@ function AnalyticsContent() {
                           <td className="py-3 px-3 text-[13px]" style={{ color: 'var(--ink-secondary)' }}>
                             {hs.city}, {hs.state}
                           </td>
-                          <td className="py-3 px-3 font-mono-id font-bold text-[14px]" style={{ color: 'var(--ink-primary)' }}>
+                          <td className="py-3 px-3 font-mono-id font-semibold text-[14px]" style={{ color: 'var(--ink-primary)' }}>
                             {hs.crimeCount}
                           </td>
                           <td className="py-3 px-3 text-[13px] font-medium" style={{ color: 'var(--ink-secondary)' }}>
@@ -738,7 +738,7 @@ function AnalyticsContent() {
                           </td>
                           <td className="py-3 px-3">
                             <span
-                              className="text-[11.5px] font-bold px-2.5 py-1 rounded-md"
+                              className="text-[11.5px] font-semibold px-2.5 py-1 rounded-md"
                               style={{
                                 background: isHigh ? 'rgba(239, 68, 68, 0.12)' : isMed ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
                                 color: isHigh ? '#DC2626' : isMed ? '#D97706' : '#16A34A',
@@ -777,10 +777,10 @@ function AnalyticsContent() {
                   <div>
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div>
-                        <span className="text-[11px] uppercase tracking-wider font-bold text-[var(--accent)]">
+                        <span className="text-[11px] uppercase tracking-wider font-semibold text-[var(--accent)]">
                           Selected Hotspot Sector
                         </span>
-                        <h4 className="text-[22px] font-bold tracking-tight mt-0.5" style={{ color: 'var(--ink-primary)' }}>
+                        <h4 className="text-[22px] font-semibold tracking-tight mt-0.5" style={{ color: 'var(--ink-primary)' }}>
                           {selectedHotspot.area}
                         </h4>
                         <p className="text-[13px]" style={{ color: 'var(--ink-secondary)' }}>
@@ -788,7 +788,7 @@ function AnalyticsContent() {
                         </p>
                       </div>
                       <span
-                        className="text-[12px] font-bold px-3 py-1.5 rounded-xl shrink-0"
+                        className="text-[12px] font-semibold px-3 py-1.5 rounded-xl shrink-0"
                         style={{
                           background: selectedHotspot.severity === 'High' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                           color: selectedHotspot.severity === 'High' ? '#DC2626' : '#D97706',
@@ -802,13 +802,13 @@ function AnalyticsContent() {
                     <div className="grid grid-cols-2 gap-3 my-4">
                       <div className="p-3.5 rounded-xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
                         <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>Total Registered</span>
-                        <div className="text-[20px] font-bold font-mono-id mt-0.5" style={{ color: 'var(--ink-primary)' }}>
+                        <div className="text-[20px] font-semibold font-mono-id mt-0.5" style={{ color: 'var(--ink-primary)' }}>
                           {selectedHotspot.crimeCount} FIRs
                         </div>
                       </div>
                       <div className="p-3.5 rounded-xl border" style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
                         <span className="text-[11px] font-medium" style={{ color: 'var(--ink-tertiary)' }}>Recent 30 Days</span>
-                        <div className="text-[20px] font-bold font-mono-id mt-0.5" style={{ color: 'var(--accent)' }}>
+                        <div className="text-[20px] font-semibold font-mono-id mt-0.5" style={{ color: 'var(--accent)' }}>
                           +{selectedHotspot.recentFIRs} new
                         </div>
                       </div>
@@ -871,7 +871,7 @@ function AnalyticsContent() {
           >
             <Shield size={22} className="text-[var(--accent)] shrink-0 mt-0.5" />
             <div className="space-y-1 text-[13.5px] leading-relaxed">
-              <div className="font-bold text-[14.5px]" style={{ color: 'var(--ink-primary)' }}>
+              <div className="font-semibold text-[14.5px]" style={{ color: 'var(--ink-primary)' }}>
                 Responsible Intelligence Framework Notice
               </div>
               <p style={{ color: 'var(--ink-secondary)' }}>
@@ -905,7 +905,7 @@ function AnalyticsContent() {
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-indigo-500 shrink-0" />
-                      <span className="text-[12.5px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                      <span className="text-[12.5px] font-semibold uppercase tracking-wider text-[var(--accent)]">
                         {pat.status}
                       </span>
                     </div>
@@ -914,14 +914,14 @@ function AnalyticsContent() {
                       <span className="text-[12.5px] font-semibold text-[var(--ink-tertiary)]">
                         Analytical Confidence:
                       </span>
-                      <span className="text-[14px] font-bold font-mono-id px-2 py-0.5 rounded-lg text-emerald-600 bg-emerald-500/10">
+                      <span className="text-[14px] font-semibold font-mono-id px-2 py-0.5 rounded-lg text-emerald-600 bg-emerald-500/10">
                         {pat.confidence}%
                       </span>
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-[18px] sm:text-[19px] font-bold tracking-tight mb-2" style={{ color: 'var(--ink-primary)' }}>
+                  <h3 className="text-[18px] sm:text-[19px] font-semibold tracking-tight mb-2" style={{ color: 'var(--ink-primary)' }}>
                     {pat.title}
                   </h3>
 
@@ -933,7 +933,7 @@ function AnalyticsContent() {
                   {/* Basis Breakdown */}
                   <div className="p-3.5 rounded-xl border mb-4 space-y-1.5"
                     style={{ background: 'var(--surface-2)', borderColor: 'var(--border)' }}>
-                    <span className="text-[12px] font-bold uppercase tracking-wider text-[var(--ink-tertiary)] block mb-1">
+                    <span className="text-[12px] font-semibold uppercase tracking-wider text-[var(--ink-tertiary)] block mb-1">
                       Correlated Signals Basis:
                     </span>
                     {pat.basis.map((b, idx) => (

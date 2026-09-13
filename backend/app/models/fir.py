@@ -77,13 +77,13 @@ class FIR(Base, UUIDMixin, TimestampMixin):
         "User",
         foreign_keys=[submitted_by_id],
         back_populates="submitted_firs",
-        lazy="selectin",
+        lazy="select",
     )
     reviewed_by: Mapped[Optional["User"]] = relationship(
         "User",
         foreign_keys=[reviewed_by_id],
         back_populates="reviewed_firs",
-        lazy="selectin",
+        lazy="select",
     )
     case: Mapped[Optional["Case"]] = relationship(
         "Case",

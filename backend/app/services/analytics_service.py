@@ -2,7 +2,8 @@
 
 from datetime import datetime, timezone
 import json
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -18,29 +19,43 @@ from app.schemas.analytics import (
     PeakHourItem,
 )
 
+_L1_ANALYTICS_CACHE: Optional[Tuple[float, AnalyticsOverviewResponse]] = None
+L1_ANALYTICS_TTL = 120  # 120 seconds in-memory cache
+
 
 class AnalyticsService:
     """Domain service for KRITAGAS Analytics Hub telemetry and AI predictive intelligence."""
 
     CACHE_KEY_OVERVIEW = "kritagas:analytics:overview"
-    CACHE_TTL_SECONDS = 10  # 10-second cache TTL for high-frequency live polling
+    CACHE_TTL_SECONDS = 120  # 120-second cache TTL for high-frequency live polling
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
     async def get_overview(self, force_refresh: bool = False) -> AnalyticsOverviewResponse:
-        """Retrieve aggregated analytics telemetry with 10-second Valkey caching."""
+        """Retrieve aggregated analytics telemetry with 2-tier (L1 Memory + Valkey) caching."""
+        global _L1_ANALYTICS_CACHE
+        now = time.time()
+
+        if not force_refresh and _L1_ANALYTICS_CACHE is not None:
+            cache_time, cached_overview = _L1_ANALYTICS_CACHE
+            if now - cache_time < L1_ANALYTICS_TTL:
+                return cached_overview
+
         if not force_refresh:
             try:
                 cached_data = await cache_service.get(self.CACHE_KEY_OVERVIEW)
                 if cached_data:
-                    return AnalyticsOverviewResponse.model_validate(cached_data)
+                    res = AnalyticsOverviewResponse.model_validate(cached_data)
+                    _L1_ANALYTICS_CACHE = (now, res)
+                    return res
             except Exception:
                 pass  # Fall back to live SQL execution if cache encounters an issue
 
         overview = await self._compute_overview()
+        _L1_ANALYTICS_CACHE = (now, overview)
 
-        # Cache in Valkey with 10-second TTL
+        # Cache in Valkey with 120-second TTL
         try:
             await cache_service.set(
                 self.CACHE_KEY_OVERVIEW,
@@ -54,10 +69,8 @@ class AnalyticsService:
 
     async def _compute_overview(self) -> AnalyticsOverviewResponse:
         """Compute full real-time analytics aggregation from PostgreSQL."""
-        total_firs = await self._get_total_cases()
-        kpis = await self._compute_kpis()
+        total_firs, kpis, crime_distribution = await self._compute_crime_distribution_and_kpis()
         monthly_trends = await self._compute_monthly_trends()
-        crime_distribution = await self._compute_crime_distribution(total_firs)
         peak_hours = await self._compute_peak_hours()
         city_volumes = await self._compute_city_volumes()
         hotspots = await self._compute_hotspots()
@@ -77,28 +90,28 @@ class AnalyticsService:
             last_refreshed=now_iso,
         )
 
-    async def _get_total_cases(self) -> int:
-        res = await self.session.execute(text("SELECT count(*) FROM cases;"))
-        return int(res.scalar() or 0)
-
-    async def _compute_kpis(self) -> List[AnalyticsKPICard]:
-        """Aggregate counts for the top 5 KPI cards."""
+    async def _compute_crime_distribution_and_kpis(self) -> Tuple[int, List[AnalyticsKPICard], List[CrimeDistributionItem]]:
+        """Single consolidated query computing total cases, top 5 KPIs, and full category distribution."""
         query = text("""
             SELECT crime_category, count(*) as count
             FROM cases
-            WHERE crime_category IN ('Burglary', 'Cargo Theft', 'Financial Fraud', 'Cybercrime', 'Vehicle Theft', 'Extortion')
-            GROUP BY crime_category;
+            GROUP BY crime_category
+            ORDER BY count DESC;
         """)
         result = await self.session.execute(query)
-        cat_counts: Dict[str, int] = {row[0]: row[1] for row in result.fetchall()}
+        rows = result.fetchall()
 
+        cat_counts: Dict[str, int] = {str(row[0]): int(row[1]) for row in rows}
+        total_cases = sum(cat_counts.values())
+
+        # Top 5 KPI Cards
         robbery_count = cat_counts.get("Burglary", 0) + cat_counts.get("Cargo Theft", 0)
         fraud_count = cat_counts.get("Financial Fraud", 0)
         cyber_count = cat_counts.get("Cybercrime", 0)
         vehicle_count = cat_counts.get("Vehicle Theft", 0)
         extortion_count = cat_counts.get("Extortion", 0)
 
-        return [
+        kpis = [
             AnalyticsKPICard(
                 id="kpi-robbery",
                 title="Robbery",
@@ -156,6 +169,29 @@ class AnalyticsService:
             ),
         ]
 
+        color_palette = {
+            "Homicide": "#DC2626",
+            "Organized Crime": "#EC4899",
+            "Burglary": "#EF4444",
+            "Cybercrime": "#8B5CF6",
+            "Vehicle Theft": "#10B981",
+            "Narcotics": "#06B6D4",
+            "Financial Fraud": "#4F46E5",
+            "Extortion": "#F59E0B",
+            "Cargo Theft": "#3B82F6",
+        }
+        fallback_colors = ["#6366F1", "#14B8A6", "#F97316", "#84CC16", "#A855F7"]
+
+        items: List[CrimeDistributionItem] = []
+        for idx, row in enumerate(rows):
+            name = str(row[0])
+            cnt = int(row[1])
+            val = round((cnt / total_cases * 100), 1) if total_cases > 0 else 0.0
+            color = color_palette.get(name, fallback_colors[idx % len(fallback_colors)])
+            items.append(CrimeDistributionItem(name=name, value=val, count=cnt, color=color))
+
+        return total_cases, kpis, items
+
     async def _compute_monthly_trends(self) -> List[MonthlyTrendItem]:
         """Compute monthly volume trends for fraud, robbery, cybercrime, and kidnapping."""
         query = text("""
@@ -200,40 +236,6 @@ class AnalyticsService:
         # Take the most recent 12 chronological periods
         sorted_keys = sorted(months_map.keys())[-12:]
         return [MonthlyTrendItem(**months_map[k]) for k in sorted_keys]
-
-    async def _compute_crime_distribution(self, total_cases: int) -> List[CrimeDistributionItem]:
-        """Compute categorical FIR distribution with standardized aesthetic color palettes."""
-        query = text("""
-            SELECT crime_category, count(*) as count
-            FROM cases
-            GROUP BY crime_category
-            ORDER BY count DESC;
-        """)
-        result = await self.session.execute(query)
-        rows = result.fetchall()
-
-        color_palette = {
-            "Homicide": "#DC2626",
-            "Organized Crime": "#EC4899",
-            "Burglary": "#EF4444",
-            "Cybercrime": "#8B5CF6",
-            "Vehicle Theft": "#10B981",
-            "Narcotics": "#06B6D4",
-            "Financial Fraud": "#4F46E5",
-            "Extortion": "#F59E0B",
-            "Cargo Theft": "#3B82F6",
-        }
-        fallback_colors = ["#6366F1", "#14B8A6", "#F97316", "#84CC16", "#A855F7"]
-
-        items: List[CrimeDistributionItem] = []
-        for idx, row in enumerate(rows):
-            name = str(row[0])
-            cnt = int(row[1])
-            val = round((cnt / total_cases * 100), 1) if total_cases > 0 else 0.0
-            color = color_palette.get(name, fallback_colors[idx % len(fallback_colors)])
-            items.append(CrimeDistributionItem(name=name, value=val, count=cnt, color=color))
-
-        return items
 
     async def _compute_peak_hours(self) -> List[PeakHourItem]:
         """Compute diurnal 24-hour incident timeline distribution."""

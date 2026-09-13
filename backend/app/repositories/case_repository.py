@@ -1,8 +1,8 @@
 """Case repository implementation."""
 
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple
 import uuid
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import noload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -147,6 +147,21 @@ class CaseRepository(BaseRepository[Case]):
             if p_.value not in counts:
                 counts[p_.value] = 0
         return counts
+
+    async def get_police_summary_metrics(self, investigator_id: uuid.UUID) -> Tuple[int, int, int]:
+        """Consolidate open cases, high-priority cases, and officer-assigned counts in a single query."""
+        stmt = text("""
+            SELECT 
+                COUNT(*) FILTER (WHERE status IN ('OPEN', 'UNDER_INVESTIGATION', 'ACTIVE')) AS open_cases,
+                COUNT(*) FILTER (WHERE priority IN ('HIGH', 'CRITICAL')) AS high_priority,
+                COUNT(*) FILTER (WHERE lead_investigator_id = :investigator_id) AS assigned_cases
+            FROM cases;
+        """)
+        res = await self.session.execute(stmt, {"investigator_id": investigator_id})
+        row = res.fetchone()
+        if not row:
+            return 0, 0, 0
+        return int(row[0] or 0), int(row[1] or 0), int(row[2] or 0)
 
     async def add_note(self, case_id: uuid.UUID, author_id: uuid.UUID, note_text: str) -> CaseNote:
         """Append an investigative note to a Case."""

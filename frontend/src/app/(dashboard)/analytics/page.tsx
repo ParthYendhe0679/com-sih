@@ -158,6 +158,11 @@ function AnalyticsContent() {
         if (data.emerging_patterns) setEmergingPatterns(data.emerging_patterns);
         if (typeof data.total_firs === 'number') setTotalFIRs(data.total_firs);
         setLastRefreshed(data.last_refreshed || new Date().toLocaleTimeString());
+
+        // Save to sessionStorage for 0ms SWR instant hydration on return
+        try {
+          sessionStorage.setItem('TRINETRA_analytics_overview', JSON.stringify(data));
+        } catch (_) {}
       }
     } catch (err) {
       console.error('Failed to load analytics telemetry:', err);
@@ -167,16 +172,40 @@ function AnalyticsContent() {
     }
   };
 
-  // Synchronize on mount and poll every 10 seconds
+  // Synchronize on mount with 0ms SWR hydration and smooth 30s polling
   useEffect(() => {
     let isMounted = true;
+
+    // 0ms instant hydration from sessionStorage
+    try {
+      const stored = sessionStorage.getItem('TRINETRA_analytics_overview');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && isMounted) {
+          if (parsed.kpis?.length > 0) setKpiCards(parsed.kpis);
+          if (parsed.monthly_trends) setMonthlyTrendsData(parsed.monthly_trends);
+          if (parsed.crime_distribution) setCrimeTypeDistribution(parsed.crime_distribution);
+          if (parsed.peak_hours) setPeakHoursData(parsed.peak_hours);
+          if (parsed.city_volumes) setCityFIRData(parsed.city_volumes);
+          if (parsed.hotspots) {
+            setFullHotspotList(parsed.hotspots);
+            setSelectedHotspot(parsed.hotspots[0] || null);
+          }
+          if (parsed.emerging_patterns) setEmergingPatterns(parsed.emerging_patterns);
+          if (typeof parsed.total_firs === 'number') setTotalFIRs(parsed.total_firs);
+          if (parsed.last_refreshed) setLastRefreshed(parsed.last_refreshed);
+          setIsLoading(false);
+        }
+      }
+    } catch (_) {}
+
     loadData(false);
 
     const interval = setInterval(() => {
       if (isMounted) {
         loadData(false);
       }
-    }, 10000); // 10-second automatic polling cycle
+    }, 30000); // 30-second smooth telemetry polling cycle
 
     return () => {
       isMounted = false;

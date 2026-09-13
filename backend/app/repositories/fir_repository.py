@@ -3,6 +3,7 @@
 from typing import Dict, Optional, Sequence
 import uuid
 from sqlalchemy import func, or_, select
+from sqlalchemy.orm import noload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.constants import FIRPriority, FIRStatus
@@ -18,7 +19,7 @@ class FIRRepository(BaseRepository[FIR]):
 
     async def get_by_fir_number(self, fir_number: str) -> Optional[FIR]:
         """Lookup FIR by unique tracking number."""
-        stmt = select(FIR).where(FIR.fir_number == fir_number.strip())
+        stmt = select(FIR).options(noload("*")).where(FIR.fir_number == fir_number.strip())
         result = await self.session.execute(stmt)
         return result.scalars().first()
 
@@ -30,7 +31,7 @@ class FIRRepository(BaseRepository[FIR]):
         limit: int = 20,
     ) -> Sequence[FIR]:
         """List FIRs submitted by a specific citizen."""
-        stmt = select(FIR).where(FIR.submitted_by_id == citizen_id)
+        stmt = select(FIR).options(noload("*")).where(FIR.submitted_by_id == citizen_id)
         if status is not None:
             stmt = stmt.where(FIR.status == status)
         stmt = stmt.order_by(FIR.created_at.desc()).offset(offset).limit(limit)
@@ -57,7 +58,7 @@ class FIRRepository(BaseRepository[FIR]):
         limit: int = 20,
     ) -> Sequence[FIR]:
         """List submitted FIRs available in the police triage review queue."""
-        stmt = select(FIR)
+        stmt = select(FIR).options(noload("*"))
         if status is not None:
             stmt = stmt.where(FIR.status == status)
         else:
@@ -96,7 +97,7 @@ class FIRRepository(BaseRepository[FIR]):
     ) -> Sequence[FIR]:
         """Search FIRs across fir_number, title, crime_category, description, or location."""
         pattern = f"%{query.strip()}%"
-        stmt = select(FIR).where(
+        stmt = select(FIR).options(noload("*")).where(
             or_(
                 FIR.fir_number.ilike(pattern),
                 FIR.title.ilike(pattern),

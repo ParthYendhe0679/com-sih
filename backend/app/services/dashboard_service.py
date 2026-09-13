@@ -1,6 +1,5 @@
-"""Dashboard analytics domain service aggregating real-time database metrics."""
-
-from typing import Optional, Any
+import time
+from typing import Optional, Any, Dict, Tuple
 from app.core.constants import CasePriority, CaseStatus, FIRStatus, UserRole
 from app.models.user import User
 from app.repositories.audit_repository import AuditRepository
@@ -16,6 +15,9 @@ from app.schemas.dashboard import (
     PoliceDashboardResponse,
 )
 from app.schemas.fir import FIRResponse
+
+_L1_DASHBOARD_CACHE: Dict[str, Tuple[float, Any]] = {}
+L1_DASHBOARD_TTL = 60  # 60 seconds memory cache
 
 
 class DashboardService:
@@ -40,11 +42,21 @@ class DashboardService:
 
     async def get_citizen_dashboard(self, citizen: User) -> CitizenDashboardResponse:
         """Calculate live statistics for Citizen portal view with caching."""
+        global _L1_DASHBOARD_CACHE
+        now = time.time()
         cache_key = self.cache.keys.dashboard("citizen", citizen.id)
+
+        if cache_key in _L1_DASHBOARD_CACHE:
+            entry_time, cached_res = _L1_DASHBOARD_CACHE[cache_key]
+            if now - entry_time < L1_DASHBOARD_TTL:
+                return cached_res
+
         cached = await self.cache.get(cache_key)
         if cached is not None and isinstance(cached, dict):
             try:
-                return CitizenDashboardResponse.model_validate(cached)
+                res = CitizenDashboardResponse.model_validate(cached)
+                _L1_DASHBOARD_CACHE[cache_key] = (now, res)
+                return res
             except Exception:
                 pass
 
@@ -72,40 +84,39 @@ class DashboardService:
             recent_firs=[FIRResponse.model_validate(f) for f in recent_firs],
             unread_notifications_count=unread_notifications,
         )
+        _L1_DASHBOARD_CACHE[cache_key] = (now, response)
         await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=self.cache.ttl.DASHBOARD)
         return response
 
     async def get_police_dashboard(self, police: User) -> PoliceDashboardResponse:
         """Calculate operational metrics for Law Enforcement Officer view with caching."""
+        global _L1_DASHBOARD_CACHE
+        now = time.time()
         cache_key = self.cache.keys.dashboard("police", police.id)
+
+        # 1. L1 in-memory cache check (<0.1ms)
+        if cache_key in _L1_DASHBOARD_CACHE:
+            entry_time, cached_res = _L1_DASHBOARD_CACHE[cache_key]
+            if now - entry_time < L1_DASHBOARD_TTL:
+                return cached_res
+
+        # 2. Valkey L2 cache check
         cached = await self.cache.get(cache_key)
         if cached is not None and isinstance(cached, dict):
             try:
-                return PoliceDashboardResponse.model_validate(cached)
+                res = PoliceDashboardResponse.model_validate(cached)
+                _L1_DASHBOARD_CACHE[cache_key] = (now, res)
+                return res
             except Exception:
                 pass
 
-        assigned = await self.case_repo.count_for_investigator(police.id)
-        # Each count used to be its own round trip to the database. Five of them
-        # ran back to back, and against a hosted Postgres that added up to about
-        # ten seconds every time the dashboard opened. Two GROUP BY queries
-        # return the same numbers.
-        status_counts = await self.case_repo.get_status_distribution()
-        priority_counts = await self.case_repo.get_priority_distribution()
-
-        open_cases = (
-            status_counts.get(CaseStatus.OPEN.value, 0)
-            + status_counts.get(CaseStatus.UNDER_INVESTIGATION.value, 0)
-            + status_counts.get(CaseStatus.ACTIVE.value, 0)
-        )
-        high_priority = (
-            priority_counts.get(CasePriority.HIGH.value, 0)
-            + priority_counts.get(CasePriority.CRITICAL.value, 0)
-        )
-
+        # 3. Consolidated single-query metrics aggregation across cases table
+        open_cases, high_priority, assigned = await self.case_repo.get_police_summary_metrics(police.id)
         pending_firs = await self.fir_repo.count_for_police_queue()
 
         recent_cases = await self.case_repo.list_for_investigator(police.id, offset=0, limit=5)
+        if not recent_cases:
+            recent_cases = await self.case_repo.list_cases(offset=0, limit=5)
         recent_firs = await self.fir_repo.list_for_police_queue(offset=0, limit=5)
 
         response = PoliceDashboardResponse(
@@ -116,16 +127,27 @@ class DashboardService:
             recent_cases=[CaseResponse.model_validate(c) for c in recent_cases],
             recent_firs_to_review=[FIRResponse.model_validate(f) for f in recent_firs],
         )
+        _L1_DASHBOARD_CACHE[cache_key] = (now, response)
         await self.cache.set(cache_key, response.model_dump(mode="json"), ttl=self.cache.ttl.DASHBOARD)
         return response
 
     async def get_admin_dashboard(self) -> AdminDashboardResponse:
         """Calculate system-wide metrics and audit history for Administrator view with caching."""
+        global _L1_DASHBOARD_CACHE
+        now = time.time()
         cache_key = self.cache.keys.dashboard("admin", "system")
+
+        if cache_key in _L1_DASHBOARD_CACHE:
+            entry_time, cached_res = _L1_DASHBOARD_CACHE[cache_key]
+            if now - entry_time < L1_DASHBOARD_TTL:
+                return cached_res
+
         cached = await self.cache.get(cache_key)
         if cached is not None and isinstance(cached, dict):
             try:
-                return AdminDashboardResponse.model_validate(cached)
+                res = AdminDashboardResponse.model_validate(cached)
+                _L1_DASHBOARD_CACHE[cache_key] = (now, res)
+                return res
             except Exception:
                 pass
 
